@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.51.1"
+APP_VERSION = "2.51.2"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -818,6 +818,31 @@ class SonyWifiClient:
             raise RuntimeError(f"{metodo}: {dati['error']}")
         return dati.get("result", [])
 
+    def _base_da_descrizione(self, locazione):
+        """Legge il file di descrizione SSDP e ricava l'URL reale dell'API.
+
+        Modelli diversi usano porte diverse (10000, 8080, ...): non va mai
+        dato per scontato il numero di porta.
+        """
+        import re
+        import urllib.request
+
+        try:
+            with urllib.request.urlopen(locazione, timeout=8) as risposta:
+                xml = risposta.read().decode("utf-8", "ignore")
+        except Exception as errore:
+            self._log(f"Sony: descrizione non leggibile ({errore})")
+            return None
+        trovato = re.search(
+            r"<av:X_ScalarWebAPI_ActionList_URL>\s*([^<]+?)\s*</av:X_ScalarWebAPI_ActionList_URL>",
+            xml,
+        )
+        if trovato:
+            base = trovato.group(1).strip().rstrip("/")
+            self._log(f"Sony: API dichiarata su {base}")
+            return base
+        return None
+
     def scopri(self, timeout=4.0):
         import socket
         import re
@@ -840,7 +865,7 @@ class SonyWifiClient:
             sock.close()
             return None
         scadenza = time.time() + timeout
-        trovato = None
+        locazioni = []
         while time.time() < scadenza:
             try:
                 dati, _ = sock.recvfrom(65507)
@@ -848,15 +873,33 @@ class SonyWifiClient:
                 continue
             testo = dati.decode("utf-8", "ignore")
             posizione = re.search(r"LOCATION:\s*(\S+)", testo, re.IGNORECASE)
-            if not posizione:
-                continue
-            host = re.sub(r"^https?://([^/:]+).*$", r"\1", posizione.group(1).strip())
-            trovato = f"http://{host}:10000/sony"
-            self._log(f"Sony: fotocamera trovata sull'IP {host}")
-            break
+            if posizione and posizione.group(1).strip() not in locazioni:
+                locazioni.append(posizione.group(1).strip())
         sock.close()
-        self.base = trovato
-        return trovato
+        for locazione in locazioni:
+            host = re.sub(r"^https?://([^/:]+).*$", r"\1", locazione)
+            self._log(f"Sony: fotocamera trovata sull'IP {host}")
+            base = self._base_da_descrizione(locazione)
+            if base:
+                self.base = base
+                return base
+            # Ripiego: stesso IP, porte note dell'API Sony
+            for porta in (8080, 10000):
+                candidato = f"http://{host}:{porta}/sony"
+                if self.tcp_aperto(host, porta):
+                    self.base = candidato
+                    return candidato
+        return None
+
+    def _chiama(self, metodo, parametri=None, versione="1.0"):
+        """Chiama un metodo provando i servizi disponibili (system, poi camera)."""
+        ultimo_errore = None
+        for servizio in ("system", "camera"):
+            try:
+                return self._api(servizio, metodo, parametri, versione)
+            except Exception as errore:
+                ultimo_errore = errore
+        raise ultimo_errore
 
     def _estrai_url(self, dato):
         import re
@@ -880,34 +923,56 @@ class SonyWifiClient:
         return trovati
 
     def connetti(self):
-        # 1) Indirizzo standard delle Sony in modalita' Smart Remote Control.
-        if self.tcp_aperto("192.168.122.1"):
-            self.base = "http://192.168.122.1:10000/sony"
-            self._log("Sony: API raggiungibile su 192.168.122.1")
-        elif self.scopri():
-            self._log(f"Sony: fotocamera trovata via SSDP ({self.base})")
-        else:
+        base = None
+        try:
+            base = self.scopri()
+        except Exception as errore:
+            self._log(f"Sony: ricerca SSDP non riuscita ({errore})")
+        if not base:
+            # Ripiego: indirizzo tipico della fotocamera in modalita' Smart Remote
+            for porta in (8080, 10000):
+                if self.tcp_aperto("192.168.122.1", porta):
+                    self.base = f"http://192.168.122.1:{porta}/sony"
+                    base = self.base
+                    self._log(f"Sony: uso l'indirizzo {base}")
+                    break
+        if not base:
             raise RuntimeError(
                 "fotocamera non raggiungibile. Il PC non sembra collegato al Wi-Fi "
                 "della fotocamera (IP atteso 192.168.122.x). Apri 'Smart Remote Control' "
                 "sulla A7S e collegati alla rete DIRECT-xxxx:ILCE-7S."
             )
-        elenco = self._api("system", "getAvailableApiList")
+
+        elenco = self._chiama("getAvailableApiList")
         self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
         if not self.apis:
             self.apis = []
         try:
-            info = self._api("system", "getApplicationInfo")
+            info = self._chiama("getApplicationInfo")
             self._log(f"Sony: connesso ({info[0] if info else 'ok'})")
         except Exception as errore:
             self._log(f"Sony: info non disponibile ({errore})")
+
         if "startRecMode" in self.apis:
             try:
-                self._api("camera", "startRecMode")
-                time.sleep(1.5)
-                self._log("Sony: modalita' remota attivata")
+                self._chiama("startRecMode")
+                self._log("Sony: attivazione modalita' remota...")
             except Exception as errore:
                 self._log(f"Sony: startRecMode non riuscito ({errore})")
+            # La fotocamera impiega alcuni secondi: attende che sia pronta
+            for _ in range(20):
+                time.sleep(1.0)
+                try:
+                    elenco = self._chiama("getAvailableApiList")
+                    self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
+                except Exception:
+                    continue
+                if "actTakePicture" in self.apis:
+                    break
+        if "actTakePicture" in self.apis:
+            self._log("Sony: fotocamera pronta (scatto disponibile)")
+        else:
+            self._log("Sony: connessa, ma lo scatto non risulta ancora disponibile")
         return self.apis
 
     def _scarica(self, indirizzo, cartella):
@@ -2004,6 +2069,13 @@ class FranchettiApp(ctk.CTk):
         self.scrivi_log(f"Monitoraggio cartella attivo su {cartella}. Output: {output}")
 
     # ============================================================ SONY WI-FI
+    def _stato_sony(self, testo, colore):
+        """Aggiorna l'etichetta Sony dal thread principale (Tkinter non e' thread-safe)."""
+        try:
+            self.after(0, lambda: self.lbl_sony.configure(text=testo, text_color=colore))
+        except Exception:
+            pass
+
     def connetti_sony(self):
         def lavoro():
             try:
@@ -2011,13 +2083,13 @@ class FranchettiApp(ctk.CTk):
                 client = SonyWifiClient(self._log_threadsafe)
                 api = client.connetti()
                 self._sony = client
-                self.lbl_sony.configure(
-                    text=f"Fotocamera connessa ({len(api)} funzioni disponibili)", text_color="#66bb6a"
+                self._stato_sony(
+                    f"Fotocamera connessa ({len(api)} funzioni disponibili)", "#66bb6a"
                 )
                 self._log_threadsafe("Sony: connessione riuscita. Usa SCATTA E SCARICA.")
             except Exception as errore:
                 self._sony = None
-                self.lbl_sony.configure(text="Fotocamera non connessa", text_color="#ffb74d")
+                self._stato_sony("Fotocamera non connessa", "#ffb74d")
                 self._log_threadsafe(f"Sony: connessione fallita - {errore}")
                 self._log_threadsafe(
                     "Sony: controlla di essere collegato al Wi-Fi DIRECT-xxxx:ILCE-7S "
@@ -2045,22 +2117,38 @@ class FranchettiApp(ctk.CTk):
                     "Il PC non e' collegato al Wi-Fi della fotocamera. "
                     "Collega la rete DIRECT-xxxx:ILCE-7S e riprova."
                 )
-            aperta = SonyWifiClient.tcp_aperto("192.168.122.1")
-            annota(
-                "Porta API 10000 su 192.168.122.1: "
-                + ("APERTA" if aperta else "CHIUSA o non raggiungibile")
-            )
-            if aperta:
+            client = SonyWifiClient(self._log_threadsafe)
+            base = None
+            try:
+                base = client.scopri(timeout=3.0)
+            except Exception as errore:
+                annota(f"Ricerca SSDP non riuscita: {errore}")
+            if base:
+                annota(f"Indirizzo API dichiarato dalla fotocamera: {base}")
                 try:
-                    client = SonyWifiClient(self._log_threadsafe)
-                    client.base = "http://192.168.122.1:10000/sony"
-                    info = client._api("system", "getApplicationInfo")
-                    annota("Risposta API: " + json.dumps(info)[:400])
+                    info = client._chiama("getApplicationInfo")
+                    annota("Fotocamera: " + json.dumps(info)[:400])
+                    elenco = client._chiama("getAvailableApiList")
+                    funzioni = elenco[0] if elenco and isinstance(elenco[0], list) else []
+                    annota(f"Funzioni disponibili: {len(funzioni)}")
+                    if "startRecMode" in funzioni:
+                        client._chiama("startRecMode")
+                        for _ in range(15):
+                            time.sleep(1.0)
+                            elenco = client._chiama("getAvailableApiList")
+                            funzioni = elenco[0] if elenco and isinstance(elenco[0], list) else []
+                            if "actTakePicture" in funzioni:
+                                break
+                    annota(
+                        "Scatto remoto: "
+                        + ("DISPONIBILE" if "actTakePicture" in funzioni else "NON disponibile")
+                    )
                 except Exception as errore:
                     annota(f"Errore chiamata API: {errore}")
             else:
                 annota(
-                    "Sulla fotocamera apri l'app Smart Remote Control e attendi che il Wi-Fi sia attivo."
+                    "Nessuna risposta dalla fotocamera. Apri 'Smart Remote Control' "
+                    "sulla A7S e attendi che il Wi-Fi sia attivo."
                 )
             percorso = os.path.join(os.path.expanduser("~"), "Desktop", "sony_diagnosi.txt")
             try:

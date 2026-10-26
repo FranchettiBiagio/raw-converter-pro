@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.51.2] - 2026-10-26
+
+### Fixed
+- **Connessione Sony A7S**: l'indirizzo dell'API non e' piu' fisso sulla porta 10000; viene letto dalla descrizione SSDP della fotocamera (sulla A7S e' `http://192.168.122.1:8080/sony`)
+- Chiamate API compatibili sia con il servizio `system` sia con `camera` (la A7S non espone `system`)
+- Dopo `startRecMode` il programma attende che la fotocamera sia pronta prima di dichiarare la connessione riuscita
+- Aggiornamento dell'etichetta di stato Sony dal thread corretto
+
+### Verified
+- Test reale su Sony A7S (Smart Remote Control SR/4.30): connessione, scatto e download JPEG funzionanti
+
+---
+
 ## [2.51.1] - 2026-10-26
 
 ### Added

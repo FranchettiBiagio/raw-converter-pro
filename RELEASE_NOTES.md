@@ -1,4 +1,26 @@
-# Release Notes v2.51.1
+# Release Notes v2.51.2
+
+**Franchetti Raw Converter Pro** - Release v2.51.2  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.51.2.0
+
+---
+
+## Correzione importante: connessione Sony A7S
+
+La A7S non usa la porta 10000 per l'API: espone l'indirizzo
+`http://192.168.122.1:8080/sony`. Ora il programma lo legge direttamente
+dalla descrizione SSDP della fotocamera, quindi funziona con qualsiasi modello
+Sony (porta 10000 o 8080).
+
+- Indirizzo API scoperto automaticamente (niente piu' porta fissa)
+- Compatibilita' con i servizi `system` e `camera`
+- Attesa che la fotocamera completi `startRecMode` prima di dichiarare la connessione
+- **Testato su Sony A7S reale**: connessione, scatto e download JPEG riusciti
+
+---
+
+# Release Notes v2.51.1 (precedente)
 
 **Franchetti Raw Converter Pro** - Release v2.51.1  
 **Data**: 26 Ottobre 2026  
