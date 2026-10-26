@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.51.1] - 2026-10-26
+
+### Added
+- Pulsante **DIAGNOSI** nel tab Tethering: verifica IP del PC, rete 192.168.122.x, porta API 10000 e risposta della fotocamera, salvando il report in `Desktop\sony_diagnosi.txt`
+- Diagnosi automatica quando la connessione Sony fallisce
+
+### Fixed
+- Connessione Sony: prova prima l'indirizzo diretto 192.168.122.1 e solo dopo SSDP, con messaggi di errore chiari
+
+---
+
 ## [2.51.0] - 2026-10-26
 
 ### Added

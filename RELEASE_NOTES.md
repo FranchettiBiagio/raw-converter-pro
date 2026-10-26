@@ -1,3 +1,25 @@
+# Release Notes v2.51.1
+
+**Franchetti Raw Converter Pro** - Release v2.51.1  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.51.1.0
+
+---
+
+## Novita v2.51.1
+
+### Diagnosi Sony Wi-Fi
+- Nuovo pulsante **DIAGNOSI** accanto a CONNETTI FOTOCAMERA
+- Controlla: IP del PC, presenza della rete 192.168.122.x, porta API 10000, risposta della fotocamera
+- Salva il report in `Desktop\sony_diagnosi.txt` (da inviare in caso di problemi)
+- La diagnosi parte automaticamente se la connessione fallisce
+
+### Connessione piu diretta
+- Prova subito l'indirizzo standard Sony 192.168.122.1, poi SSDP
+- Messaggi di errore espliciti su cosa controllare
+
+---
+
 # Release Notes v2.51.0
 
 **Franchetti Raw Converter Pro** - Release v2.51.0  

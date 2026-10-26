@@ -1,6 +1,6 @@
-# Franchetti Raw Converter Pro v2.51.0
+# Franchetti Raw Converter Pro v2.51.1
 
-[![Version](https://img.shields.io/badge/version-2.51.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.51.1-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
@@ -11,7 +11,7 @@
 
 ---
 
-## 🎯 Caratteristiche Principali v2.51.0
+## 🎯 Caratteristiche Principali v2.51.1
 
 ### 🧠 **Nuova Pipeline CIE L*a*b* (Avanzata)**
 | Fase | Descrizione | Controllo |
@@ -25,7 +25,7 @@
 
 > **Perché Lab?** La separazione luminanza/crominanza permette nitidezza pura su dettaglio senza artefatti cromatici (aloni colorati tipici dello sharpening RGB).
 
-### 📡 **Tethering Wi-Fi Automatico — Hot-Folder (v2.51.0)**
+### 📡 **Tethering Wi-Fi Automatico — Hot-Folder (v2.51.1)**
 - **Watchdog Observer** monitora cartella in tempo reale (`watchdog` library)
 - **Formati rilevati**: `.arw, .cr2, .cr3, .nef, .raf, .dng, .orf, .rw2`
 - **Buffer rete**: 1.5s delay per completamento scrittura wireless
@@ -90,12 +90,12 @@ Tutti e tre i canali attivati **in parallelo** al completamento di ogni elaboraz
 
 ## 🚀 Quick Start
 
-### Download v2.51.0
+### Download v2.51.1
 | Metodo | Link |
 |--------|------|
-| **GitHub Releases** | [Download v2.51.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.51.0) |
+| **GitHub Releases** | [Download v2.51.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.51.1) |
 | **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
-| **Installer Windows** | [Setup v2.51.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.51.0.exe) |
+| **Installer Windows** | [Setup v2.51.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.51.1.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
@@ -116,7 +116,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 📋 Requisiti di Sistema v2.51.0
+## 📋 Requisiti di Sistema v2.51.1
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -131,7 +131,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 🏗️ Architettura v2.51.0
+## 🏗️ Architettura v2.51.1
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -183,7 +183,7 @@ FranchettiRawConverterPro.exe
 
 ## 🔒 Privacy & Sicurezza (by design)
 
-| Caratteristica | Franchetti Raw Converter Pro v2.51.0 |
+| Caratteristica | Franchetti Raw Converter Pro v2.51.1 |
 |----------------|--------------------------------------|
 | **Rete** | Solo se attivi Cloud Dispatch (opzionale, esplicito) |
 | **Telemetria** | ❌ Nessuna |
@@ -220,10 +220,10 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 | [Specifiche Tecniche](TECHNICAL_SPECS.md) | Architettura, algoritmi, formati |
 | [Guida Installazione](INSTALLATION_GUIDE.md) | Deployment enterprise (GPO, Intune) |
 | [FAQ](FAQ.md) | Domande frequenti & troubleshooting |
-| [Changelog](CHANGELOG.md) | Storico versioni (v2.51.0) |
+| [Changelog](CHANGELOG.md) | Storico versioni (v2.51.1) |
 | [Privacy Policy](PRIVACY.md) | Zero data collection |
 | [Security Policy](SECURITY.md) | Responsible disclosure |
-| [Release Notes](RELEASE_NOTES.md) | Note complete v2.51.0 |
+| [Release Notes](RELEASE_NOTES.md) | Note complete v2.51.1 |
 
 ---
 
@@ -290,7 +290,7 @@ in the Software without restriction...
 
 ---
 
-## 📞 Supporto v2.51.0
+## 📞 Supporto v2.51.1
 
 | Canale | Scopo |
 |--------|-------|
@@ -300,7 +300,7 @@ in the Software without restriction...
 
 ---
 
-## 📊 Statistiche v2.51.0
+## 📊 Statistiche v2.51.1
 
 | Metrica | Valore |
 |---------|--------|
@@ -317,10 +317,10 @@ in the Software without restriction...
 
 **Made with ❤️ per fotografi professionisti da Franchetti**
 
-**v2.51.0 — Gennaio 2025**
+**v2.51.1 — Gennaio 2025**
 
 [![GitHub](https://img.shields.io/badge/GitHub-FranchettiBiagio%2Fraw--converter--pro-181717?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro)
-[![Download](https://img.shields.io/badge/Download-v2.51.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.51.0)
+[![Download](https://img.shields.io/badge/Download-v2.51.1-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.51.1)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>

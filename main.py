@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.51.0"
+APP_VERSION = "2.51.1"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -756,6 +756,37 @@ class SonyWifiClient:
         self.base = None
         self.apis = []
 
+    @staticmethod
+    def indirizzi_locali():
+        import socket
+
+        trovati = []
+        try:
+            for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+                ip = info[4][0]
+                if ip and ip not in trovati and not ip.startswith("127."):
+                    trovati.append(ip)
+        except Exception:
+            pass
+        return trovati
+
+    @staticmethod
+    def tcp_aperto(host, porta=10000, timeout=2.0):
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        try:
+            sock.connect((host, porta))
+            return True
+        except OSError:
+            return False
+        finally:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
     def _log(self, messaggio):
         if self.callback:
             try:
@@ -849,10 +880,18 @@ class SonyWifiClient:
         return trovati
 
     def connetti(self):
-        if not self.scopri():
-            # In modalita' Smart Remote la Sony usa di norma 192.168.122.1
+        # 1) Indirizzo standard delle Sony in modalita' Smart Remote Control.
+        if self.tcp_aperto("192.168.122.1"):
             self.base = "http://192.168.122.1:10000/sony"
-            self._log("Sony: SSDP senza risposta, provo 192.168.122.1")
+            self._log("Sony: API raggiungibile su 192.168.122.1")
+        elif self.scopri():
+            self._log(f"Sony: fotocamera trovata via SSDP ({self.base})")
+        else:
+            raise RuntimeError(
+                "fotocamera non raggiungibile. Il PC non sembra collegato al Wi-Fi "
+                "della fotocamera (IP atteso 192.168.122.x). Apri 'Smart Remote Control' "
+                "sulla A7S e collegati alla rete DIRECT-xxxx:ILCE-7S."
+            )
         elenco = self._api("system", "getAvailableApiList")
         self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
         if not self.apis:
@@ -1406,10 +1445,21 @@ class FranchettiApp(ctk.CTk):
         riga_sony.grid(row=3, column=0, columnspan=3, padx=8, pady=(2, 10), sticky="ew")
         riga_sony.grid_columnconfigure(0, weight=1)
         riga_sony.grid_columnconfigure(1, weight=1)
+        riga_sony.grid_columnconfigure(2, weight=1)
         self.btn_sony_connetti = ctk.CTkButton(
             riga_sony, text="CONNETTI FOTOCAMERA", height=36, command=self.connetti_sony
         )
-        self.btn_sony_connetti.grid(row=0, column=0, padx=(0, 6), sticky="ew")
+        self.btn_sony_connetti.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        self.btn_sony_diagnosi = ctk.CTkButton(
+            riga_sony,
+            text="DIAGNOSI",
+            height=36,
+            width=130,
+            fg_color="#5a5a5a",
+            hover_color="#6e6e6e",
+            command=self.diagnosi_sony,
+        )
+        self.btn_sony_diagnosi.grid(row=0, column=1, padx=5, sticky="ew")
         self.btn_sony_scatta = ctk.CTkButton(
             riga_sony,
             text="SCATTA E SCARICA",
@@ -1418,7 +1468,7 @@ class FranchettiApp(ctk.CTk):
             hover_color="#258c47",
             command=self.scatta_sony,
         )
-        self.btn_sony_scatta.grid(row=0, column=1, padx=(6, 0), sticky="ew")
+        self.btn_sony_scatta.grid(row=0, column=2, padx=(5, 0), sticky="ew")
 
         ctk.CTkLabel(scroll, text="HOT-FOLDER (CARTELLA MONITORATA)", font=ctk.CTkFont(size=12, weight="bold")).grid(
             row=6, column=0, columnspan=3, padx=8, pady=(14, 2), sticky="w"
@@ -1973,6 +2023,52 @@ class FranchettiApp(ctk.CTk):
                     "Sony: controlla di essere collegato al Wi-Fi DIRECT-xxxx:ILCE-7S "
                     "e che l'app Smart Remote Control sia aperta sulla fotocamera."
                 )
+                self.diagnosi_sony()
+
+        threading.Thread(target=lavoro, daemon=True).start()
+
+    def diagnosi_sony(self):
+        def lavoro():
+            righe = []
+
+            def annota(messaggio):
+                righe.append(messaggio)
+                self._log_threadsafe(messaggio)
+
+            annota("=== DIAGNOSI SONY WI-FI ===")
+            indirizzi = SonyWifiClient.indirizzi_locali()
+            annota("IP del PC: " + (", ".join(indirizzi) if indirizzi else "nessuno"))
+            in_rete = any(ip.startswith("192.168.122.") for ip in indirizzi)
+            annota("Rete fotocamera 192.168.122.x: " + ("SI" if in_rete else "NO"))
+            if not in_rete:
+                annota(
+                    "Il PC non e' collegato al Wi-Fi della fotocamera. "
+                    "Collega la rete DIRECT-xxxx:ILCE-7S e riprova."
+                )
+            aperta = SonyWifiClient.tcp_aperto("192.168.122.1")
+            annota(
+                "Porta API 10000 su 192.168.122.1: "
+                + ("APERTA" if aperta else "CHIUSA o non raggiungibile")
+            )
+            if aperta:
+                try:
+                    client = SonyWifiClient(self._log_threadsafe)
+                    client.base = "http://192.168.122.1:10000/sony"
+                    info = client._api("system", "getApplicationInfo")
+                    annota("Risposta API: " + json.dumps(info)[:400])
+                except Exception as errore:
+                    annota(f"Errore chiamata API: {errore}")
+            else:
+                annota(
+                    "Sulla fotocamera apri l'app Smart Remote Control e attendi che il Wi-Fi sia attivo."
+                )
+            percorso = os.path.join(os.path.expanduser("~"), "Desktop", "sony_diagnosi.txt")
+            try:
+                with open(percorso, "w", encoding="utf-8") as file_diag:
+                    file_diag.write("\n".join(righe))
+                annota(f"Diagnosi salvata in {percorso}")
+            except Exception:
+                pass
 
         threading.Thread(target=lavoro, daemon=True).start()
 
