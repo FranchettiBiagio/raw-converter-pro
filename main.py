@@ -22,7 +22,7 @@ import logging
 import threading
 import traceback
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from tkinter import filedialog, messagebox
 
 try:
@@ -321,7 +321,20 @@ def percorso_unico(percorso):
 
 def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
     """Elenca i file convertibili. Evita duplicati e la cartella di output."""
-    escluso = os.path.normcase(os.path.abspath(escludi)) if escludi else None
+    sorgente = str(sorgente or "").strip()
+    escluso = None
+    if escludi and os.path.isdir(sorgente):
+        try:
+            sorgente_norm = os.path.normcase(os.path.abspath(sorgente))
+            escluso_norm = os.path.normcase(os.path.abspath(escludi))
+            # Esclude l'output solo se e' dentro la sorgente. Se la destinazione
+            # e' una cartella superiore, i file della sorgente devono restare.
+            if escluso_norm == sorgente_norm or escluso_norm.startswith(
+                sorgente_norm + os.sep
+            ):
+                escluso = escluso_norm
+        except Exception:
+            escluso = None
 
     def valido(percorso):
         if escluso:
@@ -330,7 +343,6 @@ def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
                 return False
         return percorso.lower().endswith(ESTENSIONI_ACCETTATE)
 
-    sorgente = str(sorgente or "").strip()
     if ";" in sorgente:
         elenco = []
         for voce in sorgente.split(";"):
@@ -372,6 +384,15 @@ def _converti_file_worker(compito):
     percorso, output, parametri = compito
     temporaneo = ""
     try:
+        if os.path.normcase(os.path.abspath(percorso)) == os.path.normcase(
+            os.path.abspath(output)
+        ):
+            return {
+                "percorso": percorso,
+                "output": output,
+                "ok": False,
+                "errore": "Sorgente e destinazione coincidono: file non sovrascritto",
+            }
         cartella = os.path.dirname(output)
         if cartella:
             os.makedirs(cartella, exist_ok=True)
@@ -421,6 +442,23 @@ def termina_tutti_gli_esecutori():
             esecutore.shutdown(wait=False, cancel_futures=True)
         except Exception:
             pass
+
+
+def _pulisci_temporanei(compiti):
+    """Rimuove i file .tmp rimasti se un processo viene terminato a meta' lavoro."""
+    for _, _, output, _ in compiti:
+        radice, estensione = os.path.splitext(output)
+        temporaneo = f"{radice}.tmp{estensione}"
+        for tentativo in range(3):
+            try:
+                if os.path.exists(temporaneo):
+                    os.remove(temporaneo)
+                break
+            except OSError as errore:
+                if tentativo == 2:
+                    logging.warning("Impossibile rimuovere %s: %s", temporaneo, errore)
+                else:
+                    time.sleep(0.2)
 
 
 def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_event=None):
@@ -545,36 +583,51 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                     futuro = esecutore.submit(_converti_file_worker, (percorso, output, params))
                     futuro_mappa[futuro] = (indice, percorso, output, nome)
 
-                for futuro in as_completed(futuro_mappa):
+                pendenti = set(futuro_mappa)
+                while pendenti:
+                    # Attesa breve: l'annullamento deve reagire subito, non
+                    # aspettare che finisca la prima conversione in corso.
                     if cancel_event is not None and cancel_event.is_set():
                         annullato_durante = True
-                        for altro in futuro_mappa:
+                        for altro in pendenti:
                             altro.cancel()
                         _termina_esecutore(esecutore)
                         break
-                    indice, percorso, output, nome = futuro_mappa[futuro]
-                    try:
-                        esito = futuro.result()
-                    except Exception as errore:
-                        esito = {
-                            "ok": False,
-                            "errore": f"{type(errore).__name__}: {errore}",
-                        }
-                        logging.error("Errore sul processo per %s: %s", percorso, errore)
-                    if esito.get("ok"):
-                        ok += 1
-                        nota(f"OK: {nome}")
-                        cloud(output)
-                    else:
-                        errori += 1
-                        logging.error(
-                            "Errore su %s: %s", percorso, esito.get("errore", "sconosciuto")
-                        )
-                        nota(
-                            f"ERRORE su {os.path.basename(percorso)}: "
-                            f"{esito.get('errore', 'sconosciuto')}"
-                        )
-                    avanza(indice, totale, ok, errori, saltati)
+                    completati, pendenti = wait(
+                        pendenti, timeout=0.2, return_when=FIRST_COMPLETED
+                    )
+                    for futuro in completati:
+                        if cancel_event is not None and cancel_event.is_set():
+                            annullato_durante = True
+                            for altro in pendenti:
+                                altro.cancel()
+                            _termina_esecutore(esecutore)
+                            break
+                        indice, percorso, output, nome = futuro_mappa[futuro]
+                        try:
+                            esito = futuro.result()
+                        except Exception as errore:
+                            esito = {
+                                "ok": False,
+                                "errore": f"{type(errore).__name__}: {errore}",
+                            }
+                            logging.error("Errore sul processo per %s: %s", percorso, errore)
+                        if esito.get("ok"):
+                            ok += 1
+                            nota(f"OK: {nome}")
+                            cloud(output)
+                        else:
+                            errori += 1
+                            logging.error(
+                                "Errore su %s: %s", percorso, esito.get("errore", "sconosciuto")
+                            )
+                            nota(
+                                f"ERRORE su {os.path.basename(percorso)}: "
+                                f"{esito.get('errore', 'sconosciuto')}"
+                            )
+                        avanza(indice, totale, ok, errori, saltati)
+                    if annullato_durante:
+                        break
             finally:
                 if annullato_durante:
                     _termina_esecutore(esecutore)
@@ -582,6 +635,10 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                         esecutore.shutdown(wait=False, cancel_futures=True)
                     except Exception:
                         pass
+                    # I processi terminati non eseguono il loro finally: elimina
+                    # gli eventuali .tmp prima di restituire il controllo alla GUI.
+                    time.sleep(0.2)
+                    _pulisci_temporanei(compiti)
                 else:
                     esecutore.shutdown(wait=True)
                 with _LOCK_ESECUTORI:

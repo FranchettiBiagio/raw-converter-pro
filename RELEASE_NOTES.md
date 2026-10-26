@@ -1,7 +1,7 @@
 # Release Notes v2.53.0
 
 **Franchetti Raw Converter Pro** - Release v2.53.0  
-**Data**: 26 Ottobre 2026  
+**Data**: 27 Ottobre 2026  
 **Build**: 2.53.0.0
 
 ---
@@ -24,6 +24,8 @@ attivo di default.
 
 Ogni file viene scritto su un file temporaneo e pubblicato solo a conversione
 completata: un errore o un annullamento non lascia mai output corrotti.
+Il pulsante **ANNULLA** interrompe i processi entro 0,2 secondi e rimuove gli
+eventuali file `.tmp` rimasti, senza attendere la fine della foto in corso.
 
 ---
 
@@ -55,7 +57,10 @@ preservato (Make, ISO, orientamento corretto).
 - **Hot-folder**: elabora RAW e immagini standard, attende la fine della
   scrittura, gestisce i file spostati e ignora i propri output `_PRO`.
 - **Formati**: `JPG → JPEG`, `TIF → TIFF`; formato sconosciuto → JPEG.
-- **Sorgenti multiple**: lista con `;` deduplicata, cartella di output esclusa.
+- **Sorgenti multiple**: lista con `;` deduplicata, cartella di output esclusa
+  solo quando si trova davvero dentro la sorgente.
+- **Protezione originali**: se output e sorgente coincidono, il file non viene
+  sovrascritto e il batch segnala l'errore.
 - **Immagini minuscole** (1x1, 2x2, 1x200): nessun errore.
 
 ---
@@ -68,6 +73,8 @@ preservato (Make, ISO, orientamento corretto).
 - **Telegram** e **Dropbox** sono operativi. **Google Drive**, **Meta** e
   **SwissTransfer** sono predisposti ma non attivi in questa versione: vengono
   saltati senza generare errori.
+- Il tab **Batch** usa due colonne: sorgente, formato, nomi, watermark, preset e
+  comandi restano visibili senza scorrimento anche a 1024x720.
 - Test automatici superati: conversione, formati, watermark, logo, EXIF,
   configurazione, preset, batch sequenziale e parallelo, annullamento,
   hot-folder, cloud, helper Sony, immagini minuscole.

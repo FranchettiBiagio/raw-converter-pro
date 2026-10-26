@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.53.0] - 2026-10-26
+## [2.53.0] - 2026-10-27
 
 ### Added
 - **Elaborazione multi-core**: conversione batch con `ProcessPoolExecutor` su tutti i core logici
   - numero di processi limitato automaticamente dalla RAM libera e dal numero di file
   - interruttore **USA TUTTI I CORE (N processi)** nel tab Batch, attivo di default
   - scrittura atomica (file temporaneo + `os.replace`), nessun output corrotto in caso di errore o annullamento
-  - annullamento con terminazione immediata dei processi figli
+  - annullamento reattivo: i processi figli vengono terminati entro 0,2 s e i file `.tmp` residui vengono rimossi
   - misura su RAW Sony A7S 24 MP: 6 file da 67,6 s a 22,1 s (3,06x); 12 file in 39,8 s
 - Modalita' di test `--batch-test <sorgente> <cartella>` per verificare il batch parallelo da riga di comando
 
@@ -30,13 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Download Sony**: nomi file univoci, nessuna sovrascrittura
 - **Formati**: normalizzati `JPG → JPEG` e `TIF → TIFF`; un formato sconosciuto ripiega su JPEG
 - **Percorsi duplicati**: la lista sorgente con `;` viene deduplicata e la cartella di output esclusa dalla ricerca ricorsiva
+- **Cartella di output superiore alla sorgente**: non esclude piu' tutti i file (l'esclusione scatta solo se l'output e' dentro la sorgente)
+- **Protezione originali**: se il percorso di output coincide con il file sorgente, la conversione viene rifiutata senza sovrascrivere nulla
 - **Immagini minuscole** (1x1, 2x2, 1x200): pipeline, watermark e logo senza errori
 - **Preset**: sincronizza anche la casella EXIF
 - **Cloud**: Google Drive, Meta e SwissTransfer sono chiaramente indicati come non attivi; Telegram e Dropbox restano operativi
 
 ### Changed
 - Spazio colore fissato a **sRGB** (profilo ICC incorporato), coerente con l'output reale; rimosse le opzioni Adobe RGB/ProPhoto non implementate
-- Intestazione aggiornata: `LibRaw AHD | CIE L*a*b* | Multi-core | Tethering & Cloud`
+- **Tab Batch a due colonne**: tutte le impostazioni, i preset e i comandi sono visibili senza scorrimento anche a 1024x720
+- Intestazione compatta e sempre leggibile: `v2.53.0 | LibRaw | Multi-core | Tethering & Cloud`
 
 ---
 
