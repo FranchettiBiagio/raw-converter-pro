@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.51.3"
+APP_VERSION = "2.51.4"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -1247,37 +1247,61 @@ class FranchettiApp(ctk.CTk):
         self.entry_max_dim = ctk.CTkEntry(dim, width=90)
         self.entry_max_dim.insert(0, "1920")
         self.entry_max_dim.grid(row=0, column=1, padx=6, pady=4, sticky="w")
-        ctk.CTkLabel(dim, text="0 = originale", font=ctk.CTkFont(size=10),
-                     text_color="#9aa0a6").grid(row=0, column=2, columnspan=2, padx=6, sticky="w")
+        self.entry_max_dim.bind("<KeyRelease>", self._aggiorna_evidenzia_da_campo)
+        ctk.CTkLabel(dim, text="scegli una misura o scrivi un valore (0 = originale)",
+                     font=ctk.CTkFont(size=10), text_color="#9aa0a6").grid(
+            row=0, column=2, columnspan=2, padx=6, sticky="w"
+        )
 
-        ctk.CTkLabel(dim, text="Qualità").grid(row=1, column=0, padx=6, pady=4, sticky="w")
+        # Misure pronte in ordine crescente: un clic imposta il lato lungo.
+        self._misure_pronte = [640, 800, 1024, 1200, 1600, 1920, 2048, 2560, 3000, 4000, 6000, 0]
+        self.frame_misure = ctk.CTkFrame(dim, fg_color="transparent")
+        self.frame_misure.grid(row=1, column=0, columnspan=4, padx=6, pady=(0, 4), sticky="w")
+        self._bottoni_misure = []
+        for indice, valore in enumerate(self._misure_pronte):
+            testo = "Originale" if valore == 0 else f"{valore}"
+            bottone = ctk.CTkButton(
+                self.frame_misure,
+                text=testo,
+                width=74,
+                height=26,
+                font=ctk.CTkFont(size=11),
+                fg_color="#3a3f45",
+                hover_color="#4a5158",
+                command=lambda v=valore: self._imposta_max_dim(v),
+            )
+            bottone.grid(row=0, column=indice, padx=2, pady=2)
+            self._bottoni_misure.append((valore, bottone))
+        self._evidenzia_max_dim(1920)
+
+        ctk.CTkLabel(dim, text="Qualità").grid(row=2, column=0, padx=6, pady=4, sticky="w")
         self.entry_qualita = ctk.CTkEntry(dim, width=80)
         self.entry_qualita.insert(0, "90")
-        self.entry_qualita.grid(row=1, column=1, padx=6, pady=4, sticky="w")
+        self.entry_qualita.grid(row=2, column=1, padx=6, pady=4, sticky="w")
 
-        ctk.CTkLabel(dim, text="Formato").grid(row=1, column=2, padx=6, pady=4, sticky="e")
+        ctk.CTkLabel(dim, text="Formato").grid(row=2, column=2, padx=6, pady=4, sticky="e")
         self.combo_formato = ctk.CTkComboBox(
             dim, values=list(FORMATI_OUTPUT.keys()), width=110,
             command=lambda v: self.parametri.__setitem__("formato", v),
         )
         self.combo_formato.set("JPEG")
-        self.combo_formato.grid(row=1, column=3, padx=6, pady=4, sticky="w")
+        self.combo_formato.grid(row=2, column=3, padx=6, pady=4, sticky="w")
 
-        ctk.CTkLabel(dim, text="Spazio colore").grid(row=2, column=0, padx=6, pady=4, sticky="w")
+        ctk.CTkLabel(dim, text="Spazio colore").grid(row=3, column=0, padx=6, pady=4, sticky="w")
         self.combo_spazio = ctk.CTkComboBox(
             dim, values=["sRGB", "Adobe RGB", "ProPhoto RGB"], width=140,
             command=lambda v: self.parametri.__setitem__("profilo_colore", v),
         )
         self.combo_spazio.set("sRGB")
-        self.combo_spazio.grid(row=2, column=1, padx=6, pady=4, sticky="w")
+        self.combo_spazio.grid(row=3, column=1, padx=6, pady=4, sticky="w")
 
         self.chk_wb_camera = ctk.CTkCheckBox(dim, text="WB fotocamera")
         self.chk_wb_camera.select()
-        self.chk_wb_camera.grid(row=2, column=2, columnspan=2, padx=6, pady=4, sticky="w")
+        self.chk_wb_camera.grid(row=3, column=2, columnspan=2, padx=6, pady=4, sticky="w")
 
         self.chk_exif = ctk.CTkCheckBox(dim, text="Preserva EXIF")
         self.chk_exif.select()
-        self.chk_exif.grid(row=3, column=0, columnspan=2, padx=6, pady=4, sticky="w")
+        self.chk_exif.grid(row=4, column=0, columnspan=2, padx=6, pady=4, sticky="w")
 
         # ================= BLOCCO NOMI / WATERMARK / PRESET =================
         dx = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -1827,6 +1851,7 @@ class FranchettiApp(ctk.CTk):
         if "max_dim" in preset:
             self.entry_max_dim.delete(0, "end")
             self.entry_max_dim.insert(0, str(preset["max_dim"]))
+            self._evidenzia_max_dim(int(preset["max_dim"]))
         if "qualita_jpeg" in preset:
             self.entry_qualita.delete(0, "end")
             self.entry_qualita.insert(0, str(preset["qualita_jpeg"]))
@@ -1897,6 +1922,27 @@ class FranchettiApp(ctk.CTk):
         self.entry_colore_luci.insert(0, self.parametri.get("colore_luci", "#e0b070"))
 
     # ============================================================ CAMPI
+    def _imposta_max_dim(self, valore):
+        """Imposta il lato lungo da una misura pronta."""
+        self.entry_max_dim.delete(0, "end")
+        self.entry_max_dim.insert(0, str(valore))
+        self.parametri["max_dim"] = valore
+        self._evidenzia_max_dim(valore)
+
+    def _evidenzia_max_dim(self, valore):
+        for preset, bottone in getattr(self, "_bottoni_misure", []):
+            if preset == valore:
+                bottone.configure(fg_color="#1f7a3d", hover_color="#258c47", text_color="#ffffff")
+            else:
+                bottone.configure(fg_color="#3a3f45", hover_color="#4a5158", text_color="#dce1e6")
+
+    def _aggiorna_evidenzia_da_campo(self, _evento=None):
+        try:
+            valore = int(self.entry_max_dim.get() or 0)
+        except ValueError:
+            return
+        self._evidenzia_max_dim(valore)
+
     def _raccogli_campi(self):
         """Sincronizza tutti i campi UI nel dizionario parametri."""
         try:

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.51.4] - 2026-10-26
+
+### Added
+- **Batch**: il lato lungo si sceglie da misure pronte in ordine crescente (640, 800, 1024, 1200, 1600, 1920, 2048, 2560, 3000, 4000, 6000, Originale)
+- La misura attiva e' evidenziata in verde; resta possibile scrivere un valore personalizzato
+
+---
+
 ## [2.51.3] - 2026-10-26
 
 ### Fixed

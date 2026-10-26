@@ -3,13 +3,13 @@
 ; Output: Output/Franchetti_Raw_Converter_Setup_v2.50.1.exe
 
 #define AppName "Franchetti Raw Converter Pro"
-#define AppVersion "2.51.3"
-#define AppVersionTuple "2.51.3.0"
+#define AppVersion "2.51.4"
+#define AppVersionTuple "2.51.4.0"
 #define AppPublisher "Franchetti"
 #define AppWebsite "https://franchetti.dev/raw-converter-pro"
 #define AppExeName "FranchettiRawConverterPro.exe"
 #define SourceExe "dist\FranchettiRawConverterPro.exe"
-#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.51.3"
+#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.51.4"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}

@@ -1,4 +1,26 @@
-# Release Notes v2.51.3
+# Release Notes v2.51.4
+
+**Franchetti Raw Converter Pro** - Release v2.51.4  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.51.4.0
+
+---
+
+## Batch: misure pronte per il lato lungo
+
+Nella sezione **DIMENSIONI E FORMATO** non serve piu' scrivere il numero a mano:
+ci sono caselle in ordine crescente da cui scegliere la misura.
+
+`640 | 800 | 1024 | 1200 | 1600 | 1920 | 2048 | 2560 | 3000 | 4000 | 6000 | Originale`
+
+- Un clic imposta subito il lato lungo
+- La misura scelta resta evidenziata in verde
+- Il campo resta modificabile per valori personalizzati
+- `Originale` corrisponde a 0 (nessun ridimensionamento)
+
+---
+
+# Release Notes v2.51.3 (precedente)
 
 **Franchetti Raw Converter Pro** - Release v2.51.3  
 **Data**: 26 Ottobre 2026  
