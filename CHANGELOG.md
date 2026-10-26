@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.51.3] - 2026-10-26
+
+### Fixed
+- **Stato "connessa ma scatto non disponibile"**: se la A7S resta in uno stato intermedio, il programma esegue un ciclo `stopRecMode`/`startRecMode` e riattiva lo scatto remoto
+- `SCATTA E SCARICA` verifica e riattiva la modalita' remota prima di scattare, invece di fallire
+- Etichetta Sony distingue "pronta" da "raggiungibile ma non pronta"
+- Connessione automatica all'avvio quando il PC e' gia' sulla rete `192.168.122.x`
+
+### Added
+- Log su file in `Desktop\franchetti_log.txt` per diagnosticare i problemi
+
+---
+
 ## [2.51.2] - 2026-10-26
 
 ### Fixed

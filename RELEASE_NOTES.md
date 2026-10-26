@@ -1,4 +1,25 @@
-# Release Notes v2.51.2
+# Release Notes v2.51.3
+
+**Franchetti Raw Converter Pro** - Release v2.51.3  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.51.3.0
+
+---
+
+## Correzione: "connessa ma non scatta"
+
+La A7S a volte resta in uno stato intermedio: l'API risponde ma
+`actTakePicture` non e' disponibile. Ora il programma:
+
+- rileva lo stato e riattiva la modalita' remota (`stopRecMode` + `startRecMode`)
+- verifica che lo scatto sia disponibile prima di dichiarare la connessione
+- riprova automaticamente quando premi SCATTA E SCARICA
+- si collega da solo all'avvio se il PC e' sulla rete `192.168.122.x`
+- scrive tutto in `Desktop\franchetti_log.txt`
+
+---
+
+# Release Notes v2.51.2 (precedente)
 
 **Franchetti Raw Converter Pro** - Release v2.51.2  
 **Data**: 26 Ottobre 2026  

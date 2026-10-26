@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.51.2"
+APP_VERSION = "2.51.3"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -74,6 +74,15 @@ if SCALA_DPI > 1.01:
         pass
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Log su file: serve per diagnosticare i problemi segnalati dagli utenti.
+try:
+    _file_log = os.path.join(os.path.expanduser("~"), "Desktop", "franchetti_log.txt")
+    _handler_file = logging.FileHandler(_file_log, encoding="utf-8")
+    _handler_file.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logging.getLogger().addHandler(_handler_file)
+except Exception:
+    pass
 
 RAW_ESTENSIONI = (
     ".arw", ".cr2", ".cr3", ".nef", ".nrw", ".raf", ".dng", ".orf", ".rw2",
@@ -953,27 +962,52 @@ class SonyWifiClient:
         except Exception as errore:
             self._log(f"Sony: info non disponibile ({errore})")
 
-        if "startRecMode" in self.apis:
-            try:
-                self._chiama("startRecMode")
-                self._log("Sony: attivazione modalita' remota...")
-            except Exception as errore:
-                self._log(f"Sony: startRecMode non riuscito ({errore})")
-            # La fotocamera impiega alcuni secondi: attende che sia pronta
-            for _ in range(20):
-                time.sleep(1.0)
-                try:
-                    elenco = self._chiama("getAvailableApiList")
-                    self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
-                except Exception:
-                    continue
-                if "actTakePicture" in self.apis:
-                    break
-        if "actTakePicture" in self.apis:
+        if self.assicura_scatto():
             self._log("Sony: fotocamera pronta (scatto disponibile)")
         else:
-            self._log("Sony: connessa, ma lo scatto non risulta ancora disponibile")
+            self._log(
+                "Sony: connessa, ma la fotocamera non e' in modalita' remota. "
+                "Apri Smart Remote Control sulla A7S e premi di nuovo CONNETTI."
+            )
         return self.apis
+
+    def _prova_modalita_remota(self, secondi):
+        """Avvia la modalita' remota e attende che lo scatto sia disponibile."""
+        try:
+            self._chiama("startRecMode")
+        except Exception as errore:
+            self._log(f"Sony: startRecMode non riuscito ({errore})")
+        for indice in range(secondi):
+            time.sleep(1.0)
+            try:
+                elenco = self._chiama("getAvailableApiList")
+            except Exception:
+                continue
+            self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
+            if "actTakePicture" in self.apis:
+                return True
+            if indice == 4:
+                self._log("Sony: la fotocamera sta attivando la modalita' remota...")
+        return False
+
+    def assicura_scatto(self, tentativi=15):
+        """Rende la fotocamera pronta per lo scatto remoto.
+
+        Alcune Sony (A7S compresa) restano in uno stato intermedio in cui
+        l'API risponde ma lo scatto non e' disponibile: in quel caso serve
+        un ciclo stopRecMode/startRecMode.
+        """
+        if "actTakePicture" in self.apis:
+            return True
+        if self._prova_modalita_remota(tentativi):
+            return True
+        self._log("Sony: reset della modalita' remota...")
+        try:
+            self._chiama("stopRecMode")
+        except Exception as errore:
+            self._log(f"Sony: stopRecMode non riuscito ({errore})")
+        time.sleep(3)
+        return self._prova_modalita_remota(20)
 
     def _scarica(self, indirizzo, cartella):
         import urllib.request
@@ -987,6 +1021,11 @@ class SonyWifiClient:
 
     def scatta_e_scarica(self, cartella):
         os.makedirs(cartella, exist_ok=True)
+        if not self.assicura_scatto():
+            raise RuntimeError(
+                "la fotocamera non e' in modalita' remota. Apri 'Smart Remote Control' "
+                "sulla A7S e riprova."
+            )
         risultato = self._api("camera", "actTakePicture")
         url = self._estrai_url(risultato)
         if not url:
@@ -1032,6 +1071,16 @@ class FranchettiApp(ctk.CTk):
         # PyInstaller il fattore 125% può essere applicato due volte e tagliare
         # la parte destra dell'interfaccia.
         self.after(300, self._sincronizza_scaling)
+        # Se il PC e' gia' collegato al Wi-Fi della Sony, prova a connettersi
+        # da solo: l'utente trova la fotocamera gia' pronta.
+        self.after(2000, self._auto_connetti_sony)
+
+    def _auto_connetti_sony(self):
+        try:
+            if any(ip.startswith("192.168.122.") for ip in SonyWifiClient.indirizzi_locali()):
+                self.connetti_sony()
+        except Exception:
+            pass
 
     def _sincronizza_scaling(self):
         self._applica_geometria()
@@ -2083,10 +2132,19 @@ class FranchettiApp(ctk.CTk):
                 client = SonyWifiClient(self._log_threadsafe)
                 api = client.connetti()
                 self._sony = client
-                self._stato_sony(
-                    f"Fotocamera connessa ({len(api)} funzioni disponibili)", "#66bb6a"
-                )
-                self._log_threadsafe("Sony: connessione riuscita. Usa SCATTA E SCARICA.")
+                if "actTakePicture" in api:
+                    self._stato_sony(
+                        f"Fotocamera pronta ({len(api)} funzioni disponibili)", "#66bb6a"
+                    )
+                    self._log_threadsafe("Sony: connessione riuscita. Usa SCATTA E SCARICA.")
+                else:
+                    self._stato_sony(
+                        "Connessa ma non pronta: apri Smart Remote Control e riprova", "#ffb74d"
+                    )
+                    self._log_threadsafe(
+                        "Sony: la fotocamera e' raggiungibile ma non e' in modalita' remota. "
+                        "Sulla A7S apri Smart Remote Control e premi di nuovo CONNETTI."
+                    )
             except Exception as errore:
                 self._sony = None
                 self._stato_sony("Fotocamera non connessa", "#ffb74d")
@@ -2182,8 +2240,12 @@ class FranchettiApp(ctk.CTk):
                 self._log_threadsafe(
                     f"Sony: {len(file_ottenuti)} file ricevuti in {cartella}"
                 )
+                self._stato_sony(
+                    f"Fotocamera pronta ({len(client.apis)} funzioni disponibili)", "#66bb6a"
+                )
             except Exception as errore:
                 self._log_threadsafe(f"Sony: scatto non riuscito - {errore}")
+                self._stato_sony("Scatto non riuscito: vedi il tab Log", "#ffb74d")
 
         threading.Thread(target=lavoro, daemon=True).start()
 
