@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.52.0] - 2026-10-26
+
+### Added
+- **PIÙ LUMINOSA (BETA)**: correzione automatica dell'esposizione, attivabile nel tab Batch e nel tab Sviluppo RAW
+  - schiarisce le foto scure portando la luminosità mediana verso il centro
+  - riduce e comprime le alte luci delle foto troppo esposte
+  - lascia invariate le foto gia' bilanciate
+  - ginocchio morbido per non bruciare i bianchi; LUT a 256 livelli (circa 0,6 s su 24 MP)
+
+---
+
 ## [2.51.4] - 2026-10-26
 
 ### Added

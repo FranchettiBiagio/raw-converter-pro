@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.51.4"
+APP_VERSION = "2.52.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -140,6 +140,8 @@ def parametri_default():
         "qualita_jpeg": 90,
         "formato": "JPEG",
         "preserva_exif": True,
+        # --- Miglioramento automatico (BETA) ---
+        "auto_luminosita": False,
         "mantieni_nomi": True,
         "prefisso": "",
         "suffisso": "",
@@ -531,6 +533,51 @@ class ImageEngine:
         pil_img.save(percorso_output, format=None if formato == "JPG" else formato, **kwargs)
 
     # ------------------------------------------------------------ pipeline
+    @staticmethod
+    def correggi_luminosita_auto(pil_img):
+        """Bilanciamento automatico dell'esposizione (funzione BETA "Piu' luminosa").
+
+        Analizza l'istogramma: schiarisce le foto scure, riduce le alte luci
+        delle foto troppo esposte, lascia invariate le foto gia' corrette.
+        Usa una LUT a 256 livelli: veloce anche su immagini grandi.
+        """
+        arr = np.asarray(pil_img.convert("RGB"), dtype=np.uint8)
+        lum = (
+            0.2126 * arr[..., 0].astype(np.float32)
+            + 0.7152 * arr[..., 1].astype(np.float32)
+            + 0.0722 * arr[..., 2].astype(np.float32)
+        ) / 255.0
+        mediana = float(np.median(lum))
+        luci = float(np.percentile(lum, 97))
+
+        gamma = 1.0
+        if mediana < 0.40 and mediana > 0.01:
+            # Foto scura: schiarisce fino a portare la mediana verso il centro
+            obiettivo = 0.48 if mediana < 0.26 else 0.44
+            gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
+            gamma = max(0.32, min(1.0, gamma))
+        elif mediana > 0.56 or luci > 0.96:
+            # Foto troppo luminosa: riduce e comprime le alte luci
+            obiettivo = 0.50
+            gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
+            gamma = max(1.0, min(2.8, gamma))
+
+        if abs(gamma - 1.0) < 0.02 and luci <= 0.96:
+            return pil_img
+
+        x = np.linspace(0.0, 1.0, 256, dtype=np.float32)
+        y = np.power(x, gamma)
+        # Ginocchio morbido sulle alte luci: evita di bruciare i bianchi
+        ginocchio = 0.86
+        sopra = y > ginocchio
+        if np.any(sopra):
+            y[sopra] = ginocchio + (1.0 - ginocchio) * np.tanh(
+                (y[sopra] - ginocchio) / (1.0 - ginocchio)
+            )
+        y = np.clip(y / max(float(y[-1]), 1e-6), 0.0, 1.0)
+        lut = (y * 255.0 + 0.5).astype(np.uint8)
+        return Image.fromarray(lut[arr], "RGB")
+
     @classmethod
     def sviluppa_e_ottimizza(cls, percorso_raw, percorso_output, parametri, callback=None):
         p = parametri
@@ -571,6 +618,11 @@ class ImageEngine:
 
         img_finale = (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
         pil_img = Image.fromarray(img_finale, "RGB")
+
+        # 2b. Miglioramento automatico dell'esposizione (BETA "Piu' luminosa")
+        if p.get("auto_luminosita"):
+            pil_img = cls.correggi_luminosita_auto(pil_img)
+            nota("Bilanciamento automatico della luminosita' applicato")
 
         # 3. Ridimensionamento (lato lungo)
         max_dim = int(p.get("max_dim", 0) or 0)
@@ -1303,6 +1355,21 @@ class FranchettiApp(ctk.CTk):
         self.chk_exif.select()
         self.chk_exif.grid(row=4, column=0, columnspan=2, padx=6, pady=4, sticky="w")
 
+        # Miglioramento automatico dell'esposizione (BETA)
+        self.sw_auto_luminosita = ctk.CTkSwitch(
+            dim,
+            text="PIÙ LUMINOSA (BETA)",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=lambda: self._toggle_auto_luminosita(self.sw_auto_luminosita.get()),
+        )
+        self.sw_auto_luminosita.grid(row=5, column=0, columnspan=2, padx=6, pady=(8, 2), sticky="w")
+        ctk.CTkLabel(
+            dim,
+            text="Schiarisce le foto scure e recupera le alte luci delle foto troppo esposte.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+        ).grid(row=5, column=2, columnspan=2, padx=6, sticky="w")
+
         # ================= BLOCCO NOMI / WATERMARK / PRESET =================
         dx = ctk.CTkFrame(scroll, fg_color="transparent")
         dx.grid(row=1, column=0, padx=4, pady=(8, 2), sticky="ew")
@@ -1444,6 +1511,16 @@ class FranchettiApp(ctk.CTk):
         scroll = ctk.CTkScrollableFrame(tab, label_text="Correzioni colore e sviluppo", height=320)
         scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         scroll.grid_columnconfigure(0, weight=1)
+
+        card_auto = ctk.CTkFrame(scroll)
+        card_auto.pack(fill="x", padx=6, pady=(6, 2))
+        self.sw_auto_sviluppo = ctk.CTkSwitch(
+            card_auto,
+            text="PIÙ LUMINOSA (BETA) - sistema automaticamente foto scure e troppo esposte",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=lambda: self._toggle_auto_luminosita(self.sw_auto_sviluppo.get()),
+        )
+        self.sw_auto_sviluppo.pack(padx=10, pady=10, anchor="w")
 
         sezioni = [
             ("ESPOSIZIONE E BILANCIAMENTO", [
@@ -1920,8 +1997,25 @@ class FranchettiApp(ctk.CTk):
         self.entry_colore_ombre.insert(0, self.parametri.get("colore_ombre", "#2b4c7e"))
         self.entry_colore_luci.delete(0, "end")
         self.entry_colore_luci.insert(0, self.parametri.get("colore_luci", "#e0b070"))
+        self._toggle_auto_luminosita(bool(self.parametri.get("auto_luminosita", False)))
 
     # ============================================================ CAMPI
+    def _toggle_auto_luminosita(self, attivo):
+        """Attiva il miglioramento automatico e tiene allineati i due interruttori."""
+        attivo = bool(attivo)
+        self.parametri["auto_luminosita"] = attivo
+        for nome in ("sw_auto_luminosita", "sw_auto_sviluppo"):
+            widget = getattr(self, nome, None)
+            if widget is None:
+                continue
+            try:
+                if attivo and not widget.get():
+                    widget.select()
+                elif not attivo and widget.get():
+                    widget.deselect()
+            except Exception:
+                pass
+
     def _imposta_max_dim(self, valore):
         """Imposta il lato lungo da una misura pronta."""
         self.entry_max_dim.delete(0, "end")

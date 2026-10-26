@@ -1,4 +1,30 @@
-# Release Notes v2.51.4
+# Release Notes v2.52.0
+
+**Franchetti Raw Converter Pro** - Release v2.52.0  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.52.0.0
+
+---
+
+## PIÙ LUMINOSA (BETA) - esposizione automatica
+
+Nuovo interruttore **PIÙ LUMINOSA (BETA)** nel tab **Batch** e nel tab **Sviluppo RAW**.
+
+Analizza l'istogramma di ogni immagine e decide da solo:
+
+- **Foto scure** -> schiarisce fino a portare la luminosità mediana verso il centro
+- **Foto troppo esposte** -> riduce la luminosità e comprime le alte luci
+- **Foto gia' corrette** -> nessuna modifica
+
+Dettagli tecnici: correzione gamma con ginocchio morbido sulle alte luci
+(evita di bruciare i bianchi) e LUT a 256 livelli, circa 0,6 secondi su
+un'immagine da 24 megapixel.
+
+I due interruttori (Batch e Sviluppo) restano sincronizzati.
+
+---
+
+# Release Notes v2.51.4 (precedente)
 
 **Franchetti Raw Converter Pro** - Release v2.51.4  
 **Data**: 26 Ottobre 2026  
