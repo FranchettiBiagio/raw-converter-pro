@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+dist/
+Output/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test / temp
+test_tmp/
+*.log
+_new_batch.txt
+
+# Tool binaries (scaricabili a parte)
+upx.exe
+upx64.exe
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store

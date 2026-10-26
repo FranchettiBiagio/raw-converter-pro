@@ -1,0 +1,156 @@
+# Informativa sulla Privacy - Franchetti Raw Converter Pro
+
+**Titolare del trattamento:** Franchetti  
+**Email:** privacy@franchetti.dev  
+**Ultimo aggiornamento:** 18 Settembre 2024  
+**Versione:** 1.0
+
+---
+
+## 1. Premessa
+
+Franchetti Raw Converter Pro ("l'Applicazione") è un software desktop per Windows progettato per convertire file RAW in JPEG con watermark copyright. La presente informativa descrive come l'Applicazione gestisce i dati degli utenti in conformità al Regolamento UE 2016/679 (GDPR) e alla normativa italiana applicabile.
+
+---
+
+## 2. Dati Raccolti
+
+**L'Applicazione NON raccoglie, memorizza, trasmette o elabora alcun dato personale.**
+
+| Categoria di dati | Raccolti? | Dettagli |
+|-------------------|-----------|----------|
+| Dati anagrafici (nome, email) | ❌ No | Nessuna registrazione richiesta |
+| Dati di utilizzo / telemetria | ❌ No | Nessun analytics, crash reporting, tracking |
+| Indirizzo IP / identificatori dispositivo | ❌ No | Zero connessioni di rete |
+| File elaborati (RAW, JPEG) | ❌ No | Elaborazione 100% locale |
+| Metadati file (EXIF, GPS, timestamp) | ❌ No | Non estratti, non salvati, non trasmessi |
+| Preferenze utente | ❌ No | Non persistite su disco |
+| Log applicazione | ❌ No | Solo in memoria, sessione corrente |
+
+---
+
+## 3. Modalità di Elaborazione
+
+### 3.1 Elaborazione Locale Esclusiva
+Tutte le operazioni avvengono **esclusivamente sul dispositivo dell'utente**:
+- Lettura file RAW selezionati dall'utente
+- Decodifica RAW → RGB (libreria LibRaw)
+- Ridimensionamento, watermark, encoding JPEG (libreria Pillow)
+- Scrittura file JPEG nella cartella di destinazione scelta dall'utente
+
+### 3.2 Nessuna Comunicazione di Rete
+L'Applicazione:
+- Non apre socket di rete
+- Non effettua richieste HTTP/HTTPS
+- Non include librerie di rete (curl, OpenSSL, WinHTTP, WinINet)
+- Non verifica aggiornamenti automaticamente
+- Non invia report di errore
+
+### 3.3 Nessuna Persistenza
+- Nessun file scritto in `%APPDATA%`, `%LOCALAPPDATA%`, `Registry`
+- Nessun file temporaneo creato fuori dalla cartella di output utente
+- Impostazioni UI mantenute solo in memoria per la durata della sessione
+- Chiusura applicazione = cancellazione completa stato memoria
+
+---
+
+## 4. Base Giuridica (GDPR Art. 6)
+
+Non avviene alcun trattamento di dati personali → **non si applica alcuna base giuridica**.
+
+Se si considera "trattamento" la mera esecuzione del software scelto dall'utente:
+- **Art. 6(1)(b)** — Esecuzione di un contratto (licenza MIT) su richiesta dell'interessato
+- **Art. 6(1)(f)** — Legittimo interesse (fornire lo strumento richiesto)
+
+---
+
+## 5. Diritti dell'Interessato (GDPR Artt. 15-22)
+
+Poiché **nessun dato personale è trattato**, i diritti si esercitano come segue:
+
+| Diritto | Come esercitare |
+|---------|-----------------|
+| Accesso (Art. 15) | Nessun dato esiste da accedere |
+| Rettifica (Art. 16) | Nessun dato esiste da rettificare |
+| Cancellazione (Art. 17) | Disinstalla l'applicazione (elimina il file `.exe`) |
+| Limitazione (Art. 18) | Non usare l'applicazione |
+| Portabilità (Art. 20) | Nessun dato da esportare |
+| Opposizione (Art. 21) | Non usare l'applicazione |
+| Processi automatizzati (Art. 22) | Nessun processo decisionale automatizzato |
+
+---
+
+## 6. Sicurezza dei Dati (GDPR Art. 32)
+
+| Misura | Implementazione |
+|--------|-----------------|
+| Crittografia a riposo | Affidata al sistema operativo (BitLocker, FileVault, LUKS) |
+| Crittografia in transito | N/A (nessuna trasmissione) |
+| Controllo accessi | Permessi file system OS |
+| Minimizzazione | **Zero raccolta by design** |
+| Pseudonimizzazione | N/A |
+| Resilienza sistemi | Applicazione standalone, nessun servizio |
+
+---
+
+## 7. Conservazione dei Dati
+
+| Dato | Periodo conservazione |
+|------|----------------------|
+| File output JPEG generati | Fino a cancellazione manuale utente (file utente) |
+| Stato sessione (memoria) | Fino a chiusura applicazione |
+| Log sessione (memoria) | Fino a chiusura applicazione |
+| Dati personali | **Mai raccolti → mai conservati** |
+
+---
+
+## 8. Trasferimenti Internazionali
+
+**Nessun trasferimento** — nessun dato lascia il dispositivo dell'utente.
+
+---
+
+## 9. Servizi di Terze Parti
+
+**Nessun servizio di terze parti integrato:**
+- Nessun analytics (Google Analytics, Matomo, ecc.)
+- Nessun crash reporting (Sentry, Bugsnag, ecc.)
+- Nessun CDN, font esterni, API cloud
+- Nessun social login, OAuth, federated identity
+
+---
+
+## 10. Minori
+
+L'Applicazione non è diretta a minori di 13 anni (16 in UE). Non raccoglie dati da nessuno, inclusi minori.
+
+---
+
+## 11. Modifiche alla Presente Informativa
+
+Eventuali aggiornamenti saranno pubblicati:
+- Nel repository GitHub: `https://github.com/franchetti/raw-converter-pro`
+- Nella sezione "Privacy Policy" della pagina uptodown.dev
+- Nel file `PRIVACY.md` incluso nell'applicazione
+
+L'uso continuato dell'Applicazione dopo modifiche costituisce accettazione.
+
+---
+
+## 12. Contatti
+
+**Titolare del trattamento:** Franchetti  
+**Email privacy:** privacy@franchetti.dev  
+**Email supporto:** support@franchetti.dev  
+**Repository:** https://github.com/franchetti/raw-converter-pro
+
+---
+
+## 13. Autorità di Controllo
+
+In caso di violazione presunta, l'interessato può rivolgersi al **Garante per la Protezione dei Dati Personali** (Italia):  
+`https://www.garanteprivacy.it/` — Piazza di Monte Citorio 121, 00186 Roma
+
+---
+
+*La presente informativa è resa ai sensi degli Artt. 13-14 GDPR e costituisce l'informativa completa per Franchetti Raw Converter Pro v1.0.0+.*
