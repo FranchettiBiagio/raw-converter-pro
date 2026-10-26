@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.50.1**
+**Franchetti Raw Converter Pro v2.53.0**
 
 ---
 
@@ -27,7 +27,7 @@ with rawpy.imread(str(raw_path)) as raw:
     rgb = raw.postprocess(
         use_camera_wb=True,      # Camera white balance
         half_size=False,         # Full resolution
-        no_auto_bright=True,     # Linear data
+        no_auto_bright=False,    # Luminosità gestita dalla pipeline Lab
         output_bps=8             # 8-bit per channel
     )
 ```
@@ -92,7 +92,7 @@ Font: Arial/DejaVuSans fallback → default bitmap
 ### Time Complexity
 | Stage | Complexity | Dominant Factor |
 |-------|------------|-----------------|
-| RAW decode | O(W×H) | LibRaw C++ (single-threaded) |
+| RAW decode | O(W×H) | LibRaw C++ (un file per processo) |
 | Resize | O(W×H) | Pillow Lanczos (SIMD optimized) |
 | Watermark | O(text_pixels) | Negligible |
 | JPEG encode | O(W×H) | libjpeg-turbo (SIMD) |
@@ -136,26 +136,31 @@ out_path = output_dir / f"{stem}.jpg"
 
 ---
 
-## Threading Model
+## Modello di esecuzione (multi-core)
 
 ```
 Main Thread (GUI)
 ├── Event loop (tkinter)
-├── File selection dialogs
-├── Progress bar updates (via queue)
-└── Log updates (via queue)
+├── Dialoghi di selezione file
+├── Aggiornamento progress bar / log (via coda)
+└── root.after(120 ms, _processa_coda)
 
 Worker Thread (daemon)
-├── RawConverter.batch_convert()
-├── Per-file: convert_single()
-└── Callback → queue.put(('progress', ...))
-
-Queue polling: root.after(100ms, check_queue)
+├── esegui_batch()
+├── ProcessPoolExecutor(max_workers = numero_processi_ottimale())
+│   ├── _converti_file_worker() × N processi
+│   │   ├── ImageEngine.sviluppa_e_ottimizza()
+│   │   ├── scrittura su file .tmp
+│   │   └── os.replace() atomico
+│   └── risultati raccolti con as_completed()
+└── Callback → queue.put(('progress' | 'done' | 'log', ...))
 ```
 
-- **No shared state** between threads
-- **Queue-based** communication (thread-safe)
-- **Cancellation**: Atomic boolean flag checked per-file
+- **Nessuno stato condiviso** tra processi: ogni file riceve una copia dei parametri
+- **Comunicazione thread-safe** tramite coda; i processi figli non toccano Tk
+- **Numero di processi**: tutti i core logici, ridotto in base alla RAM libera e ai file
+- **Annullamento**: `cancel_event` + `terminate()` dei processi figli
+- **Output atomico**: un file parziale non viene mai pubblicato
 
 ---
 
@@ -191,7 +196,7 @@ cmd = [
 | Property | Value |
 |----------|-------|
 | **File** | `FranchettiRawConverterPro.exe` |
-| **Size** | 32,424,034 bytes (30.9 MB) |
+| **Size** | ~62 MB |
 | **Architecture** | x64 (PE32+) |
 | **Subsystem** | Windows GUI (2) |
 | **Dependencies** | None (fully bundled) |
@@ -203,14 +208,14 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.50.1.0 |
-| **ProductVersion** | 2.50.1.0 |
+| **FileVersion** | 2.53.0.0 |
+| **ProductVersion** | 2.53.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
 | **OriginalFilename** | FranchettiRawConverterPro.exe |
-| **FileDescription** | RAW to JPEG converter with watermark |
-| **LegalCopyright** | Copyright © 2024-2025 Franchetti |
+| **FileDescription** | Professional RAW converter with multi-core batch, CIE Lab pipeline and watermark |
+| **LegalCopyright** | Copyright © 2024-2026 Franchetti |
 | **LegalTrademarks** | Franchetti™ |
 
 ---
@@ -228,30 +233,33 @@ cmd = [
 
 ---
 
-## Limitations (v2.50.1)
+## Limiti noti (v2.53.0)
 
-| Limitation | Impact | Planned Fix |
-|------------|--------|-------------|
-| EXIF preservation | **Implemented v2.50.1** | — |
-| Color profile handling | **sRGB ICC embedded v2.50.1** | Adobe RGB/ProPhoto v2.51 |
-| Single watermark position | **Bottom-right proportional v2.50.1** | 9-position grid v2.51 |
-| No CLI | GUI only | v1.1 |
-| No preset save/load | Manual re-entry | v1.1 |
-| CR3 compressed limited | Some Canon files fail | Upstream LibRaw |
-| No multi-file parallelism | Single decode thread | Architectural change |
-
----
-
-## Quality Metrics
-
-| Metric | Target | Measured |
-|--------|--------|----------|
-| Startup time (cold) | < 2 s | 1.3 s |
-| Startup time (warm) | < 0.5 s | 0.3 s |
-| UI responsiveness | 60 fps | 60 fps |
-| Memory leak (1000 files) | 0 MB | < 5 MB |
-| Crash rate | 0% | 0% (tested) |
+| Voce | Stato |
+|------|-------|
+| Preservazione EXIF | ✅ Implementata (JPEG/ARW, orientamento normalizzato) |
+| Profilo colore | ✅ Solo sRGB con ICC incorporato (Adobe RGB/ProPhoto non supportati) |
+| Posizioni watermark | ✅ Cinque posizioni + logo PNG |
+| Preset | ✅ Web/Social, Stampa Fine Art, Archivio JPEG, Ritratto, Paesaggio, Bianco e Nero |
+| Parallelismo | ✅ Tutti i core logici, limite RAM |
+| Cloud | ✅ Telegram e Dropbox; Google Drive/Meta/SwissTransfer non attivi |
+| CR3 compresso | ⚠️ Alcuni file possono fallire (limite LibRaw upstream) |
+| Firma del codice | ❌ Non firmato (verifica SHA-256 su GitHub Releases) |
 
 ---
 
-*Technical specs v2.50.1 — Gennaio 2025*
+## Qualità e prestazioni misurate
+
+| Metrica | Valore |
+|---------|--------|
+| Avvio (onefile, cold) | ~5–10 s |
+| UI | Reattiva durante il batch (thread separato + coda) |
+| RAW Sony A7S 24 MP | ~10–12 s per core |
+| 6 RAW (6 processi) | 22,1 s (3,06× rispetto a 67,6 s sequenziale) |
+| 12 RAW (12 processi) | 39,8 s, 0 errori |
+| Memoria | ~1–1,5 GB per processo |
+| Crash rate nei test | 0% |
+
+---
+
+*Technical specs v2.53.0 — 26 Ottobre 2026*

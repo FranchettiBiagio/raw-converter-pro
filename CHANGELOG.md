@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.53.0] - 2026-10-26
+
+### Added
+- **Elaborazione multi-core**: conversione batch con `ProcessPoolExecutor` su tutti i core logici
+  - numero di processi limitato automaticamente dalla RAM libera e dal numero di file
+  - interruttore **USA TUTTI I CORE (N processi)** nel tab Batch, attivo di default
+  - scrittura atomica (file temporaneo + `os.replace`), nessun output corrotto in caso di errore o annullamento
+  - annullamento con terminazione immediata dei processi figli
+  - misura su RAW Sony A7S 24 MP: 6 file da 67,6 s a 22,1 s (3,06x); 12 file in 39,8 s
+- Modalita' di test `--batch-test <sorgente> <cartella>` per verificare il batch parallelo da riga di comando
+
+### Fixed
+- **Salvataggio JPEG**: alcune immagini facevano fallire `optimize=True` con `OSError: broken data stream`; ora il salvataggio riprova automaticamente senza ottimizzazione
+- **Logo corrotto o illeggibile**: non blocca piu' la conversione (viene ignorato con avviso nel Log)
+- **PIÙ LUMINOSA**: nessuna divisione per zero sulle immagini completamente bianche; le immagini gia' ottimali restano invariate
+- **EXIF**: orientamento corretto (`Orientation = 1`) su RAW e JPEG; testato su ARW reale (Make, ISO, orientamento)
+- **Configurazione**: tutti i valori numerici vengono ripuliti e limitati; un JSON corrotto o incompleto non blocca piu' la conversione; ripristino completo di checkbox, campi e cloud
+- **Nomi duplicati nel batch**: due file con lo stesso nome non scrivono mai sullo stesso output; "Sovrascrivi" sostituisce i file esistenti ma non due lavori dello stesso batch
+- **Nomi generati** (`mantieni_nomi` disattivo): usano correttamente `IMG_0001`, `IMG_0002`, … invece del nome sorgente
+- **Hot-folder**: elabora anche JPEG/PNG/TIFF/WEBP, attende la fine della scrittura, gestisce i file spostati e ignora la propria cartella di output e i file `_PRO`
+- **Download Sony**: nomi file univoci, nessuna sovrascrittura
+- **Formati**: normalizzati `JPG → JPEG` e `TIF → TIFF`; un formato sconosciuto ripiega su JPEG
+- **Percorsi duplicati**: la lista sorgente con `;` viene deduplicata e la cartella di output esclusa dalla ricerca ricorsiva
+- **Immagini minuscole** (1x1, 2x2, 1x200): pipeline, watermark e logo senza errori
+- **Preset**: sincronizza anche la casella EXIF
+- **Cloud**: Google Drive, Meta e SwissTransfer sono chiaramente indicati come non attivi; Telegram e Dropbox restano operativi
+
+### Changed
+- Spazio colore fissato a **sRGB** (profilo ICC incorporato), coerente con l'output reale; rimosse le opzioni Adobe RGB/ProPhoto non implementate
+- Intestazione aggiornata: `LibRaw AHD | CIE L*a*b* | Multi-core | Tethering & Cloud`
+
+---
+
+## [2.52.1] - 2026-10-26
+
+### Fixed
+- **Conversione RAW non funzionante**: la libreria inclusa non supporta l'algoritmo AMAZE e ogni file terminava con `NotSupportedError`. Ora il programma prova AMAZE, poi AHD, PPG e LINEAR, memorizzando quello disponibile
+- Aggiunta modalita' di test da riga di comando (`--converti-test`) per verificare la conversione senza aprire la finestra
+
+---
+
 ## [2.52.0] - 2026-10-26
 
 ### Added

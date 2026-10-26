@@ -1,6 +1,6 @@
 # Guida Installazione e Deployment
 
-**Franchetti Raw Converter Pro v2.50.1**  
+**Franchetti Raw Converter Pro v2.53.0**  
 *Opzioni per utenti singoli, IT admin, enterprise*
 
 ---
@@ -59,8 +59,8 @@ powershell -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%S
 ```yaml
 # chocolatey package (da creare)
 id: franchetti-raw-converter-pro
-version: 2.50.1
-url: https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.50.1/FranchettiRawConverterPro.exe
+version: 2.53.0
+url: https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.53.0/FranchettiRawConverterPro.exe
 checksum: SHA256_HASH
 checksumType: sha256
 ```
@@ -103,7 +103,7 @@ signtool verify /pa /v FranchettiRawConverterPro.exe
     <Conditions>
       <FilePublisherCondition PublisherName="O=Franchetti, L=Citta, S=Stato, C=IT"
         ProductName="Franchetti Raw Converter Pro" BinaryName="FranchettiRawConverterPro.exe">
-        <BinaryVersionRange LowSection="2.50.1.0" HighSection="2.9999.9999.9999" />
+        <BinaryVersionRange LowSection="2.53.0.0" HighSection="2.9999.9999.9999" />
       </FilePublisherCondition>
     </Conditions>
   </FilePublisherRule>
@@ -153,8 +153,8 @@ CommercialUse=true
 EULAVersion=1
 
 [Version]
-DisplayVersion=2.50.1
-PackageVersion=2.50.1.0
+DisplayVersion=2.53.0
+PackageVersion=2.53.0.0
 
 [Control]
 Start=FranchettiRawConverterPro.exe
@@ -220,4 +220,4 @@ Poi ricompila: `python build_exe.py`
 
 ---
 
-*Guida Installation v2.50.1 — Gennaio 2025*
+*Guida Installation v2.53.0 — 26 Ottobre 2026*

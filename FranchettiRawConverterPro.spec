@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = []
 binaries = []
-hiddenimports = ['rawpy', 'rawpy._rawpy', 'numpy', 'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL.ImageOps', 'imageio', 'imageio.v3', 'skimage', 'skimage.color', 'skimage.filters', 'customtkinter', 'watchdog', 'watchdog.observers', 'watchdog.events', 'piexif', 'requests', 'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL.ImageOps', 'PIL.ImageCms', 'PIL.ImageFilter', 'PIL.ImageDraw', 'tkinter', 'tkinter.ttk', 'tkinter.filedialog', 'tkinter.messagebox', 'tkinter.scrolledtext']
+hiddenimports = ['rawpy', 'rawpy._rawpy', 'numpy', 'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL.ImageOps', 'imageio', 'imageio.v3', 'skimage', 'skimage.color', 'skimage.filters', 'customtkinter', 'watchdog', 'watchdog.observers', 'watchdog.events', 'piexif', 'requests', 'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL.ImageOps', 'PIL.ImageCms', 'PIL.ImageFilter', 'multiprocessing', 'multiprocessing.spawn', 'multiprocessing.popen_spawn_win32', 'concurrent.futures', 'concurrent.futures.process', 'PIL.ImageDraw', 'tkinter', 'tkinter.ttk', 'tkinter.filedialog', 'tkinter.messagebox', 'tkinter.scrolledtext']
 tmp_ret = collect_all('imageio')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('skimage')

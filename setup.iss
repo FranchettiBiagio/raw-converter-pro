@@ -1,15 +1,15 @@
-; Inno Setup Script for Franchetti Raw Converter Pro v2.50.1
+; Inno Setup Script for Franchetti Raw Converter Pro v2.53.0
 ; Build: iscc setup.iss
-; Output: Output/Franchetti_Raw_Converter_Setup_v2.50.1.exe
+; Output: Output/Franchetti_Raw_Converter_Setup_v2.53.0.exe
 
 #define AppName "Franchetti Raw Converter Pro"
-#define AppVersion "2.52.0"
-#define AppVersionTuple "2.52.0.0"
+#define AppVersion "2.53.0"
+#define AppVersionTuple "2.53.0.0"
 #define AppPublisher "Franchetti"
-#define AppWebsite "https://franchetti.dev/raw-converter-pro"
+#define AppWebsite "https://github.com/FranchettiBiagio/raw-converter-pro"
 #define AppExeName "FranchettiRawConverterPro.exe"
 #define SourceExe "dist\FranchettiRawConverterPro.exe"
-#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.52.0"
+#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.53.0"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
@@ -27,8 +27,8 @@ OutputBaseFilename={#OutputBaseName}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesInstallIn64BitMode=x64
-ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed=x64compatible
 PrivilegesRequired=lowest
 UsePreviousAppDir=no
 UsePreviousGroup=no
@@ -52,7 +52,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; Flags: ignoreversion
@@ -64,10 +63,9 @@ Source: "USER_MANUAL.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "FAQ.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Comment: "Convertitore RAW → JPEG Enterprise con pipeline CIE Lab"
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Comment: "Convertitore RAW professionale con pipeline CIE Lab"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"; WorkingDir: "{app}"
-Name: "{commondesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Comment: "Convertitore RAW → JPEG Enterprise"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: quicklaunchicon
+Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Comment: "Convertitore RAW professionale"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

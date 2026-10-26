@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.50.1 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.53.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
-             sensore (LibRaw), ottimizzazione in spazio CIE L*a*b*, correzioni
-             colore complete, ridimensionamento, watermarking, tethering Wi-Fi
-             automatico (Hot-Folder) e distribuzione Cloud multi-canale.
+             sensore (LibRaw con fallback AMaZE/AHD/PPG/LINEAR), ottimizzazione
+             in spazio CIE L*a*b*, correzioni colore complete, ridimensionamento,
+             watermarking, tethering Wi-Fi automatico (Hot-Folder), Cloud
+             (Telegram/Dropbox) ed elaborazione batch su tutti i core.
 ================================================================================
 """
 
@@ -20,7 +21,8 @@ import queue
 import logging
 import threading
 import traceback
-from datetime import datetime
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from tkinter import filedialog, messagebox
 
 try:
@@ -28,7 +30,7 @@ try:
     import rawpy
     import piexif
     import customtkinter as ctk
-    from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageFilter
+    from PIL import Image, ImageOps, ImageDraw, ImageFont
     from skimage import color, filters
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
@@ -39,7 +41,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.52.0"
+APP_VERSION = "2.53.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -142,6 +144,8 @@ def parametri_default():
         "preserva_exif": True,
         # --- Miglioramento automatico (BETA) ---
         "auto_luminosita": False,
+        # --- Prestazioni ---
+        "usa_multicore": True,
         "mantieni_nomi": True,
         "prefisso": "",
         "suffisso": "",
@@ -171,6 +175,427 @@ def parametri_default():
         "cloud_dropbox": False,
         "cloud_swiss": False,
         "tethering_attivo": False,
+    }
+
+
+LIMITI_NUMERICI = {
+    "esposizione": (-3.0, 3.0),
+    "temperatura": (-100.0, 100.0),
+    "tinta": (-100.0, 100.0),
+    "luci": (-100.0, 100.0),
+    "ombre": (-100.0, 100.0),
+    "bianchi": (-100.0, 100.0),
+    "neri": (-100.0, 100.0),
+    "contrasto": (0.0, 1.0),
+    "vivacita": (0.0, 1.0),
+    "saturazione": (0.0, 2.0),
+    "chiarezza": (0.0, 1.0),
+    "dehaze": (0.0, 1.0),
+    "nr_luminanza": (0.0, 100.0),
+    "nr_colore": (0.0, 100.0),
+    "nitidezza_raggio": (0.5, 4.0),
+    "nitidezza_quantita": (0.0, 5.0),
+    "vignettatura": (-100.0, 100.0),
+    "grana": (0.0, 100.0),
+    "hsl_rosso": (-100.0, 100.0),
+    "hsl_verde": (-100.0, 100.0),
+    "hsl_blu": (-100.0, 100.0),
+    "intensita_ombre": (0.0, 100.0),
+    "intensita_luci": (0.0, 100.0),
+    "max_dim": (0.0, 20000.0),
+    "qualita_jpeg": (1.0, 100.0),
+    "font_size": (8.0, 600.0),
+    "watermark_opacita": (0.0, 1.0),
+    "logo_opacita": (0.0, 1.0),
+}
+
+
+def pulisci_nome_file(valore):
+    """Rimuove i caratteri non validi nei nomi file di Windows."""
+    testo = str(valore or "")
+    for carattere in '<>:"/\\|?*':
+        testo = testo.replace(carattere, "_")
+    return testo.strip().rstrip(".")
+
+
+def normalizza_parametri(parametri):
+    """Ripulisce i parametri (anche da un file di configurazione) prima dell'uso.
+
+    Evita che un valore mancante o scritto male blocchi l'intera conversione.
+    """
+    base = parametri_default()
+    p = dict(base)
+    if parametri:
+        p.update(parametri)
+
+    for chiave, (minimo, massimo) in LIMITI_NUMERICI.items():
+        try:
+            valore = float(p.get(chiave, base[chiave]))
+        except (TypeError, ValueError):
+            valore = float(base[chiave])
+        if not math.isfinite(valore):
+            valore = float(base[chiave])
+        p[chiave] = max(minimo, min(massimo, valore))
+
+    for chiave in ("max_dim", "qualita_jpeg", "font_size"):
+        p[chiave] = int(round(p[chiave]))
+
+    formato = str(p.get("formato", "JPEG") or "JPEG").strip().upper()
+    if formato == "JPG":
+        formato = "JPEG"
+    if formato == "TIF":
+        formato = "TIFF"
+    if formato not in FORMATI_OUTPUT:
+        formato = "JPEG"
+    p["formato"] = formato
+    p["profilo_colore"] = "sRGB"
+
+    politica = str(p.get("sovrascrittura", "Rinomina") or "Rinomina").strip()
+    if politica not in ("Rinomina", "Sovrascrivi", "Salta"):
+        politica = "Rinomina"
+    p["sovrascrittura"] = politica
+
+    for chiave in (
+        "usa_multicore", "auto_luminosita", "preserva_exif", "mantieni_nomi",
+        "ricorsivo", "watermark_attivo", "use_camera_wb", "cloud_telegram",
+        "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss",
+    ):
+        p[chiave] = bool(p.get(chiave))
+
+    p["prefisso"] = pulisci_nome_file(p.get("prefisso", ""))
+    p["suffisso"] = pulisci_nome_file(p.get("suffisso", ""))
+    p["watermark_text"] = str(p.get("watermark_text", "") or "")
+    return p
+
+
+# ================================================================================
+# 1b. ELABORAZIONE PARALLELA: TUTTI I CORE DEL PROCESSORE
+# ================================================================================
+def memoria_disponibile_mb():
+    """Memoria fisica libera in MB (Windows); 4 GB come stima prudente."""
+    try:
+        import ctypes
+
+        class _MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        stato = _MemoryStatusEx()
+        stato.dwLength = ctypes.sizeof(_MemoryStatusEx)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stato)):
+            return int(stato.ullAvailPhys / (1024 * 1024))
+    except Exception:
+        pass
+    return 4096
+
+
+def numero_processi_ottimale(numero_file):
+    """Quanti processi usare: tutti i core, limitati dalla RAM disponibile."""
+    cpu = os.cpu_count() or 1
+    # Picco stimato per processo su RAW da 24 MP: circa 1,2 GB.
+    per_ram = max(1, int(memoria_disponibile_mb() / 1200))
+    return max(1, min(int(cpu), per_ram, max(1, int(numero_file))))
+
+
+def percorso_unico(percorso):
+    """Restituisce un percorso libero, aggiungendo _1, _2, ... se necessario."""
+    if not os.path.exists(percorso):
+        return percorso
+    radice, estensione = os.path.splitext(percorso)
+    contatore = 1
+    while True:
+        candidato = f"{radice}_{contatore}{estensione}"
+        if not os.path.exists(candidato):
+            return candidato
+        contatore += 1
+
+
+def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
+    """Elenca i file convertibili. Evita duplicati e la cartella di output."""
+    escluso = os.path.normcase(os.path.abspath(escludi)) if escludi else None
+
+    def valido(percorso):
+        if escluso:
+            percorso_norm = os.path.normcase(os.path.abspath(percorso))
+            if percorso_norm == escluso or percorso_norm.startswith(escluso + os.sep):
+                return False
+        return percorso.lower().endswith(ESTENSIONI_ACCETTATE)
+
+    sorgente = str(sorgente or "").strip()
+    if ";" in sorgente:
+        elenco = []
+        for voce in sorgente.split(";"):
+            voce = voce.strip()
+            if voce and os.path.isfile(voce) and valido(voce):
+                elenco.append(voce)
+        return list(dict.fromkeys(elenco))
+    if os.path.isfile(sorgente):
+        return [sorgente] if valido(sorgente) else []
+    if not os.path.isdir(sorgente):
+        return []
+
+    files = []
+    if ricorsivo:
+        for root, cartelle, nomi in os.walk(sorgente):
+            if escluso:
+                cartelle[:] = [
+                    c for c in cartelle
+                    if os.path.normcase(os.path.abspath(os.path.join(root, c))) != escluso
+                ]
+            for nome in nomi:
+                percorso = os.path.join(root, nome)
+                if valido(percorso):
+                    files.append(percorso)
+    else:
+        for nome in os.listdir(sorgente):
+            percorso = os.path.join(sorgente, nome)
+            if os.path.isfile(percorso) and valido(percorso):
+                files.append(percorso)
+    return sorted(files)
+
+
+def _converti_file_worker(compito):
+    """Converte un singolo file. Funzione di modulo: necessaria al multiprocessing.
+
+    Scrive su un file temporaneo e sostituisce l'output solo a conversione
+    completata: un annullamento non lascia file corrotti.
+    """
+    percorso, output, parametri = compito
+    temporaneo = ""
+    try:
+        cartella = os.path.dirname(output)
+        if cartella:
+            os.makedirs(cartella, exist_ok=True)
+        radice, estensione = os.path.splitext(output)
+        temporaneo = f"{radice}.tmp{estensione}"
+        ImageEngine.sviluppa_e_ottimizza(percorso, temporaneo, parametri)
+        os.replace(temporaneo, output)
+        return {"percorso": percorso, "output": output, "ok": True, "errore": ""}
+    except Exception as errore:
+        return {
+            "percorso": percorso,
+            "output": output,
+            "ok": False,
+            "errore": f"{type(errore).__name__}: {errore}",
+            "traceback": traceback.format_exc(),
+        }
+    finally:
+        if temporaneo:
+            try:
+                if os.path.exists(temporaneo):
+                    os.remove(temporaneo)
+            except Exception:
+                pass
+
+
+_ESECUTORI_ATTIVI = set()
+_LOCK_ESECUTORI = threading.Lock()
+
+
+def _termina_esecutore(esecutore):
+    """Interrompe subito i processi figli (usato dall'annullamento)."""
+    for processo in list(getattr(esecutore, "_processes", {}).values()):
+        try:
+            if processo.is_alive():
+                processo.terminate()
+        except Exception:
+            pass
+
+
+def termina_tutti_gli_esecutori():
+    """Chiude subito ogni elaborazione parallela in corso (chiusura app)."""
+    with _LOCK_ESECUTORI:
+        esecutori = list(_ESECUTORI_ATTIVI)
+    for esecutore in esecutori:
+        _termina_esecutore(esecutore)
+        try:
+            esecutore.shutdown(wait=False, cancel_futures=True)
+        except Exception:
+            pass
+
+
+def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_event=None):
+    """Converte tutti i file, in parallelo su tutti i core quando possibile.
+
+    log(messaggio), progresso(indice, totale, ok, errori, saltati).
+    """
+    def nota(messaggio):
+        if log:
+            try:
+                log(messaggio)
+            except Exception:
+                pass
+
+    def avanza(indice, totale, ok, errori, saltati):
+        if progresso:
+            try:
+                progresso(indice, totale, ok, errori, saltati)
+            except Exception:
+                pass
+
+    def cloud(output):
+        canali = ("cloud_telegram", "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss")
+        if not any(params.get(c) for c in canali):
+            return
+        try:
+            esiti = CloudDispatcher.dispatch(output, params)
+            for nome_canale, esito in esiti:
+                nota(f"Cloud {nome_canale}: {'inviato' if esito else 'saltato'}")
+        except Exception as errore:
+            nota(f"Cloud: errore di invio ({errore})")
+
+    totale = len(files)
+    params = normalizza_parametri(params)
+    formato = str(params.get("formato", "JPEG")).upper()
+    if formato == "JPG":
+        formato = "JPEG"
+    if formato == "TIF":
+        formato = "TIFF"
+    estensione = FORMATI_OUTPUT.get(formato, ".jpg")
+    prefisso = str(params.get("prefisso", "") or "")
+    suffisso = str(params.get("suffisso", "") or "")
+    politica = str(params.get("sovrascrittura", "Rinomina") or "Rinomina")
+    ok = errori = saltati = 0
+    compiti = []
+    nomi_prenotati = set()
+
+    for indice, percorso in enumerate(files, start=1):
+        if cancel_event is not None and cancel_event.is_set():
+            break
+        base = os.path.splitext(os.path.basename(percorso))[0]
+        if params.get("mantieni_nomi", True):
+            radice_nome = f"{prefisso}{base}{suffisso}"
+        else:
+            radice_nome = f"{prefisso}IMG_{indice:04d}{suffisso}"
+        nome = f"{radice_nome}{estensione}"
+        output = os.path.join(destinazione, nome)
+        chiave = os.path.normcase(os.path.abspath(output))
+
+        if politica == "Salta" and (os.path.exists(output) or chiave in nomi_prenotati):
+            saltati += 1
+            nota(f"Saltato (esiste): {nome}")
+            avanza(indice, totale, ok, errori, saltati)
+            continue
+
+        # Nomi uguali (anche da sottocartelle diverse) non devono mai
+        # scrivere sullo stesso file nello stesso momento. Con "Sovrascrivi"
+        # un file gia' presente viene sostituito, ma non due file del batch.
+        da_rinominare = chiave in nomi_prenotati or (
+            politica == "Rinomina" and os.path.exists(output)
+        )
+        if da_rinominare:
+            contatore = 1
+            while True:
+                nome = f"{radice_nome}_{contatore}{estensione}"
+                output = os.path.join(destinazione, nome)
+                chiave = os.path.normcase(os.path.abspath(output))
+                libero = chiave not in nomi_prenotati
+                if politica == "Rinomina":
+                    libero = libero and not os.path.exists(output)
+                if libero:
+                    break
+                contatore += 1
+
+        nomi_prenotati.add(chiave)
+        compiti.append((indice, percorso, output, nome))
+
+    if compiti and (cancel_event is None or not cancel_event.is_set()):
+        processi = 1
+        if params.get("usa_multicore", True) and len(compiti) > 1:
+            processi = numero_processi_ottimale(len(compiti))
+        if processi > 1:
+            nota(f"Elaborazione parallela: {processi} processi su {os.cpu_count() or 1} core CPU.")
+        else:
+            nota("Elaborazione sequenziale.")
+
+        if processi <= 1:
+            for indice, percorso, output, nome in compiti:
+                if cancel_event is not None and cancel_event.is_set():
+                    break
+                esito = _converti_file_worker((percorso, output, params))
+                if esito["ok"]:
+                    ok += 1
+                    nota(f"OK: {nome}")
+                    cloud(output)
+                else:
+                    errori += 1
+                    logging.error("Errore su %s: %s", percorso, esito["errore"])
+                    nota(f"ERRORE su {os.path.basename(percorso)}: {esito['errore']}")
+                avanza(indice, totale, ok, errori, saltati)
+        else:
+            esecutore = ProcessPoolExecutor(max_workers=processi)
+            with _LOCK_ESECUTORI:
+                _ESECUTORI_ATTIVI.add(esecutore)
+            futuro_mappa = {}
+            annullato_durante = False
+            try:
+                for indice, percorso, output, nome in compiti:
+                    if cancel_event is not None and cancel_event.is_set():
+                        annullato_durante = True
+                        break
+                    futuro = esecutore.submit(_converti_file_worker, (percorso, output, params))
+                    futuro_mappa[futuro] = (indice, percorso, output, nome)
+
+                for futuro in as_completed(futuro_mappa):
+                    if cancel_event is not None and cancel_event.is_set():
+                        annullato_durante = True
+                        for altro in futuro_mappa:
+                            altro.cancel()
+                        _termina_esecutore(esecutore)
+                        break
+                    indice, percorso, output, nome = futuro_mappa[futuro]
+                    try:
+                        esito = futuro.result()
+                    except Exception as errore:
+                        esito = {
+                            "ok": False,
+                            "errore": f"{type(errore).__name__}: {errore}",
+                        }
+                        logging.error("Errore sul processo per %s: %s", percorso, errore)
+                    if esito.get("ok"):
+                        ok += 1
+                        nota(f"OK: {nome}")
+                        cloud(output)
+                    else:
+                        errori += 1
+                        logging.error(
+                            "Errore su %s: %s", percorso, esito.get("errore", "sconosciuto")
+                        )
+                        nota(
+                            f"ERRORE su {os.path.basename(percorso)}: "
+                            f"{esito.get('errore', 'sconosciuto')}"
+                        )
+                    avanza(indice, totale, ok, errori, saltati)
+            finally:
+                if annullato_durante:
+                    _termina_esecutore(esecutore)
+                    try:
+                        esecutore.shutdown(wait=False, cancel_futures=True)
+                    except Exception:
+                        pass
+                else:
+                    esecutore.shutdown(wait=True)
+                with _LOCK_ESECUTORI:
+                    _ESECUTORI_ATTIVI.discard(esecutore)
+
+    annullato = bool(cancel_event is not None and cancel_event.is_set())
+    if annullato:
+        nota("Batch annullato dall'utente.")
+    return {
+        "ok": ok,
+        "errori": errori,
+        "saltati": saltati,
+        "totale": totale,
+        "annullato": annullato,
     }
 
 
@@ -452,7 +877,11 @@ class ImageEngine:
     def applica_logo(base_image, logo_path, opacita=0.5, posizione="Basso a destra"):
         if not logo_path or not os.path.exists(logo_path):
             return base_image
-        logo = Image.open(logo_path).convert("RGBA")
+        try:
+            logo = Image.open(logo_path).convert("RGBA")
+        except Exception as errore:
+            logging.warning("Logo non leggibile (%s): %s", logo_path, errore)
+            return base_image
         base_w, base_h = base_image.size
         if base_w <= 0 or logo.size[0] <= 0:
             return base_image
@@ -497,8 +926,18 @@ class ImageEngine:
     # ------------------------------------------------------------ output
     @staticmethod
     def _salva(pil_img, percorso_output, p):
-        formato = str(p.get("formato", "JPEG")).upper()
-        qualita = int(p.get("qualita_jpeg", 90))
+        formato = str(p.get("formato", "JPEG") or "JPEG").strip().upper()
+        if formato == "JPG":
+            formato = "JPEG"
+        if formato == "TIF":
+            formato = "TIFF"
+        if formato not in ("JPEG", "PNG", "TIFF", "WEBP"):
+            formato = "JPEG"
+        try:
+            qualita = int(p.get("qualita_jpeg", 90))
+        except (TypeError, ValueError):
+            qualita = 90
+        qualita = max(1, min(100, qualita))
         kwargs = {}
         icc = None
         try:
@@ -507,7 +946,7 @@ class ImageEngine:
         except Exception:
             icc = None
 
-        if formato in ("JPEG", "JPG"):
+        if formato == "JPEG":
             if pil_img.mode not in ("RGB", "L"):
                 pil_img = pil_img.convert("RGB")
             kwargs = dict(quality=qualita, subsampling=0, optimize=True)
@@ -517,7 +956,7 @@ class ImageEngine:
             kwargs = dict(compress_level=6)
             if icc:
                 kwargs["icc_profile"] = icc
-        elif formato in ("TIFF", "TIF"):
+        elif formato == "TIFF":
             kwargs = dict(compression="tiff_lzw")
             if icc:
                 kwargs["icc_profile"] = icc
@@ -527,10 +966,17 @@ class ImageEngine:
             kwargs = dict(quality=qualita, method=4)
             if icc:
                 kwargs["icc_profile"] = icc
-        else:
-            kwargs = dict(quality=qualita)
 
-        pil_img.save(percorso_output, format=None if formato == "JPG" else formato, **kwargs)
+        try:
+            pil_img.save(percorso_output, format=formato, **kwargs)
+        except OSError:
+            # Alcuni JPEG fanno fallire l'ottimizzazione di libjpeg
+            # ("broken data stream"): si riprova senza optimize.
+            if formato == "JPEG" and kwargs.get("optimize"):
+                kwargs.pop("optimize", None)
+                pil_img.save(percorso_output, format=formato, **kwargs)
+            else:
+                raise
 
     # ------------------------------------------------------------ pipeline
     @staticmethod
@@ -550,13 +996,17 @@ class ImageEngine:
         mediana = float(np.median(lum))
         luci = float(np.percentile(lum, 97))
 
+        # Immagine gia' al massimo (o completamente nera): nulla da recuperare.
+        if mediana >= 0.995:
+            return pil_img
+
         gamma = 1.0
         if mediana < 0.40 and mediana > 0.01:
             # Foto scura: schiarisce fino a portare la mediana verso il centro
             obiettivo = 0.48 if mediana < 0.26 else 0.44
             gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
             gamma = max(0.32, min(1.0, gamma))
-        elif mediana > 0.56 or luci > 0.96:
+        elif (mediana > 0.56 or luci > 0.96) and mediana < 0.995:
             # Foto troppo luminosa: riduce e comprime le alte luci
             obiettivo = 0.50
             gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
@@ -578,9 +1028,48 @@ class ImageEngine:
         lut = (y * 255.0 + 0.5).astype(np.uint8)
         return Image.fromarray(lut[arr], "RGB")
 
+    _demosaic_ok = None
+
+    @classmethod
+    def _decodifica_raw(cls, raw, p, nota=None):
+        """Decodifica il RAW usando un algoritmo supportato dalla libraw inclusa.
+
+        La build distribuita di rawpy/libraw non include sempre il pacchetto
+        GPL3: in quel caso AMAZE non e' disponibile e si ripiega su AHD/PPG.
+        """
+        algoritmi = [
+            rawpy.DemosaicAlgorithm.AMAZE,
+            rawpy.DemosaicAlgorithm.AHD,
+            rawpy.DemosaicAlgorithm.PPG,
+            rawpy.DemosaicAlgorithm.LINEAR,
+        ]
+        if cls._demosaic_ok is not None:
+            algoritmi = [cls._demosaic_ok] + [a for a in algoritmi if a != cls._demosaic_ok]
+        ultimo_errore = None
+        for algoritmo in algoritmi:
+            try:
+                rgb = raw.postprocess(
+                    demosaic_algorithm=algoritmo,
+                    use_camera_wb=bool(p.get("use_camera_wb", True)),
+                    no_auto_bright=False,
+                    output_color=rawpy.ColorSpace.sRGB,
+                    output_bps=8,
+                )
+            except Exception as errore:
+                ultimo_errore = errore
+                continue
+            if algoritmo != cls._demosaic_ok:
+                cls._demosaic_ok = algoritmo
+                if nota:
+                    nota(f"Demosaic: {str(algoritmo).split('.')[-1]}")
+            return rgb
+        if ultimo_errore is not None:
+            raise ultimo_errore
+        raise RuntimeError("decodifica RAW non riuscita")
+
     @classmethod
     def sviluppa_e_ottimizza(cls, percorso_raw, percorso_output, parametri, callback=None):
-        p = parametri
+        p = normalizza_parametri(parametri)
 
         def nota(msg):
             logging.info(msg)
@@ -595,13 +1084,7 @@ class ImageEngine:
         # 1. Decodifica RAW (o immagine standard)
         if percorso_raw.lower().endswith(RAW_ESTENSIONI):
             with rawpy.imread(percorso_raw) as raw:
-                rgb = raw.postprocess(
-                    demosaic_algorithm=rawpy.DemosaicAlgorithm.AMAZE,
-                    use_camera_wb=bool(p.get("use_camera_wb", True)),
-                    no_auto_bright=False,
-                    output_color=rawpy.ColorSpace.sRGB,
-                    output_bps=8,
-                )
+                rgb = cls._decodifica_raw(raw, p, nota)
         else:
             with Image.open(percorso_raw) as im:
                 im = ImageOps.exif_transpose(im).convert("RGB")
@@ -707,21 +1190,21 @@ class CloudDispatcher:
     def invia_google_drive(file_path, credenziali):
         if not credenziali:
             return False
-        logging.info("Google Drive: credenziale presente, predisposizione upload per %s", file_path)
+        logging.warning("Google Drive: canale non attivo in questa versione (%s).", file_path)
         return False
 
     @staticmethod
     def invia_meta_social(file_path, access_token, account_id, platform="instagram"):
         if not access_token or not account_id:
             return False
-        logging.info("Meta Graph API: pubblicazione %s predisposta per %s", platform, file_path)
+        logging.warning("Meta Graph API: canale non attivo in questa versione (%s).", platform)
         return False
 
     @staticmethod
     def invia_swisstransfer(file_path, email):
         if not email:
             return False
-        logging.info("SwissTransfer: trasferimento predisposto per %s (%s)", file_path, email)
+        logging.warning("SwissTransfer: canale non attivo in questa versione (%s).", file_path)
         return False
 
     @classmethod
@@ -753,9 +1236,9 @@ class CloudDispatcher:
 # ================================================================================
 class RawHotFolderHandler(FileSystemEventHandler):
     def __init__(self, parametri, callback_interfaccia, snapshot=None):
-        self.parametri = dict(parametri)
+        self.parametri = normalizza_parametri(parametri)
         self.callback = callback_interfaccia
-        self.estensioni = RAW_ESTENSIONI
+        self.estensioni = ESTENSIONI_ACCETTATE
         self._in_corso = set()
         self._lock = threading.Lock()
 
@@ -766,32 +1249,76 @@ class RawHotFolderHandler(FileSystemEventHandler):
             except Exception:
                 pass
 
-    def on_created(self, event):
-        if event.is_directory:
+    def _accoda(self, percorso):
+        if not percorso or not percorso.lower().endswith(self.estensioni):
             return
-        percorso = event.src_path
-        if not percorso.lower().endswith(self.estensioni):
+        # Non riprocessare i file prodotti dal programma stesso.
+        if os.path.splitext(os.path.basename(percorso))[0].upper().endswith("_PRO"):
             return
+        cartella_output = self.parametri.get("output_dir") or ""
+        if cartella_output:
+            try:
+                if os.path.normcase(os.path.dirname(os.path.abspath(percorso))) == os.path.normcase(
+                    os.path.abspath(cartella_output)
+                ):
+                    return
+            except Exception:
+                pass
         with self._lock:
             if percorso in self._in_corso:
                 return
             self._in_corso.add(percorso)
         threading.Thread(target=self._elabora, args=(percorso,), daemon=True).start()
 
+    def on_created(self, event):
+        if not event.is_directory:
+            self._accoda(event.src_path)
+
+    def on_moved(self, event):
+        # Alcune fotocamere scrivono un file temporaneo e poi lo rinominano.
+        if not event.is_directory:
+            self._accoda(event.dest_path)
+
+    @staticmethod
+    def _attendi_file(percorso, timeout=25.0):
+        """Attende che il file abbia smesso di crescere (scrittura completata)."""
+        inizio = time.time()
+        ultima_dimensione = -1
+        stabile = 0
+        while time.time() - inizio < timeout:
+            try:
+                dimensione = os.path.getsize(percorso)
+            except OSError:
+                dimensione = -1
+            if dimensione > 0 and dimensione == ultima_dimensione:
+                stabile += 1
+                if stabile >= 3:
+                    return True
+            else:
+                stabile = 0
+                ultima_dimensione = dimensione
+            time.sleep(0.5)
+        try:
+            return os.path.getsize(percorso) > 0
+        except OSError:
+            return False
+
     def _elabora(self, percorso):
         try:
             self._notifica(f"Wi-Fi: rilevato {os.path.basename(percorso)}")
-            time.sleep(1.5)
+            self._attendi_file(percorso)
 
-            p = dict(self.parametri)
+            p = normalizza_parametri(self.parametri)
             cartella_output = p.get("output_dir") or os.path.join(os.path.dirname(percorso), "Output_Ottimizzati")
             os.makedirs(cartella_output, exist_ok=True)
 
             est = FORMATI_OUTPUT.get(str(p.get("formato", "JPEG")).upper(), ".jpg")
             nome = os.path.splitext(os.path.basename(percorso))[0] + "_PRO" + est
-            output = os.path.join(cartella_output, nome)
+            output = percorso_unico(os.path.join(cartella_output, nome))
 
-            ImageEngine.sviluppa_e_ottimizza(percorso, output, p, callback=self._notifica)
+            esito = _converti_file_worker((percorso, output, p))
+            if not esito.get("ok"):
+                raise RuntimeError(esito.get("errore", "conversione non riuscita"))
             CloudDispatcher.dispatch(output, p, callback=self._notifica)
             self._notifica(f"Wi-Fi: pronto {os.path.basename(output)}")
         except Exception as e:
@@ -1065,7 +1592,7 @@ class SonyWifiClient:
         import urllib.request
 
         nome = os.path.basename(indirizzo.split("?")[0]) or f"sony_{int(time.time())}.jpg"
-        destinazione = os.path.join(cartella, nome)
+        destinazione = percorso_unico(os.path.join(cartella, nome))
         with urllib.request.urlopen(indirizzo, timeout=60) as risposta, open(destinazione, "wb") as uscita:
             uscita.write(risposta.read())
         self._log(f"Sony: scaricato {nome}")
@@ -1191,8 +1718,8 @@ class FranchettiApp(ctk.CTk):
         ).grid(row=0, column=1, padx=(0, 14), pady=(22, 4), sticky="w")
         ctk.CTkLabel(
             header,
-            text=f"v{APP_VERSION}  |  LibRaw AMaZE  |  CIE L*a*b*  |  Tethering & Cloud",
-            font=ctk.CTkFont(size=12),
+            text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Tethering & Cloud",
+            font=ctk.CTkFont(size=10),
             text_color="#8ab4f8",
         ).grid(row=0, column=2, padx=10, pady=10, sticky="w")
 
@@ -1229,7 +1756,7 @@ class FranchettiApp(ctk.CTk):
                 elif tipo == "progress":
                     self._aggiorna_progresso(*messaggio[1:])
                 elif tipo == "done":
-                    self._fine_batch(messaggio[1], messaggio[2])
+                    self._fine_batch(*messaggio[1:])
         except queue.Empty:
             pass
         except Exception:
@@ -1245,18 +1772,22 @@ class FranchettiApp(ctk.CTk):
         tab.grid_rowconfigure(0, weight=1)
         tab.grid_propagate(False)
 
-        scroll = ctk.CTkScrollableFrame(tab, height=320)
-        scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
-        scroll.grid_columnconfigure(0, weight=1)
+        # Due colonne affiancate: tutte le impostazioni restano visibili senza
+        # scorrimento anche su schermi 1366x768 e con scaling di Windows.
+        contenuto = ctk.CTkFrame(tab, fg_color="transparent")
+        contenuto.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        contenuto.grid_columnconfigure(0, weight=1, uniform="batch")
+        contenuto.grid_columnconfigure(1, weight=1, uniform="batch")
+        contenuto.grid_rowconfigure(0, weight=1)
 
         # ================= BLOCCO SORGENTE / DESTINAZIONE / DIMENSIONI =================
-        sx = ctk.CTkFrame(scroll, fg_color="transparent")
-        sx.grid(row=0, column=0, padx=4, pady=2, sticky="ew")
+        sx = ctk.CTkFrame(contenuto, fg_color="transparent")
+        sx.grid(row=0, column=0, padx=(4, 8), pady=2, sticky="nsew")
         sx.grid_columnconfigure(1, weight=1)
 
         r = 0
         ctk.CTkLabel(sx, text="SORGENTE", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=3, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=3, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         ctk.CTkLabel(sx, text="File / Cartella:").grid(row=r, column=0, padx=6, pady=3, sticky="w")
@@ -1276,7 +1807,7 @@ class FranchettiApp(ctk.CTk):
         r += 1
 
         ctk.CTkLabel(sx, text="DESTINAZIONE", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=3, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=3, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         ctk.CTkLabel(sx, text="Cartella output:").grid(row=r, column=0, padx=6, pady=3, sticky="w")
@@ -1287,7 +1818,7 @@ class FranchettiApp(ctk.CTk):
         r += 1
 
         ctk.CTkLabel(sx, text="DIMENSIONI E FORMATO", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=3, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=3, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         dim = ctk.CTkFrame(sx)
@@ -1295,12 +1826,12 @@ class FranchettiApp(ctk.CTk):
         dim.grid_columnconfigure(1, weight=1)
         dim.grid_columnconfigure(3, weight=1)
 
-        ctk.CTkLabel(dim, text="Lato lungo max (px)").grid(row=0, column=0, padx=6, pady=4, sticky="w")
+        ctk.CTkLabel(dim, text="Lato max (px)").grid(row=0, column=0, padx=6, pady=4, sticky="w")
         self.entry_max_dim = ctk.CTkEntry(dim, width=90)
         self.entry_max_dim.insert(0, "1920")
-        self.entry_max_dim.grid(row=0, column=1, padx=6, pady=4, sticky="w")
+        self.entry_max_dim.grid(row=0, column=1, padx=6, pady=2, sticky="w")
         self.entry_max_dim.bind("<KeyRelease>", self._aggiorna_evidenzia_da_campo)
-        ctk.CTkLabel(dim, text="scegli una misura o scrivi un valore (0 = originale)",
+        ctk.CTkLabel(dim, text="misura pronta o valore (0 = originale)",
                      font=ctk.CTkFont(size=10), text_color="#9aa0a6").grid(
             row=0, column=2, columnspan=2, padx=6, sticky="w"
         )
@@ -1308,7 +1839,7 @@ class FranchettiApp(ctk.CTk):
         # Misure pronte in ordine crescente: un clic imposta il lato lungo.
         self._misure_pronte = [640, 800, 1024, 1200, 1600, 1920, 2048, 2560, 3000, 4000, 6000, 0]
         self.frame_misure = ctk.CTkFrame(dim, fg_color="transparent")
-        self.frame_misure.grid(row=1, column=0, columnspan=4, padx=6, pady=(0, 4), sticky="w")
+        self.frame_misure.grid(row=1, column=0, columnspan=4, padx=6, pady=(0, 2), sticky="w")
         self._bottoni_misure = []
         for indice, valore in enumerate(self._misure_pronte):
             testo = "Originale" if valore == 0 else f"{valore}"
@@ -1322,14 +1853,15 @@ class FranchettiApp(ctk.CTk):
                 hover_color="#4a5158",
                 command=lambda v=valore: self._imposta_max_dim(v),
             )
-            bottone.grid(row=0, column=indice, padx=2, pady=2)
+            # Sei misure per riga: restano dentro la colonna anche a 1024 px.
+            bottone.grid(row=indice // 6, column=indice % 6, padx=2, pady=2)
             self._bottoni_misure.append((valore, bottone))
         self._evidenzia_max_dim(1920)
 
         ctk.CTkLabel(dim, text="Qualità").grid(row=2, column=0, padx=6, pady=4, sticky="w")
         self.entry_qualita = ctk.CTkEntry(dim, width=80)
         self.entry_qualita.insert(0, "90")
-        self.entry_qualita.grid(row=2, column=1, padx=6, pady=4, sticky="w")
+        self.entry_qualita.grid(row=2, column=1, padx=6, pady=2, sticky="w")
 
         ctk.CTkLabel(dim, text="Formato").grid(row=2, column=2, padx=6, pady=4, sticky="e")
         self.combo_formato = ctk.CTkComboBox(
@@ -1337,23 +1869,25 @@ class FranchettiApp(ctk.CTk):
             command=lambda v: self.parametri.__setitem__("formato", v),
         )
         self.combo_formato.set("JPEG")
-        self.combo_formato.grid(row=2, column=3, padx=6, pady=4, sticky="w")
+        self.combo_formato.grid(row=2, column=3, padx=6, pady=2, sticky="w")
 
         ctk.CTkLabel(dim, text="Spazio colore").grid(row=3, column=0, padx=6, pady=4, sticky="w")
         self.combo_spazio = ctk.CTkComboBox(
-            dim, values=["sRGB", "Adobe RGB", "ProPhoto RGB"], width=140,
+            dim, values=["sRGB"], width=140,
             command=lambda v: self.parametri.__setitem__("profilo_colore", v),
         )
         self.combo_spazio.set("sRGB")
-        self.combo_spazio.grid(row=3, column=1, padx=6, pady=4, sticky="w")
+        # Disabilitato dopo il set: cosi' il valore resta sempre leggibile.
+        self.combo_spazio.configure(state="disabled")
+        self.combo_spazio.grid(row=3, column=1, padx=6, pady=2, sticky="w")
 
         self.chk_wb_camera = ctk.CTkCheckBox(dim, text="WB fotocamera")
         self.chk_wb_camera.select()
-        self.chk_wb_camera.grid(row=3, column=2, columnspan=2, padx=6, pady=4, sticky="w")
+        self.chk_wb_camera.grid(row=3, column=2, columnspan=2, padx=6, pady=2, sticky="w")
 
         self.chk_exif = ctk.CTkCheckBox(dim, text="Preserva EXIF")
         self.chk_exif.select()
-        self.chk_exif.grid(row=4, column=0, columnspan=2, padx=6, pady=4, sticky="w")
+        self.chk_exif.grid(row=4, column=0, columnspan=2, padx=6, pady=2, sticky="w")
 
         # Miglioramento automatico dell'esposizione (BETA)
         self.sw_auto_luminosita = ctk.CTkSwitch(
@@ -1362,23 +1896,26 @@ class FranchettiApp(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._toggle_auto_luminosita(self.sw_auto_luminosita.get()),
         )
-        self.sw_auto_luminosita.grid(row=5, column=0, columnspan=2, padx=6, pady=(8, 2), sticky="w")
-        ctk.CTkLabel(
+        self.sw_auto_luminosita.grid(row=5, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
+
+        # Elaborazione su tutti i core del processore
+        self.chk_multicore = ctk.CTkCheckBox(
             dim,
-            text="Schiarisce le foto scure e recupera le alte luci delle foto troppo esposte.",
-            font=ctk.CTkFont(size=10),
-            text_color="#9aa0a6",
-        ).grid(row=5, column=2, columnspan=2, padx=6, sticky="w")
+            text=f"USA TUTTI I CORE ({os.cpu_count() or 1} processi)",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        )
+        self.chk_multicore.select()
+        self.chk_multicore.grid(row=6, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
 
         # ================= BLOCCO NOMI / WATERMARK / PRESET =================
-        dx = ctk.CTkFrame(scroll, fg_color="transparent")
-        dx.grid(row=1, column=0, padx=4, pady=(8, 2), sticky="ew")
+        dx = ctk.CTkFrame(contenuto, fg_color="transparent")
+        dx.grid(row=0, column=1, padx=(8, 4), pady=2, sticky="nsew")
         dx.grid_columnconfigure(1, weight=1)
 
         r = 0
         ctk.CTkLabel(dx, text="NOMI FILE E SOVRASCRITTURA",
                      font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         self.chk_mantieni_nomi = ctk.CTkCheckBox(dx, text="Mantieni nome originale")
@@ -1409,7 +1946,7 @@ class FranchettiApp(ctk.CTk):
         self.combo_sovrascrittura.grid(row=1, column=1, columnspan=3, padx=(0, 6), pady=3, sticky="w")
 
         ctk.CTkLabel(dx, text="WATERMARK", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         self.chk_watermark = ctk.CTkCheckBox(dx, text="Applica testo")
@@ -1452,7 +1989,7 @@ class FranchettiApp(ctk.CTk):
 
         ctk.CTkLabel(dx, text="PRESET E CONFIGURAZIONE",
                      font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(6, 2), sticky="w"
+            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
         ); r += 1
 
         self.combo_preset = ctk.CTkComboBox(
@@ -1728,11 +2265,11 @@ class FranchettiApp(ctk.CTk):
         credenziali = [
             ("Telegram Bot Token", "entry_tg_token", False, "cloud_telegram"),
             ("Telegram Chat ID", "entry_tg_chat", False, "cloud_telegram"),
-            ("Google Drive API Key / Folder ID", "entry_gdrive", False, "cloud_gdrive"),
-            ("Meta Access Token (FB/IG)", "entry_meta", False, "cloud_meta"),
-            ("Meta Account ID", "entry_meta_id", False, "cloud_meta"),
+            ("Google Drive API Key / Folder ID (non attivo)", "entry_gdrive", False, "cloud_gdrive"),
+            ("Meta Access Token (FB/IG) (non attivo)", "entry_meta", False, "cloud_meta"),
+            ("Meta Account ID (non attivo)", "entry_meta_id", False, "cloud_meta"),
             ("Dropbox Access Token", "entry_dropbox", False, "cloud_dropbox"),
-            ("SwissTransfer Email", "entry_swiss", False, "cloud_swiss"),
+            ("SwissTransfer Email (non attivo)", "entry_swiss", False, "cloud_swiss"),
         ]
         riga = 12
         for etichetta, attr, _, chiave_flag in credenziali:
@@ -1748,19 +2285,22 @@ class FranchettiApp(ctk.CTk):
         canali.grid(row=riga, column=0, columnspan=3, padx=8, pady=8, sticky="ew")
         self.chk_cloud_telegram = ctk.CTkCheckBox(canali, text="Telegram")
         self.chk_cloud_telegram.grid(row=0, column=0, padx=10, pady=6, sticky="w")
-        self.chk_cloud_gdrive = ctk.CTkCheckBox(canali, text="Google Drive")
+        self.chk_cloud_gdrive = ctk.CTkCheckBox(canali, text="Google Drive (non attivo)")
         self.chk_cloud_gdrive.grid(row=0, column=1, padx=10, pady=6, sticky="w")
-        self.chk_cloud_meta = ctk.CTkCheckBox(canali, text="Meta (FB/IG)")
+        self.chk_cloud_meta = ctk.CTkCheckBox(canali, text="Meta FB/IG (non attivo)")
         self.chk_cloud_meta.grid(row=0, column=2, padx=10, pady=6, sticky="w")
         self.chk_cloud_dropbox = ctk.CTkCheckBox(canali, text="Dropbox")
         self.chk_cloud_dropbox.grid(row=1, column=0, padx=10, pady=6, sticky="w")
-        self.chk_cloud_swiss = ctk.CTkCheckBox(canali, text="SwissTransfer")
+        self.chk_cloud_swiss = ctk.CTkCheckBox(canali, text="SwissTransfer (non attivo)")
         self.chk_cloud_swiss.grid(row=1, column=1, padx=10, pady=6, sticky="w")
 
         ctk.CTkLabel(
             scroll,
-            text="Nota: i canali senza credenziali valide vengono saltati automaticamente.",
-            font=ctk.CTkFont(size=11), text_color="#9aa0a6",
+            text=(
+                "Telegram e Dropbox sono operativi. Google Drive, Meta e SwissTransfer "
+                "sono predisposti ma non ancora attivi: l'invio viene saltato senza errori."
+            ),
+            font=ctk.CTkFont(size=11), text_color="#9aa0a6", wraplength=900, justify="left",
         ).grid(row=riga + 1, column=0, columnspan=3, padx=8, pady=(0, 10), sticky="w")
 
     # ------------------------------------------------------------- tab LOG
@@ -1934,6 +2474,11 @@ class FranchettiApp(ctk.CTk):
             self.entry_qualita.insert(0, str(preset["qualita_jpeg"]))
         if "formato" in preset:
             self.combo_formato.set(preset["formato"])
+        if "preserva_exif" in preset:
+            if preset["preserva_exif"]:
+                self.chk_exif.select()
+            else:
+                self.chk_exif.deselect()
 
         self.scrivi_log(f"Preset applicato: {nome}")
 
@@ -1960,7 +2505,9 @@ class FranchettiApp(ctk.CTk):
         try:
             with open(percorso, "r", encoding="utf-8") as f:
                 dati = json.load(f)
-            self.parametri.update(dati)
+            if not isinstance(dati, dict):
+                raise ValueError("il file non contiene una configurazione valida")
+            self.parametri = normalizza_parametri(dati)
             self._applica_config_alla_ui()
             self.scrivi_log(f"Configurazione caricata: {percorso}")
         except Exception as e:
@@ -1971,13 +2518,34 @@ class FranchettiApp(ctk.CTk):
             if chiave in self._slider_widgets:
                 try:
                     slider, label, fmt = self._slider_widgets[chiave]
-                    slider.set(float(valore))
-                    label.configure(text=fmt.format(float(valore)))
+                    numero = float(valore)
+                    slider.set(numero)
+                    label.configure(text=fmt.format(numero))
                 except Exception:
                     pass
 
+        def imposta_check(widget, chiave, default=False):
+            try:
+                if bool(self.parametri.get(chiave, default)):
+                    widget.select()
+                else:
+                    widget.deselect()
+            except Exception:
+                pass
+
+        def imposta_entry(widget, chiave, default=""):
+            try:
+                widget.delete(0, "end")
+                widget.insert(0, str(self.parametri.get(chiave, default) or ""))
+            except Exception:
+                pass
+
         self.entry_max_dim.delete(0, "end")
         self.entry_max_dim.insert(0, str(self.parametri.get("max_dim", 1920)))
+        try:
+            self._evidenzia_max_dim(int(self.parametri.get("max_dim", 1920)))
+        except (TypeError, ValueError):
+            pass
         self.entry_qualita.delete(0, "end")
         self.entry_qualita.insert(0, str(self.parametri.get("qualita_jpeg", 90)))
         self.combo_formato.set(self.parametri.get("formato", "JPEG"))
@@ -1997,6 +2565,35 @@ class FranchettiApp(ctk.CTk):
         self.entry_colore_ombre.insert(0, self.parametri.get("colore_ombre", "#2b4c7e"))
         self.entry_colore_luci.delete(0, "end")
         self.entry_colore_luci.insert(0, self.parametri.get("colore_luci", "#e0b070"))
+
+        imposta_check(self.chk_wb_camera, "use_camera_wb", True)
+        imposta_check(self.chk_exif, "preserva_exif", True)
+        imposta_check(self.chk_ricorsivo, "ricorsivo", True)
+        imposta_check(self.chk_mantieni_nomi, "mantieni_nomi", True)
+        imposta_check(self.chk_watermark, "watermark_attivo", True)
+        imposta_check(self.chk_multicore, "usa_multicore", True)
+        imposta_check(self.chk_cloud_telegram, "cloud_telegram")
+        imposta_check(self.chk_cloud_gdrive, "cloud_gdrive")
+        imposta_check(self.chk_cloud_meta, "cloud_meta")
+        imposta_check(self.chk_cloud_dropbox, "cloud_dropbox")
+        imposta_check(self.chk_cloud_swiss, "cloud_swiss")
+
+        imposta_entry(self.entry_wifi_dir, "wifi_dir")
+        imposta_entry(self.entry_wifi_output, "output_dir")
+        imposta_entry(self.entry_tg_token, "tg_token")
+        imposta_entry(self.entry_tg_chat, "tg_chat_id")
+        imposta_entry(self.entry_gdrive, "gdrive_key")
+        imposta_entry(self.entry_meta, "meta_token")
+        imposta_entry(self.entry_meta_id, "meta_id")
+        imposta_entry(self.entry_dropbox, "dropbox_token")
+        imposta_entry(self.entry_swiss, "swisstransfer_email")
+
+        logo = str(self.parametri.get("logo_path", "") or "")
+        try:
+            self.lbl_logo.configure(text=os.path.basename(logo) if logo else "Nessun logo")
+        except Exception:
+            pass
+
         self._toggle_auto_luminosita(bool(self.parametri.get("auto_luminosita", False)))
 
     # ============================================================ CAMPI
@@ -2044,6 +2641,10 @@ class FranchettiApp(ctk.CTk):
         except ValueError:
             self.parametri["max_dim"] = 1920
         try:
+            self._evidenzia_max_dim(int(self.parametri["max_dim"]))
+        except (TypeError, ValueError):
+            pass
+        try:
             self.parametri["qualita_jpeg"] = max(1, min(100, int(self.entry_qualita.get() or 90)))
         except ValueError:
             self.parametri["qualita_jpeg"] = 90
@@ -2058,6 +2659,8 @@ class FranchettiApp(ctk.CTk):
         self.parametri["preserva_exif"] = bool(self.chk_exif.get())
         self.parametri["ricorsivo"] = bool(self.chk_ricorsivo.get())
         self.parametri["mantieni_nomi"] = bool(self.chk_mantieni_nomi.get())
+        self.parametri["auto_luminosita"] = bool(self.sw_auto_luminosita.get())
+        self.parametri["usa_multicore"] = bool(self.chk_multicore.get())
         self.parametri["prefisso"] = self.entry_prefisso.get().strip()
         self.parametri["suffisso"] = self.entry_suffisso.get().strip()
         self.parametri["sovrascrittura"] = self.combo_sovrascrittura.get()
@@ -2086,26 +2689,8 @@ class FranchettiApp(ctk.CTk):
         return self.parametri
 
     # ============================================================ BATCH
-    def _raccogli_file_sorgente(self, sorgente, ricorsivo):
-        if ";" in sorgente:
-            return [f.strip() for f in sorgente.split(";") if f.strip() and os.path.isfile(f.strip())]
-        if os.path.isfile(sorgente):
-            return [sorgente]
-        if not os.path.isdir(sorgente):
-            return []
-
-        files = []
-        if ricorsivo:
-            for root, _, nomi in os.walk(sorgente):
-                for nome in nomi:
-                    if nome.lower().endswith(ESTENSIONI_ACCETTATE):
-                        files.append(os.path.join(root, nome))
-        else:
-            for nome in os.listdir(sorgente):
-                percorso = os.path.join(sorgente, nome)
-                if os.path.isfile(percorso) and nome.lower().endswith(ESTENSIONI_ACCETTATE):
-                    files.append(percorso)
-        return sorted(files)
+    def _raccogli_file_sorgente(self, sorgente, ricorsivo, escludi=None):
+        return raccogli_file_sorgente(sorgente, ricorsivo, escludi)
 
     def avvia_batch(self):
         if self._batch_attivo:
@@ -2129,7 +2714,9 @@ class FranchettiApp(ctk.CTk):
             return
 
         self._raccogli_campi()
-        files = self._raccogli_file_sorgente(sorgente, self.parametri.get("ricorsivo", True))
+        files = self._raccogli_file_sorgente(
+            sorgente, self.parametri.get("ricorsivo", True), escludi=destinazione
+        )
         if not files:
             messagebox.showwarning("Nessun file", "Nessun file RAW o immagine trovato nella sorgente selezionata.")
             return
@@ -2145,75 +2732,47 @@ class FranchettiApp(ctk.CTk):
         self.lbl_stato.configure(text="Conversione in corso...")
         self.scrivi_log(f"Batch avviato: {len(files)} file -> {destinazione}")
 
-        params = dict(self.parametri)
+        params = normalizza_parametri(self.parametri)
         thread = threading.Thread(
             target=self._batch_worker, args=(list(files), params, destinazione), daemon=True
         )
         thread.start()
 
     def _batch_worker(self, files, params, destinazione):
-        ok = 0
-        errori = 0
-        totale = len(files)
-        formato = str(params.get("formato", "JPEG")).upper()
-        estensione = FORMATI_OUTPUT.get(formato, ".jpg")
+        def log(messaggio):
+            self._log_threadsafe(messaggio)
 
-        for indice, percorso in enumerate(files, start=1):
-            if self._cancel_event.is_set():
-                self._log_threadsafe("Batch annullato dall'utente.")
-                break
+        def progresso(indice, totale, ok, errori, saltati):
+            self._coda.put(("progress", indice, totale, ok, errori, saltati))
 
-            try:
-                base = os.path.splitext(os.path.basename(percorso))[0]
-                if params.get("mantieni_nomi", True):
-                    nome = f"{params.get('prefisso', '')}{base}{params.get('suffisso', '')}{estensione}"
-                else:
-                    nome = f"{params.get('prefisso', '')}IMG_{indice:04d}{params.get('suffisso', '')}{estensione}"
-                output = os.path.join(destinazione, nome)
+        esito = esegui_batch(
+            files, params, destinazione,
+            log=log, progresso=progresso, cancel_event=self._cancel_event,
+        )
+        self._coda.put((
+            "done", esito["ok"], esito["errori"], esito["saltati"], esito["annullato"]
+        ))
 
-                esistente = os.path.exists(output)
-                politica = params.get("sovrascrittura", "Rinomina")
-                if esistente and politica == "Salta":
-                    self._log_threadsafe(f"Saltato (esiste): {nome}")
-                    ok += 1
-                    self._coda.put(("progress", indice, totale, ok, errori))
-                    continue
-                if esistente and politica == "Rinomina":
-                    contatore = 1
-                    while os.path.exists(output):
-                        nome = f"{params.get('prefisso', '')}{base}{params.get('suffisso', '')}_{contatore}{estensione}"
-                        output = os.path.join(destinazione, nome)
-                        contatore += 1
-
-                ImageEngine.sviluppa_e_ottimizza(
-                    percorso, output, params, callback=self._log_threadsafe
-                )
-
-                if any(params.get(c) for c in ("cloud_telegram", "cloud_gdrive", "cloud_meta",
-                                               "cloud_dropbox", "cloud_swiss")):
-                    CloudDispatcher.dispatch(output, params, callback=self._log_threadsafe)
-
-                ok += 1
-            except Exception as e:
-                errori += 1
-                logging.error("Errore su %s: %s\n%s", percorso, e, traceback.format_exc())
-                self._log_threadsafe(f"ERRORE su {os.path.basename(percorso)}: {e}")
-
-            self._coda.put(("progress", indice, totale, ok, errori))
-
-        self._coda.put(("done", ok, errori))
-
-    def _aggiorna_progresso(self, indice, totale, ok, errori):
+    def _aggiorna_progresso(self, indice, totale, ok, errori, saltati=0):
         self.progress.set(min(1.0, indice / max(totale, 1)))
-        self.lbl_progresso.configure(text=f"{indice} / {totale}  -  OK: {ok}  Errori: {errori}")
+        testo = f"{indice} / {totale}  -  OK: {ok}  Errori: {errori}"
+        if saltati:
+            testo += f"  Saltati: {saltati}"
+        self.lbl_progresso.configure(text=testo)
 
-    def _fine_batch(self, ok, errori):
+    def _fine_batch(self, ok, errori, saltati=0, annullato=False):
         self._batch_attivo = False
         self.btn_avvia.configure(state="normal")
         self.btn_annulla.configure(state="disabled")
-        self.lbl_stato.configure(text=f"Completato - OK: {ok}, Errori: {errori}")
-        self.lbl_progresso.configure(text=f"Completato - OK: {ok}, Errori: {errori}")
-        self.scrivi_log(f"Batch terminato: {ok} conversioni riuscite, {errori} errori.")
+        if annullato:
+            testo = f"Annullato - OK: {ok}, Errori: {errori}"
+        else:
+            testo = f"Completato - OK: {ok}, Errori: {errori}"
+        if saltati:
+            testo += f", Saltati: {saltati}"
+        self.lbl_stato.configure(text=testo)
+        self.lbl_progresso.configure(text=testo)
+        self.scrivi_log(f"Batch terminato: OK {ok}, errori {errori}, saltati {saltati}.")
 
     def annulla_batch(self):
         if not self._batch_attivo:
@@ -2396,6 +2955,7 @@ class FranchettiApp(ctk.CTk):
             if self.observer and self.observer.is_alive():
                 self.observer.stop()
                 self.observer.join(timeout=2)
+            termina_tutti_gli_esecutori()
         except Exception:
             pass
         self.destroy()
@@ -2405,5 +2965,60 @@ class FranchettiApp(ctk.CTk):
 # 6. ENTRY POINT
 # ================================================================================
 if __name__ == "__main__":
+    # Necessario su Windows per l'elaborazione multi-processo (PyInstaller).
+    multiprocessing.freeze_support()
+
+    # Modalita' di test da riga di comando:
+    #   FranchettiRawConverterPro.exe --converti-test <sorgente> <uscita>
+    #   FranchettiRawConverterPro.exe --batch-test <sorgente> <cartella output>
+    # Servono a verificare la conversione senza aprire la finestra.
+    if "--converti-test" in sys.argv:
+        indice = sys.argv.index("--converti-test")
+        if len(sys.argv) < indice + 3:
+            sys.exit(2)
+        sorgente = sys.argv[indice + 1]
+        uscita = sys.argv[indice + 2]
+        try:
+            parametri = parametri_default()
+            parametri["watermark_attivo"] = False
+            parametri["max_dim"] = 0
+            ImageEngine.sviluppa_e_ottimizza(sorgente, uscita, parametri)
+            sys.exit(0 if os.path.exists(uscita) else 3)
+        except Exception as errore:
+            logging.error("Test conversione fallito: %s", errore)
+            sys.exit(1)
+
+    if "--batch-test" in sys.argv:
+        indice = sys.argv.index("--batch-test")
+        if len(sys.argv) < indice + 3:
+            sys.exit(2)
+        sorgente = sys.argv[indice + 1]
+        destinazione = sys.argv[indice + 2]
+        os.makedirs(destinazione, exist_ok=True)
+        parametri = parametri_default()
+        parametri["watermark_attivo"] = False
+        parametri["max_dim"] = 0
+        elenco = raccogli_file_sorgente(sorgente, True, escludi=destinazione)
+        inizio = time.time()
+        esito = esegui_batch(
+            elenco, parametri, destinazione,
+            log=lambda messaggio: logging.info("[batch-test] %s", messaggio),
+        )
+        durata = time.time() - inizio
+        rapporto = (
+            f"File trovati: {len(elenco)}\n"
+            f"OK: {esito['ok']}\n"
+            f"Errori: {esito['errori']}\n"
+            f"Saltati: {esito['saltati']}\n"
+            f"Processi: {numero_processi_ottimale(len(elenco))} su {os.cpu_count() or 1} core\n"
+            f"Durata: {durata:.1f} s\n"
+        )
+        try:
+            with open(os.path.join(destinazione, "_report.txt"), "w", encoding="utf-8") as f:
+                f.write(rapporto)
+        except Exception:
+            pass
+        sys.exit(0 if esito["errori"] == 0 else 1)
+
     app = FranchettiApp()
     app.mainloop()

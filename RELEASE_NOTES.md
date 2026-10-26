@@ -1,4 +1,113 @@
-# Release Notes v2.52.0
+# Release Notes v2.53.0
+
+**Franchetti Raw Converter Pro** - Release v2.53.0  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.53.0.0
+
+---
+
+## Elaborazione su tutti i core del processore
+
+Il batch ora usa **tutti i core logici** della CPU tramite `ProcessPoolExecutor`.
+Il numero di processi viene scelto automaticamente in base ai core disponibili,
+alla RAM libera e al numero di foto da convertire.
+
+Nel tab **Batch** trovi l'interruttore **USA TUTTI I CORE (N processi)**,
+attivo di default.
+
+| Test su RAW Sony A7S (24 MP) | Tempo |
+|------------------------------|-------|
+| 6 file, sequenziale | 67,6 s |
+| 6 file, parallelo (6 processi) | 22,1 s |
+| **Guadagno** | **3,06x** |
+| 12 file, parallelo (12 processi) | 39,8 s |
+
+Ogni file viene scritto su un file temporaneo e pubblicato solo a conversione
+completata: un errore o un annullamento non lascia mai output corrotti.
+
+---
+
+## Conversione RAW affidabile
+
+La libreria RAW inclusa non contiene sempre l'algoritmo **AMaZE** (richiede il
+pacchetto GPL3). Ora il programma prova **AMaZE**, poi **AHD**, **PPG** e
+**LINEAR**, usa il primo disponibile e lo ricorda per i file successivi.
+Il Log indica l'algoritmo usato (`Demosaic: AHD`).
+
+Verificato su file ARW reali (6024x4024): conversione completata, EXIF
+preservato (Make, ISO, orientamento corretto).
+
+---
+
+## Correzioni di affidabilita'
+
+- **JPEG**: alcune immagini facevano fallire il salvataggio con
+  `OSError: broken data stream`; ora si riprova automaticamente senza
+  ottimizzazione.
+- **Logo corrotto**: viene ignorato con un avviso, la conversione prosegue.
+- **PIÙ LUMINOSA**: nessun errore sulle immagini completamente bianche o nere;
+  le foto gia' bilanciate restano invariate.
+- **Configurazione**: valori numerici ripuliti e limitati; un JSON incompleto
+  o corrotto non blocca piu' la conversione. Tutte le caselle e i campi vengono
+  ripristinati correttamente.
+- **Nomi duplicati**: due foto con lo stesso nome non scrivono mai sullo stesso
+  file; "Sovrascrivi" sostituisce i file esistenti ma non due lavori del batch.
+- **Hot-folder**: elabora RAW e immagini standard, attende la fine della
+  scrittura, gestisce i file spostati e ignora i propri output `_PRO`.
+- **Formati**: `JPG → JPEG`, `TIF → TIFF`; formato sconosciuto → JPEG.
+- **Sorgenti multiple**: lista con `;` deduplicata, cartella di output esclusa.
+- **Immagini minuscole** (1x1, 2x2, 1x200): nessun errore.
+
+---
+
+## Note
+
+- Lo spazio colore di output e' **sRGB** con profilo ICC incorporato. Le voci
+  Adobe RGB e ProPhoto RGB sono state rimosse perche' non erano realmente
+  implementate.
+- **Telegram** e **Dropbox** sono operativi. **Google Drive**, **Meta** e
+  **SwissTransfer** sono predisposti ma non attivi in questa versione: vengono
+  saltati senza generare errori.
+- Test automatici superati: conversione, formati, watermark, logo, EXIF,
+  configurazione, preset, batch sequenziale e parallelo, annullamento,
+  hot-folder, cloud, helper Sony, immagini minuscole.
+
+---
+
+## Download
+
+| Pacchetto | File |
+|-----------|------|
+| **Portable** | `FranchettiRawConverterPro.exe` |
+| **Installer** | `Franchetti_Raw_Converter_Setup_v2.53.0.exe` |
+
+---
+
+# Release Notes v2.52.1 (precedente)
+
+**Franchetti Raw Converter Pro** - Release v2.52.1  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.52.1.0
+
+---
+
+## Correzione: conversione RAW bloccata
+
+La libreria RAW inclusa nel programma non contiene l'algoritmo **AMAZE**
+(richiede il pacchetto GPL3): ogni file terminava con l'errore
+`Demosaic algorithm AMAZE requires GPL3 demosaic pack`.
+
+Ora il programma:
+
+- prova **AMAZE**, poi **AHD**, **PPG** e **LINEAR**
+- usa il primo disponibile e lo ricorda per i file successivi
+- scrive nel Log quale algoritmo sta usando (`Demosaic: AHD`)
+
+Verificato su un file ARW reale (6024x4024): conversione completata.
+
+---
+
+# Release Notes v2.52.0 (precedente)
 
 **Franchetti Raw Converter Pro** - Release v2.52.0  
 **Data**: 26 Ottobre 2026  

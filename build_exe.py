@@ -21,8 +21,8 @@ VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.52.0"
-VERSION_TUPLE = (2, 50, 1, 0)
+VERSION = "2.53.0"
+VERSION_TUPLE = (2, 53, 0, 0)
 
 
 def run_cmd(cmd, cwd=None):
@@ -125,6 +125,11 @@ def main():
         "--hidden-import=PIL.ImageOps",
         "--hidden-import=PIL.ImageCms",
         "--hidden-import=PIL.ImageFilter",
+        "--hidden-import=multiprocessing",
+        "--hidden-import=multiprocessing.spawn",
+        "--hidden-import=multiprocessing.popen_spawn_win32",
+        "--hidden-import=concurrent.futures",
+        "--hidden-import=concurrent.futures.process",
         "--hidden-import=PIL.ImageDraw",
         "--hidden-import=tkinter",
         "--hidden-import=tkinter.ttk",

@@ -1,6 +1,6 @@
 # User Manual
 
-**Franchetti Raw Converter Pro v2.50.1**  
+**Franchetti Raw Converter Pro v2.53.0**  
 *Complete guide for photographers — Enterprise Edition*
 
 ---
@@ -49,7 +49,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Franchetti Raw Converter Pro v2.50.1                    [×] [−] [□] │
+│  Franchetti Raw Converter Pro v2.53.0                    [×] [−] [□] │
 ├─────────────────────────────────────────────────────────────────┤
 │  Franchetti Raw Converter Pro                                   │
 │  Converti RAW → JPG ridotto + watermark copyright               │
@@ -214,17 +214,16 @@ Franchetti Studio • All Rights Reserved
 
 | Hardware | Speed (24 MP RAW → 1920px JPG) |
 |----------|--------------------------------|
-| i5-8250U (4C/8T) | ~80 files/min |
-| i7-11700 (8C/16T) | ~180 files/min |
-| Ryzen 7 5800X (8C/16T) | ~220 files/min |
-| i9-13900K (24C/32T) | ~400 files/min |
+| 4 core | ~20 file/min |
+| 8 core | ~40 file/min |
+| 20 core (i9-12900H) | ~60–100 file/min |
 
-> **Bottleneck**: Single-threaded LibRaw decode. Multi-file parallelism via OS scheduler.
+> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale: 6 RAW da 24 MP in 22,1 s con 6 processi (3,06× rispetto al sequenziale).
 
 ### Memory Management
 
-- **Per-file memory**: ~200-400 MB during decode (released immediately)
-- **Peak batch memory**: ~500-800 MB typical
+- **Per-process memory**: ~1–1,5 GB durante la decodifica di un RAW da 24 MP
+- **Peak batch memory**: circa 1,2 GB per processo attivo; il programma riduce i processi se la RAM non basta
 - **Large batches**: No accumulation — each file processed independently
 
 ---
@@ -300,30 +299,19 @@ YourBrand © 2024
 | `ERRORE file.CR3: Not supported` | Canon CR3 (compressed) | Update rawpy/LibRaw (future version) |
 | `ERRORE: Permission denied` | Output folder locked | Choose different folder, check permissions |
 
-### Log Colors
+### Log
 
-| Color | Level | Meaning |
-|-------|-------|---------|
-| 🔵 Blue | INFO | General progress |
-| 🟢 Green | SUCCESS | File converted OK |
-| 🔴 Red | ERROR | Conversion failed |
-| 🟠 Orange | WARNING | Non-fatal issue (e.g., cancel requested) |
+Il tab **Log** mostra ogni operazione con orario (`[HH:MM:SS]`) ed è accompagnato da due pulsanti:
+**Svuota log** e **Salva log su file**. Lo stesso contenuto viene scritto nel file
+`franchetti_log.txt` sul Desktop per diagnosi successive.
 
 ---
 
-## Keyboard Shortcuts
+## Input da tastiera
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+O` | Select Folder (planned) |
-| `Ctrl+Shift+O` | Select Files (planned) |
-| `Ctrl+S` | Select Output Folder (planned) |
-| `Enter` | Start Conversion (when focused) |
-| `Esc` | Cancel Conversion |
-| `Ctrl+L` | Clear Log (planned) |
-| `F1` | Open Help (planned) |
-
-> **Current v2.50.1**: Mouse-driven. Shortcuts planned for v2.51.
+L'interfaccia è progettata per il mouse. I campi di testo (dimensione massima,
+qualità, prefisso, suffisso, nome watermark, credenziali) sono modificabili
+direttamente; non sono presenti scorciatoie globali.
 
 ---
 
@@ -340,22 +328,22 @@ A: Never. Only reads them. Originals untouched.
 **Q: Can I use it on Mac/Linux?**  
 A: Windows only currently. Source code is cross-platform; PRs welcome for native builds.
 
-**Q: Why 32 MB for a simple tool?**  
-A: Bundles Python runtime + LibRaw + Pillow + NumPy for zero-dependency execution.
+**Q: Why 62 MB for a simple tool?**  
+A: Bundles Python runtime + LibRaw + Pillow + NumPy + scikit-image + CustomTkinter for zero-dependency execution.
 
 ### Technical
 
 **Q: Which RAW formats exactly?**  
-A: See [README.md](README.md#-universal-raw-support) — 25+ formats via LibRaw 0.21+.
+A: See [README.md](README.md) — 25+ formats via LibRaw 0.21+.
 
 **Q: Does it preserve EXIF?**  
-A: **Yes, v2.50.1** preserves EXIF (GPS, camera settings, orientation).
+A: **Yes** — EXIF preserved (GPS, camera settings, orientation) with `Orientation` normalized to 1.
 
 **Q: Can I add custom watermark positions?**  
-A: **v2.50.1: bottom-right only** (proportional scaling, 15% long edge). 9-position grid planned for v2.51.
+A: **Yes** — five positions (bottom/top left/right, center), proportional margin and shadow. Logo PNG supported.
 
 **Q: Is there a command-line version?**  
-A: Planned for v2.51. Current: **GUI Enterprise (CustomTkinter)** only.
+A: The GUI is the main interface. Diagnostic modes: `--converti-test` and `--batch-test`.
 
 **Q: How to verify file integrity?**  
 A: Check SHA-256 on GitHub Releases page.
@@ -387,4 +375,4 @@ When reporting issues, include:
 
 ---
 
-*Manual v2.50.1 — Gennaio 2025*
+*Manual v2.53.0 — 26 Ottobre 2026*
