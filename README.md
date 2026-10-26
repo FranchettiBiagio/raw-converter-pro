@@ -94,7 +94,8 @@ Tutti e tre i canali attivati **in parallelo** al completamento di ogni elaboraz
 | Metodo | Link |
 |--------|------|
 | **GitHub Releases** | [Download v2.50.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.50.1) |
-| **Direct Download** | [Latest Executable](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
+| **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
+| **Installer Windows** | [Setup v2.50.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.50.1.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
