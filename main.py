@@ -39,7 +39,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.50.1"
+APP_VERSION = "2.51.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -742,7 +742,164 @@ class RawHotFolderHandler(FileSystemEventHandler):
 
 
 # ================================================================================
-# 5. INTERFACCIA GRAFICA (CUSTOMTKINTER)
+# 5. SONY WI-FI (CAMERA REMOTE API)
+# ================================================================================
+class SonyWifiClient:
+    """Client per la Sony Camera Remote API via Wi-Fi (app Smart Remote Control).
+
+    La fotocamera crea una rete Wi-Fi (DIRECT-xxxx:ILCE-7S); il PC vi si collega
+    e parla con l'API JSON su http://<ip>:10000/sony.
+    """
+
+    def __init__(self, callback=None):
+        self.callback = callback
+        self.base = None
+        self.apis = []
+
+    def _log(self, messaggio):
+        if self.callback:
+            try:
+                self.callback(messaggio)
+            except Exception:
+                pass
+
+    def _api(self, servizio, metodo, parametri=None, versione="1.0"):
+        import urllib.request
+
+        if not self.base:
+            raise RuntimeError("fotocamera non connessa")
+        corpo = json.dumps(
+            {
+                "method": metodo,
+                "params": parametri or [],
+                "id": 1,
+                "version": versione,
+            }
+        ).encode("utf-8")
+        richiesta = urllib.request.Request(
+            f"{self.base}/{servizio}",
+            data=corpo,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(richiesta, timeout=8) as risposta:
+            dati = json.loads(risposta.read().decode("utf-8", "ignore"))
+        if "error" in dati:
+            raise RuntimeError(f"{metodo}: {dati['error']}")
+        return dati.get("result", [])
+
+    def scopri(self, timeout=4.0):
+        import socket
+        import re
+
+        messaggio = (
+            "M-SEARCH * HTTP/1.1\r\n"
+            "HOST: 239.255.255.250:1900\r\n"
+            'MAN: "ssdp:discover"\r\n'
+            "MX: 2\r\n"
+            "ST: urn:schemas-sony-com:service:ScalarWebAPI:1\r\n"
+            "\r\n"
+        ).encode("ascii")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.settimeout(0.8)
+        try:
+            sock.sendto(messaggio, ("239.255.255.250", 1900))
+        except OSError as errore:
+            self._log(f"Sony: invio SSDP fallito ({errore})")
+            sock.close()
+            return None
+        scadenza = time.time() + timeout
+        trovato = None
+        while time.time() < scadenza:
+            try:
+                dati, _ = sock.recvfrom(65507)
+            except socket.timeout:
+                continue
+            testo = dati.decode("utf-8", "ignore")
+            posizione = re.search(r"LOCATION:\s*(\S+)", testo, re.IGNORECASE)
+            if not posizione:
+                continue
+            host = re.sub(r"^https?://([^/:]+).*$", r"\1", posizione.group(1).strip())
+            trovato = f"http://{host}:10000/sony"
+            self._log(f"Sony: fotocamera trovata sull'IP {host}")
+            break
+        sock.close()
+        self.base = trovato
+        return trovato
+
+    def _estrai_url(self, dato):
+        import re
+
+        trovati = []
+
+        def cammina(valore):
+            if isinstance(valore, dict):
+                for sotto in valore.values():
+                    cammina(sotto)
+            elif isinstance(valore, list):
+                for sotto in valore:
+                    cammina(sotto)
+            elif isinstance(valore, str):
+                if valore.startswith("http") and re.search(
+                    r"\.(jpe?g|arw|png|tiff?)(\?|$)", valore, re.IGNORECASE
+                ):
+                    trovati.append(valore)
+
+        cammina(dato)
+        return trovati
+
+    def connetti(self):
+        if not self.scopri():
+            # In modalita' Smart Remote la Sony usa di norma 192.168.122.1
+            self.base = "http://192.168.122.1:10000/sony"
+            self._log("Sony: SSDP senza risposta, provo 192.168.122.1")
+        elenco = self._api("system", "getAvailableApiList")
+        self.apis = elenco[0] if elenco and isinstance(elenco[0], list) else []
+        if not self.apis:
+            self.apis = []
+        try:
+            info = self._api("system", "getApplicationInfo")
+            self._log(f"Sony: connesso ({info[0] if info else 'ok'})")
+        except Exception as errore:
+            self._log(f"Sony: info non disponibile ({errore})")
+        if "startRecMode" in self.apis:
+            try:
+                self._api("camera", "startRecMode")
+                time.sleep(1.5)
+                self._log("Sony: modalita' remota attivata")
+            except Exception as errore:
+                self._log(f"Sony: startRecMode non riuscito ({errore})")
+        return self.apis
+
+    def _scarica(self, indirizzo, cartella):
+        import urllib.request
+
+        nome = os.path.basename(indirizzo.split("?")[0]) or f"sony_{int(time.time())}.jpg"
+        destinazione = os.path.join(cartella, nome)
+        with urllib.request.urlopen(indirizzo, timeout=60) as risposta, open(destinazione, "wb") as uscita:
+            uscita.write(risposta.read())
+        self._log(f"Sony: scaricato {nome}")
+        return destinazione
+
+    def scatta_e_scarica(self, cartella):
+        os.makedirs(cartella, exist_ok=True)
+        risultato = self._api("camera", "actTakePicture")
+        url = self._estrai_url(risultato)
+        if not url:
+            # Alcuni modelli restituiscono lo scatto tramite getEvent
+            for _ in range(10):
+                time.sleep(1.0)
+                eventi = self._api("camera", "getEvent", [True])
+                url = self._estrai_url(eventi)
+                if url:
+                    break
+        if not url:
+            raise RuntimeError("la fotocamera non ha restituito alcuna immagine")
+        return [self._scarica(indirizzo, cartella) for indirizzo in url if isinstance(indirizzo, str)]
+
+
+# ================================================================================
+# 6. INTERFACCIA GRAFICA (CUSTOMTKINTER)
 # ================================================================================
 class FranchettiApp(ctk.CTk):
     def __init__(self):
@@ -757,6 +914,7 @@ class FranchettiApp(ctk.CTk):
 
         self.parametri = parametri_default()
         self.observer = None
+        self._sony = None
         self._cancel_event = threading.Event()
         self._batch_files = []
         self._batch_attivo = False
@@ -1224,31 +1382,82 @@ class FranchettiApp(ctk.CTk):
         scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         scroll.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(scroll, text="HOT-FOLDER WI-FI", font=ctk.CTkFont(size=12, weight="bold")).grid(
+        ctk.CTkLabel(scroll, text="SONY WI-FI - SMART REMOTE CONTROL", font=ctk.CTkFont(size=12, weight="bold")).grid(
             row=0, column=0, columnspan=3, padx=8, pady=(8, 2), sticky="w"
         )
-        ctk.CTkLabel(scroll, text="Cartella fotocamera:").grid(row=1, column=0, padx=8, pady=4, sticky="w")
-        self.entry_wifi_dir = ctk.CTkEntry(scroll, placeholder_text="Cartella monitorata (es. cartella della fotocamera in rete)")
-        self.entry_wifi_dir.grid(row=1, column=1, padx=8, pady=4, sticky="ew")
+        ctk.CTkLabel(
+            scroll,
+            text=(
+                "1) Sulla A7S apri l'app 'Smart Remote Control' (PlayMemories Camera Apps).\n"
+                "2) Collega il PC alla rete Wi-Fi della fotocamera (DIRECT-xxxx:ILCE-7S).\n"
+                "3) Premi CONNETTI FOTOCAMERA, poi SCATTA E SCARICA.\n"
+                "La fotocamera non invia da sola le foto al PC: e' il programma a comandarla."
+            ),
+            justify="left",
+            anchor="w",
+            font=ctk.CTkFont(size=11),
+            text_color="#9aa0a6",
+        ).grid(row=1, column=0, columnspan=3, padx=8, pady=(0, 4), sticky="w")
+
+        self.lbl_sony = ctk.CTkLabel(scroll, text="Fotocamera non connessa", text_color="#ffb74d")
+        self.lbl_sony.grid(row=2, column=0, columnspan=3, padx=8, pady=2, sticky="w")
+
+        riga_sony = ctk.CTkFrame(scroll, fg_color="transparent")
+        riga_sony.grid(row=3, column=0, columnspan=3, padx=8, pady=(2, 10), sticky="ew")
+        riga_sony.grid_columnconfigure(0, weight=1)
+        riga_sony.grid_columnconfigure(1, weight=1)
+        self.btn_sony_connetti = ctk.CTkButton(
+            riga_sony, text="CONNETTI FOTOCAMERA", height=36, command=self.connetti_sony
+        )
+        self.btn_sony_connetti.grid(row=0, column=0, padx=(0, 6), sticky="ew")
+        self.btn_sony_scatta = ctk.CTkButton(
+            riga_sony,
+            text="SCATTA E SCARICA",
+            height=36,
+            fg_color="#1f7a3d",
+            hover_color="#258c47",
+            command=self.scatta_sony,
+        )
+        self.btn_sony_scatta.grid(row=0, column=1, padx=(6, 0), sticky="ew")
+
+        ctk.CTkLabel(scroll, text="HOT-FOLDER (CARTELLA MONITORATA)", font=ctk.CTkFont(size=12, weight="bold")).grid(
+            row=6, column=0, columnspan=3, padx=8, pady=(14, 2), sticky="w"
+        )
+        ctk.CTkLabel(
+            scroll,
+            text=(
+                "Utile con USB + Imaging Edge Desktop, con cartelle sincronizzate "
+                "(Google Drive/Dropbox) o con fotocamere che salvano su cartella di rete."
+            ),
+            justify="left",
+            anchor="w",
+            font=ctk.CTkFont(size=11),
+            text_color="#9aa0a6",
+            wraplength=900,
+        ).grid(row=7, column=0, columnspan=3, padx=8, pady=(0, 4), sticky="w")
+
+        ctk.CTkLabel(scroll, text="Cartella fotocamera:").grid(row=8, column=0, padx=8, pady=4, sticky="w")
+        self.entry_wifi_dir = ctk.CTkEntry(scroll, placeholder_text="Cartella da monitorare (es. cartella sincronizzata)")
+        self.entry_wifi_dir.grid(row=8, column=1, padx=8, pady=4, sticky="ew")
         ctk.CTkButton(scroll, text="Sfoglia", width=100, command=self.seleziona_cartella_wifi).grid(
-            row=1, column=2, padx=8, pady=4
+            row=8, column=2, padx=8, pady=4
         )
 
-        ctk.CTkLabel(scroll, text="Cartella output:").grid(row=2, column=0, padx=8, pady=4, sticky="w")
+        ctk.CTkLabel(scroll, text="Cartella output:").grid(row=9, column=0, padx=8, pady=4, sticky="w")
         self.entry_wifi_output = ctk.CTkEntry(scroll, placeholder_text="Cartella output tethering")
-        self.entry_wifi_output.grid(row=2, column=1, padx=8, pady=4, sticky="ew")
+        self.entry_wifi_output.grid(row=9, column=1, padx=8, pady=4, sticky="ew")
         ctk.CTkButton(scroll, text="Sfoglia", width=100, command=self.seleziona_output_wifi).grid(
-            row=2, column=2, padx=8, pady=4
+            row=9, column=2, padx=8, pady=4
         )
 
         self.btn_tethering = ctk.CTkButton(
-            scroll, text="ATTIVA SERVER IN ASCOLTO", height=40, fg_color="#1f7a3d", hover_color="#258c47",
+            scroll, text="AVVIA MONITORAGGIO CARTELLA", height=40, fg_color="#1f7a3d", hover_color="#258c47",
             command=self.toggle_tethering,
         )
-        self.btn_tethering.grid(row=3, column=0, columnspan=3, padx=8, pady=10, sticky="ew")
+        self.btn_tethering.grid(row=10, column=0, columnspan=3, padx=8, pady=10, sticky="ew")
 
         ctk.CTkLabel(scroll, text="CREDENZIALI CLOUD", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=4, column=0, columnspan=3, padx=8, pady=(14, 2), sticky="w"
+            row=11, column=0, columnspan=3, padx=8, pady=(14, 2), sticky="w"
         )
 
         credenziali = [
@@ -1260,7 +1469,7 @@ class FranchettiApp(ctk.CTk):
             ("Dropbox Access Token", "entry_dropbox", False, "cloud_dropbox"),
             ("SwissTransfer Email", "entry_swiss", False, "cloud_swiss"),
         ]
-        riga = 5
+        riga = 12
         for etichetta, attr, _, chiave_flag in credenziali:
             ctk.CTkLabel(scroll, text=etichetta + ":").grid(row=riga, column=0, padx=8, pady=3, sticky="w")
             entry = ctk.CTkEntry(scroll)
@@ -1719,9 +1928,9 @@ class FranchettiApp(ctk.CTk):
                 pass
             self.observer = None
             self.parametri["tethering_attivo"] = False
-            self.btn_tethering.configure(text="ATTIVA SERVER IN ASCOLTO", fg_color="#1f7a3d", hover_color="#258c47")
-            self.lbl_stato.configure(text="Tethering disattivato")
-            self.scrivi_log("Server tethering Wi-Fi disattivato.")
+            self.btn_tethering.configure(text="AVVIA MONITORAGGIO CARTELLA", fg_color="#1f7a3d", hover_color="#258c47")
+            self.lbl_stato.configure(text="Monitoraggio disattivato")
+            self.scrivi_log("Monitoraggio cartella disattivato.")
             return
 
         self._raccogli_campi()
@@ -1740,9 +1949,59 @@ class FranchettiApp(ctk.CTk):
         self.observer.start()
 
         self.parametri["tethering_attivo"] = True
-        self.btn_tethering.configure(text="DISATTIVA SERVER IN ASCOLTO", fg_color="#a32a2a", hover_color="#bf3333")
-        self.lbl_stato.configure(text=f"Tethering attivo: {cartella}")
-        self.scrivi_log(f"Server tethering attivo su {cartella}. Output: {output}")
+        self.btn_tethering.configure(text="DISATTIVA MONITORAGGIO", fg_color="#a32a2a", hover_color="#bf3333")
+        self.lbl_stato.configure(text=f"Monitoraggio attivo: {cartella}")
+        self.scrivi_log(f"Monitoraggio cartella attivo su {cartella}. Output: {output}")
+
+    # ============================================================ SONY WI-FI
+    def connetti_sony(self):
+        def lavoro():
+            try:
+                self._log_threadsafe("Sony: ricerca della fotocamera in corso...")
+                client = SonyWifiClient(self._log_threadsafe)
+                api = client.connetti()
+                self._sony = client
+                self.lbl_sony.configure(
+                    text=f"Fotocamera connessa ({len(api)} funzioni disponibili)", text_color="#66bb6a"
+                )
+                self._log_threadsafe("Sony: connessione riuscita. Usa SCATTA E SCARICA.")
+            except Exception as errore:
+                self._sony = None
+                self.lbl_sony.configure(text="Fotocamera non connessa", text_color="#ffb74d")
+                self._log_threadsafe(f"Sony: connessione fallita - {errore}")
+                self._log_threadsafe(
+                    "Sony: controlla di essere collegato al Wi-Fi DIRECT-xxxx:ILCE-7S "
+                    "e che l'app Smart Remote Control sia aperta sulla fotocamera."
+                )
+
+        threading.Thread(target=lavoro, daemon=True).start()
+
+    def scatta_sony(self):
+        client = getattr(self, "_sony", None)
+        if client is None:
+            messagebox.showwarning(
+                "Sony Wi-Fi",
+                "Prima premi CONNETTI FOTOCAMERA e attendi la conferma di connessione.",
+            )
+            return
+        cartella = self.entry_wifi_dir.get().strip()
+        if not cartella or not os.path.isdir(cartella):
+            cartella = os.path.join(os.path.expanduser("~"), "Pictures", "SonyTether")
+            os.makedirs(cartella, exist_ok=True)
+            self.entry_wifi_dir.delete(0, "end")
+            self.entry_wifi_dir.insert(0, cartella)
+
+        def lavoro():
+            try:
+                self._log_threadsafe("Sony: scatto in corso...")
+                file_ottenuti = client.scatta_e_scarica(cartella)
+                self._log_threadsafe(
+                    f"Sony: {len(file_ottenuti)} file ricevuti in {cartella}"
+                )
+            except Exception as errore:
+                self._log_threadsafe(f"Sony: scatto non riuscito - {errore}")
+
+        threading.Thread(target=lavoro, daemon=True).start()
 
     # ============================================================ CHIUSURA
     def _chiudi_app(self):

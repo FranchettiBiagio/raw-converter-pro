@@ -21,7 +21,7 @@ VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.50.1"
+VERSION = "2.51.0"
 VERSION_TUPLE = (2, 50, 1, 0)
 
 

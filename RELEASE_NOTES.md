@@ -1,6 +1,35 @@
-# Release Notes v2.50.1
+# Release Notes v2.51.0
 
-**Franchetti Raw Converter Pro** — Major Release v2.50.1  
+**Franchetti Raw Converter Pro** - Release v2.51.0  
+**Data**: 26 Ottobre 2026  
+**Build**: 2.51.0.0
+
+---
+
+## Novita v2.51.0
+
+### Tethering Wi-Fi Sony (Camera Remote API)
+- Nuova sezione **SONY WI-FI - SMART REMOTE CONTROL** nel tab Tethering
+- Ricerca automatica della fotocamera via SSDP e connessione all'API Sony (porta 10000)
+- Pulsante **CONNETTI FOTOCAMERA** con log dettagliato di ogni fase
+- Pulsante **SCATTA E SCARICA**: comanda la fotocamera e scarica subito JPEG/RAW
+- I file scaricati finiscono nella cartella monitorata e vengono sviluppati automaticamente
+- Istruzioni integrate per Sony A7S (app Smart Remote Control + Wi-Fi DIRECT)
+
+### Hot-folder piu chiaro
+- Etichette corrette: "AVVIA MONITORAGGIO CARTELLA" al posto di "server in ascolto"
+- Nota esplicativa: le fotocamere Sony non inviano da sole i file a un PC via Wi-Fi
+
+### Interfaccia
+- Finestra adattata all'area di lavoro Windows: nessun controllo tagliato
+- Scaling DPI corretto (100%, 125%, 150%)
+- Diciture recensione accanto al nome del programma
+
+---
+
+# Release Notes v2.50.1 (precedente)
+
+**Franchetti Raw Converter Pro** - Major Release v2.50.1  
 **Data**: 25 Gennaio 2025  
 **Build**: 2.50.1.0
 

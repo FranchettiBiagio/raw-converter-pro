@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.51.0] - 2026-10-26
+
+### Added
+- **Sony Wi-Fi tethering (Camera Remote API)**: ricerca SSDP della fotocamera, connessione all'API su porta 10000, comando di scatto e download immediato di JPEG/RAW
+- Pulsanti **CONNETTI FOTOCAMERA** e **SCATTA E SCARICA** con log dettagliato
+- Istruzioni integrate per Sony A7S (app Smart Remote Control + rete Wi-Fi DIRECT)
+- I file scaricati vengono elaborati automaticamente dalla pipeline hot-folder
+
+### Changed
+- Tab Tethering: etichette corrette ("AVVIA MONITORAGGIO CARTELLA") e note esplicative sui limiti del Wi-Fi Sony
+- Intestazione del programma con la dicitura sulle recensioni
+
+### Fixed
+- Finestra non piu tagliata: scaling DPI corretto e dimensionamento sull'area di lavoro di Windows
+- Barra azioni e barra di stato sempre visibili
+
+---
+
 ## [2.50.1] - 2025-01-25
 
 ### Added
