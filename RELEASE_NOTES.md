@@ -1,526 +1,160 @@
-# Release Notes v2.54.0
+# Release Notes v2.55.0
 
-**Franchetti Raw Converter Pro** - Release v2.54.0  
+**Franchetti Raw Converter Pro** — Release v2.55.0  
 **Data**: 27 Ottobre 2026  
-**Build**: 2.54.0.0
+**Build**: 2.55.0.0
 
 ---
 
-## Rimuovi grana in un clic
+## Il profilo predefinito ora punta sulla qualità
 
-Nel tab **Batch** e nel tab **Sviluppo RAW** c'e' il nuovo pulsante
-**RIMUOVI GRANA (AUTO ISO)**.
+La 2.55.0 nasce per rispondere a un problema concreto: gli ingrandimenti al 100%
+mostravano ancora grana e dettagli impastati, soprattutto dopo il ridimensionamento
+e la nitidezza.
 
-Il denoise lavora in **Y/Cb/Cr**:
+Il nuovo profilo predefinito è:
 
-- la luminanza usa un guided filter che pulisce le zone piatte e conserva i bordi;
-- la crominanza viene elaborata a meta' risoluzione, dove il rumore colorato vive,
-  poi ricostruita: 4x piu' veloce e senza aloni;
-- la forza si adatta all'ISO del RAW (testati ISO 1000, 2000 e 3200);
-- restano disponibili gli slider manuali per regolare l'intensita';
-- la nitidezza viene riapplicata dopo il denoise, per non perdere dettaglio.
+| Impostazione | Valore |
+|---|---|
+| Lato massimo | **3000 px** |
+| Formato | **JPEG** |
+| Qualità | **90** |
+| RIMUOVI GRANA (AUTO ISO) | **attivo** |
+| Riduzione rumore | **88 / 92** |
+| Nitidezza | **0,9 / 0,9** |
 
-Il preset del pulsante e': luminanza **60**, colore **70**, nitidezza **1.25**,
-raggio **1.2**. Un secondo clic ripristina i valori precedenti.
-
-Confronto 100% su RAW ISO 3200: la grana della parete scende di circa il 60%,
-mentre occhi, capelli e contorni del soggetto restano definiti.
-
----
-
-## PIU' LUMINOSA: piu' luce e piu' colore
-
-**PIU' LUMINOSA** ora corregge l'esposizione **e** aumenta la vividezza:
-
-- la curva di esposizione viene applicata alla sola luminanza, quindi i colori
-  non si spostano e le dominanti restano stabili;
-- le zone spente ricevono circa il 10-16% di saturazione in piu';
-- le alte luci sono protette da un ginocchio morbido;
-- un micro-contrasto leggero recupera la nitidezza dopo la schiaritura.
-
-Le foto gia' corrette restano praticamente invariate; bianco e nero puri non
-vengono alterati.
+Il risultato tipico è un JPEG da **0,6–1,3 MB** con dettaglio utilizzabile anche
+a forte ingrandimento. Chi ha bisogno di file ancora più piccoli può scegliere
+1920–2048 px; per la stampa restano disponibili Originale e TIFF.
 
 ---
 
-## Batch piu' veloce e senza errori
+## Denoise ibrido: pulito nelle zone piatte, dettagliato sul soggetto
 
-- Il RAW viene ridimensionato **prima** della pipeline: tutte le fasi lavorano
-  sulla risoluzione finale, non su 24-60 MP inutili.
-- Rimosse le conversioni CIE Lab: tono e nitidezza lavorano sulla luminanza Y.
-- Ogni processo usa **un solo thread** OpenMP/BLAS: niente contesa tra 20 core.
-- Il numero di processi tiene conto della RAM libera, dei RAW originali e del
-  denoise attivo.
-- JPEG salvato senza `optimize=True`: sparisce l'errore libjpeg
-  `Suspension not allowed here` / `broken data stream` che poteva bloccare o
-  corrompere i batch paralleli.
+Il denoise non usa più un solo filtro. Ora lavora in due fasi:
 
-| Test (4 RAW Sony A7S, 24 MP) | Tempo |
-|------------------------------|-------|
-| 1920 px, pipeline normale | **5,6 s** |
-| 1920 px, con Rimuovi grana | **5,9 s** |
-| 1920 px, con PIU' LUMINOSA | **6,1 s** |
-| Risoluzione originale, normale | **14,2 s** |
-| Risoluzione originale, con denoise | **20,8 s** |
+1. **Guided filter + coring** su luminanza e crominanza. La grana fine viene spenta,
+   mentre i bordi e le texture reali vengono conservati.
+2. **Non-local means solo nelle zone piatte** (cieli, pareti, ombre). È qui che
+   restava il rumore più visibile dopo la nitidezza.
 
-Tutti i test: 4/4 file convertiti, 0 errori, 0 file temporanei residui.
+La crominanza viene elaborata a metà risoluzione: più veloce e senza aloni.
+La forza si adatta automaticamente all'ISO del RAW.
+
+> Il denoise non-locale è volutamente limitato alle aree uniformi. Visi, capelli,
+> tessuti e particolari architettonici non vengono “lisciati” come con un filtro
+> globale.
 
 ---
 
-## Qualita' verificata
+## Nitidezza protetta dal rumore
 
-- rumore nelle zone piatte ridotto del 35-67% a seconda dell'ISO;
-- bordi forti conservati (99esimo percentile del gradiente: 60-97%);
-- dominante colore stabile (differenza media massima < 0,002);
-- vividezza aumentata del 16-24% sulle foto a colori;
-- output JPEG validi, senza `NaN` o immagini troncate.
+La nitidezza classica tende a far riemergere la grana nelle zone piatte. In questa
+versione la maschera di nitidezza ha una **soglia stimata sul rumore**:
+
+- i dettagli veri vengono accentuati;
+- le differenze minime, tipiche della grana, restano spente;
+- non si crea l'effetto “plastica” dopo il denoise.
+
+L'ordine della pipeline è stato corretto: **curva → denoise → nitidezza**.
+L'esposizione automatica viene applicata prima del denoise, così il rumore
+introdotto dalla schiaritura viene pulito.
 
 ---
 
-## Guida completa inclusa
+## PIÙ LUMINOSA più controllata
 
-Questa release include **GUIDA_COMPLETA.md** e **GUIDA_COMPLETA.html**:
-una spiegazione elementare di ogni scheda, pulsante, slider e impostazione,
-con valori consigliati per web, social, stampa, archivio, ritratto, paesaggio,
-bianco e nero e foto notturne. L'installer aggiunge anche la voce
-**Guida completa** nel menu Start.
+**PIÙ LUMINOSA** è stata resa più conservativa:
+
+- limite sulla schiaritura delle ombre profonde: un notturno non diventa giorno;
+- vividezza ridotta rispetto alla 2.54.0;
+- rimosso il micro-contrasto finale che faceva riemergere la grana;
+- esposizione applicata alla sola luminanza, senza spostare i colori.
+
+Nelle foto molto scure il risultato resta più naturale e pulito. Per i notturni
+spinti è comunque consigliato usare Esposizione e Ombre manuali.
+
+---
+
+## RIMUOVI GRANA subito sotto PIÙ LUMINOSA
+
+Il pulsante **RIMUOVI GRANA (AUTO ISO)** è stato spostato direttamente sotto
+**PIÙ LUMINOSA**, sia nel tab **Batch** sia nel tab **Sviluppo RAW**.
+
+- è **attivo di default**;
+- quando è attivo diventa verde e mostra **GRANA RIMOSSA (AUTO ISO)**;
+- un secondo clic ripristina i valori manuali precedenti.
+
+Il pulsante imposta **88 / 92** e nitidezza **0,9 / 0,9**.
+
+---
+
+## Preset aggiornati
+
+Tutti i preset usano il nuovo motore, il denoise automatico e una nitidezza
+controllata:
+
+| Preset | Output | Nitidezza |
+|---|---|---|
+| Web / Social | 2048 px, JPEG 90 | 0,8 / 0,8 |
+| Stampa Fine Art | Originale, TIFF 100 | 0,7 / 1,0 |
+| Archivio JPEG | Originale, JPEG 95 | 0,6 / 1,0 |
+| Ritratto | 3000 px, JPEG 92 | 0,8 / 0,9 |
+| Paesaggio | 3000 px, JPEG 92 | 1,0 / 1,0 |
+| Bianco e Nero | 3000 px, JPEG 92 | 0,9 / 0,9 |
+
+La grana sintetica non è più attiva per impostazione predefinita.
+
+---
+
+## Tethering multi-marca
+
+La scheda **Tethering & Cloud** ora spiega come lavorare con:
+
+- **Canon** — EOS Utility / tethering Canon;
+- **Nikon** — NX Tether o SnapBridge;
+- **Fujifilm** — X Acquire / tethering Fujifilm;
+- **Panasonic** — Lumix Tether;
+- **OM System / Olympus** — OM Capture;
+- **Leica** — Leica Tethered / Image Shuttle.
+
+Per queste marche si usa il software del produttore e si monitora la sua cartella
+di destinazione: ogni scatto viene sviluppato automaticamente. **Sony** conserva
+anche il controllo Wi-Fi diretto con Smart Remote Control.
+
+---
+
+## Prestazioni misurate
+
+Test su 4 RAW Sony A7S da 24 MP, profilo predefinito 3000 px con denoise attivo:
+
+| Test | Tempo | Output |
+|---|---:|---|
+| Batch di 4 file, 3000 px | **12,8 s** | 743 / 639 / 609 / 915 KB |
+| Singola foto, 3000 px | **8–9 s** | circa 0,6–1,3 MB |
+| Stampa Fine Art, originale, TIFF | **circa 40-45 s/foto** | TIFF senza perdita |
+| Archivio JPEG, originale | **circa 40-45 s/foto** | JPEG qualità 95 |
+
+I preset a risoluzione originale sono più lenti perché il denoise non-locale
+lavora anche sui 24 MP. È un costo voluto per la qualità di stampa.
+
+---
+
+## Compatibilità e note
+
+- **Windows 10/11 x64**, nessuna installazione obbligatoria.
+- I file originali non vengono mai modificati.
+- L'EXIF viene preservato nei JPEG.
+- La 2.55.0 legge le configurazioni JSON salvate con le versioni precedenti.
+- Il profilo predefinito cambia rispetto alla 2.54.0: se preferisci il vecchio
+  flusso leggero, imposta 1920 px e disattiva **RIMUOVI GRANA**.
 
 ---
 
 ## Download
 
-| Pacchetto | File |
-|-----------|------|
-| **Portable** | `FranchettiRawConverterPro.exe` |
-| **Installer** | `Franchetti_Raw_Converter_Setup_v2.54.0.exe` |
-| **Guida** | `GUIDA_COMPLETA.html` (leggibile nel browser) |
-
----
-
-# Release Notes v2.53.0
-
-**Franchetti Raw Converter Pro** - Release v2.53.0  
-**Data**: 27 Ottobre 2026  
-**Build**: 2.53.0.0
-
----
-
-## Elaborazione su tutti i core del processore
-
-Il batch ora usa **tutti i core logici** della CPU tramite `ProcessPoolExecutor`.
-Il numero di processi viene scelto automaticamente in base ai core disponibili,
-alla RAM libera e al numero di foto da convertire.
-
-Nel tab **Batch** trovi l'interruttore **USA TUTTI I CORE (N processi)**,
-attivo di default.
-
-| Test su RAW Sony A7S (24 MP) | Tempo |
-|------------------------------|-------|
-| 6 file, sequenziale | 67,6 s |
-| 6 file, parallelo (6 processi) | 22,1 s |
-| **Guadagno** | **3,06x** |
-| 12 file, parallelo (12 processi) | 39,8 s |
-
-Ogni file viene scritto su un file temporaneo e pubblicato solo a conversione
-completata: un errore o un annullamento non lascia mai output corrotti.
-Il pulsante **ANNULLA** interrompe i processi entro 0,2 secondi e rimuove gli
-eventuali file `.tmp` rimasti, senza attendere la fine della foto in corso.
-
----
-
-## Conversione RAW affidabile
-
-La libreria RAW inclusa non contiene sempre l'algoritmo **AMaZE** (richiede il
-pacchetto GPL3). Ora il programma prova **AMaZE**, poi **AHD**, **PPG** e
-**LINEAR**, usa il primo disponibile e lo ricorda per i file successivi.
-Il Log indica l'algoritmo usato (`Demosaic: AHD`).
-
-Verificato su file ARW reali (6024x4024): conversione completata, EXIF
-preservato (Make, ISO, orientamento corretto).
-
----
-
-## Correzioni di affidabilita'
-
-- **JPEG**: alcune immagini facevano fallire il salvataggio con
-  `OSError: broken data stream`; ora si riprova automaticamente senza
-  ottimizzazione.
-- **Logo corrotto**: viene ignorato con un avviso, la conversione prosegue.
-- **PIÙ LUMINOSA**: nessun errore sulle immagini completamente bianche o nere;
-  le foto gia' bilanciate restano invariate.
-- **Configurazione**: valori numerici ripuliti e limitati; un JSON incompleto
-  o corrotto non blocca piu' la conversione. Tutte le caselle e i campi vengono
-  ripristinati correttamente.
-- **Nomi duplicati**: due foto con lo stesso nome non scrivono mai sullo stesso
-  file; "Sovrascrivi" sostituisce i file esistenti ma non due lavori del batch.
-- **Hot-folder**: elabora RAW e immagini standard, attende la fine della
-  scrittura, gestisce i file spostati e ignora i propri output `_PRO`.
-- **Formati**: `JPG → JPEG`, `TIF → TIFF`; formato sconosciuto → JPEG.
-- **Sorgenti multiple**: lista con `;` deduplicata, cartella di output esclusa
-  solo quando si trova davvero dentro la sorgente.
-- **Protezione originali**: se output e sorgente coincidono, il file non viene
-  sovrascritto e il batch segnala l'errore.
-- **Immagini minuscole** (1x1, 2x2, 1x200): nessun errore.
-
----
-
-## Note
-
-- Lo spazio colore di output e' **sRGB** con profilo ICC incorporato. Le voci
-  Adobe RGB e ProPhoto RGB sono state rimosse perche' non erano realmente
-  implementate.
-- **Telegram** e **Dropbox** sono operativi. **Google Drive**, **Meta** e
-  **SwissTransfer** sono predisposti ma non attivi in questa versione: vengono
-  saltati senza generare errori.
-- Il tab **Batch** usa due colonne: sorgente, formato, nomi, watermark, preset e
-  comandi restano visibili senza scorrimento anche a 1024x720.
-- Test automatici superati: conversione, formati, watermark, logo, EXIF,
-  configurazione, preset, batch sequenziale e parallelo, annullamento,
-  hot-folder, cloud, helper Sony, immagini minuscole.
-
----
-
-## Download
-
-| Pacchetto | File |
-|-----------|------|
-| **Portable** | `FranchettiRawConverterPro.exe` |
-| **Installer** | `Franchetti_Raw_Converter_Setup_v2.53.0.exe` |
-
----
-
-# Release Notes v2.52.1 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.52.1  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.52.1.0
-
----
-
-## Correzione: conversione RAW bloccata
-
-La libreria RAW inclusa nel programma non contiene l'algoritmo **AMAZE**
-(richiede il pacchetto GPL3): ogni file terminava con l'errore
-`Demosaic algorithm AMAZE requires GPL3 demosaic pack`.
-
-Ora il programma:
-
-- prova **AMAZE**, poi **AHD**, **PPG** e **LINEAR**
-- usa il primo disponibile e lo ricorda per i file successivi
-- scrive nel Log quale algoritmo sta usando (`Demosaic: AHD`)
-
-Verificato su un file ARW reale (6024x4024): conversione completata.
-
----
-
-# Release Notes v2.52.0 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.52.0  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.52.0.0
-
----
-
-## PIÙ LUMINOSA (BETA) - esposizione automatica
-
-Nuovo interruttore **PIÙ LUMINOSA (BETA)** nel tab **Batch** e nel tab **Sviluppo RAW**.
-
-Analizza l'istogramma di ogni immagine e decide da solo:
-
-- **Foto scure** -> schiarisce fino a portare la luminosità mediana verso il centro
-- **Foto troppo esposte** -> riduce la luminosità e comprime le alte luci
-- **Foto gia' corrette** -> nessuna modifica
-
-Dettagli tecnici: correzione gamma con ginocchio morbido sulle alte luci
-(evita di bruciare i bianchi) e LUT a 256 livelli, circa 0,6 secondi su
-un'immagine da 24 megapixel.
-
-I due interruttori (Batch e Sviluppo) restano sincronizzati.
-
----
-
-# Release Notes v2.51.4 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.51.4  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.51.4.0
-
----
-
-## Batch: misure pronte per il lato lungo
-
-Nella sezione **DIMENSIONI E FORMATO** non serve piu' scrivere il numero a mano:
-ci sono caselle in ordine crescente da cui scegliere la misura.
-
-`640 | 800 | 1024 | 1200 | 1600 | 1920 | 2048 | 2560 | 3000 | 4000 | 6000 | Originale`
-
-- Un clic imposta subito il lato lungo
-- La misura scelta resta evidenziata in verde
-- Il campo resta modificabile per valori personalizzati
-- `Originale` corrisponde a 0 (nessun ridimensionamento)
-
----
-
-# Release Notes v2.51.3 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.51.3  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.51.3.0
-
----
-
-## Correzione: "connessa ma non scatta"
-
-La A7S a volte resta in uno stato intermedio: l'API risponde ma
-`actTakePicture` non e' disponibile. Ora il programma:
-
-- rileva lo stato e riattiva la modalita' remota (`stopRecMode` + `startRecMode`)
-- verifica che lo scatto sia disponibile prima di dichiarare la connessione
-- riprova automaticamente quando premi SCATTA E SCARICA
-- si collega da solo all'avvio se il PC e' sulla rete `192.168.122.x`
-- scrive tutto in `Desktop\franchetti_log.txt`
-
----
-
-# Release Notes v2.51.2 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.51.2  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.51.2.0
-
----
-
-## Correzione importante: connessione Sony A7S
-
-La A7S non usa la porta 10000 per l'API: espone l'indirizzo
-`http://192.168.122.1:8080/sony`. Ora il programma lo legge direttamente
-dalla descrizione SSDP della fotocamera, quindi funziona con qualsiasi modello
-Sony (porta 10000 o 8080).
-
-- Indirizzo API scoperto automaticamente (niente piu' porta fissa)
-- Compatibilita' con i servizi `system` e `camera`
-- Attesa che la fotocamera completi `startRecMode` prima di dichiarare la connessione
-- **Testato su Sony A7S reale**: connessione, scatto e download JPEG riusciti
-
----
-
-# Release Notes v2.51.1 (precedente)
-
-**Franchetti Raw Converter Pro** - Release v2.51.1  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.51.1.0
-
----
-
-## Novita v2.51.1
-
-### Diagnosi Sony Wi-Fi
-- Nuovo pulsante **DIAGNOSI** accanto a CONNETTI FOTOCAMERA
-- Controlla: IP del PC, presenza della rete 192.168.122.x, porta API 10000, risposta della fotocamera
-- Salva il report in `Desktop\sony_diagnosi.txt` (da inviare in caso di problemi)
-- La diagnosi parte automaticamente se la connessione fallisce
-
-### Connessione piu diretta
-- Prova subito l'indirizzo standard Sony 192.168.122.1, poi SSDP
-- Messaggi di errore espliciti su cosa controllare
-
----
-
-# Release Notes v2.51.0
-
-**Franchetti Raw Converter Pro** - Release v2.51.0  
-**Data**: 26 Ottobre 2026  
-**Build**: 2.51.0.0
-
----
-
-## Novita v2.51.0
-
-### Tethering Wi-Fi Sony (Camera Remote API)
-- Nuova sezione **SONY WI-FI - SMART REMOTE CONTROL** nel tab Tethering
-- Ricerca automatica della fotocamera via SSDP e connessione all'API Sony (porta 10000)
-- Pulsante **CONNETTI FOTOCAMERA** con log dettagliato di ogni fase
-- Pulsante **SCATTA E SCARICA**: comanda la fotocamera e scarica subito JPEG/RAW
-- I file scaricati finiscono nella cartella monitorata e vengono sviluppati automaticamente
-- Istruzioni integrate per Sony A7S (app Smart Remote Control + Wi-Fi DIRECT)
-
-### Hot-folder piu chiaro
-- Etichette corrette: "AVVIA MONITORAGGIO CARTELLA" al posto di "server in ascolto"
-- Nota esplicativa: le fotocamere Sony non inviano da sole i file a un PC via Wi-Fi
-
-### Interfaccia
-- Finestra adattata all'area di lavoro Windows: nessun controllo tagliato
-- Scaling DPI corretto (100%, 125%, 150%)
-- Diciture recensione accanto al nome del programma
-
----
-
-# Release Notes v2.50.1 (precedente)
-
-**Franchetti Raw Converter Pro** - Major Release v2.50.1  
-**Data**: 25 Gennaio 2025  
-**Build**: 2.50.1.0
-
----
-
-## 🎉 Novità Principali v2.50.1
-
-### 🧠 Nuovo Motore di Elaborazione: CIE L*a*b* Pipeline
-- **Spazio colore CIE L*a*b***: Elaborazione percutualmente uniforme, separa luminanza da crominanza
-- **Contrasto sigmoidale**: Curva logistica a "S" per protezione luci/ombre senza clipping
-- **Vivacità selettiva**: Saturazione intelligente solo toni spenti, preserva incarnati
-- **Nitidezza Unsharp Mask su canale L***: Nessun alone colorato, dettaglio puro su luminanza
-- **Profilo ICC sRGB embedded**: Consistenza cross-platform garantita
-
-### 📡 Tethering Wi-Fi Automatico (Hot-Folder)
-- **Watchdog background**: Monitoraggio cartella in tempo reale via `watchdog`
-- **Buffer scrittura rete**: 1.5s delay per completamento trasferimento wireless
-- **Elaborazione immediata**: RAW → JPEG ottimizzato → Cloud dispatch automatico
-- **Interfaccia live**: Log console in tempo reale con timestamp
-
-### ☁️ Distribuzione Cloud Multi-Canale Simultanea
-- **Telegram Bot API**: Foto + caption automatica
-- **Google Drive API v3**: Upload multipart chunked
-- **Meta Graph API**: Pubblicazione diretta Instagram/Facebook portfolio
-- **Configurazione UI**: Token/ID inseribili direttamente nell'interfaccia
-
-### 🏷️ Watermark Professionale
-- **Scaling proporzionale**: Logo al 15% lato lungo, ridimensionamento Lanczos
-- **Opacità configurabile**: Canale alpha nativo preservato
-- **Composizione alpha**: Overlay trasparente, fusione corretta
-- **Posizione**: Basso-destra con margine 20px
-
-### 🔧 EXIF Preservation
-- **Estrazione binaria**: Blocchi EXIF originali preservati integralmente
-- **Correzione orientamento**: Forza Orientation=1 per rotazione corretta
-- **GPS/Camera settings**: Tutti i metadati mantenuti nel JPEG finale
-
-### 🎨 Enterprise Dark GUI (CustomTkinter)
-- **Layout dual-colonna**: Pipeline immagine (sinistra) | Tethering/Cloud (destra)
-- **Slider live**: Contrasto, Vivacità, Nitidezza con aggiornamento parametri real-time
-- **Campi API integrati**: Token Telegram, Chat ID, Google Drive, Meta
-- **Console log visiva**: Timestamp, color-coding, auto-scroll
-
----
-
-## 📋 Specifiche Tecniche v2.50.1
-
-| Componente | Versione |
-|------------|----------|
-| Python | 3.12+ |
-| rawpy / LibRaw | 0.27+ / 0.21+ (AMaZE demosaic) |
-| Pillow | 12.3+ |
-| NumPy | 2.5+ |
-| scikit-image | 0.24+ (Lab processing) |
-| customtkinter | 5.2+ |
-| watchdog | 4.0+ |
-| PyInstaller | 6.x |
-
-**Output**: Singolo `.exe` portable ~23 MB (UPX compressed)  
-**OS**: Windows 10 1809+ / Windows 11 (x64)  
-**RAM**: 2 GB min (8 GB consigliati)  
-**Licenza**: MIT (Open Source)
-
----
-
-## 🔧 Dettagli Implementazione
-
-### Pipeline Immagine (`ImageEngine`)
-```python
-# 1. Sviluppo RAW nativo LibRaw (AMaZE)
-# 2. Float32 normalizzato [0,1]
-# 3. Curva sigmoidale (contrasto)
-# 4. Vivacità selettiva
-# 5. RGB → CIE Lab
-# 6. Unsharp Mask su canale L
-# 7. Lab → RGB
-# 8. uint8 + ICC sRGB
-# 9. Watermark alpha composite
-# 10. Salvataggio JPEG + EXIF injection
-```
-
-### Tethering Background (`RawHotFolderHandler`)
-```python
-# Watchdog Observer → on_created(.arw/.cr2/.nef/...)
-# sleep(1.5) → buffer rete
-# ImageEngine.sviluppa_e_ottimizza()
-# CloudDispatcher.invia_*() paralleli
-# callback UI → log visivo
-```
-
-### Cloud Dispatcher
-- **Telegram**: `sendPhoto` multipart, timeout 15s
-- **Google Drive**: `files.create` multipart/chunked
-- **Meta**: Graph API `media_publish` (IG/FB)
-
----
-
-## 🐛 Limitazioni Note v2.50.1
-
-| Limitazione | Impatto | Fix Previsto |
-|-------------|---------|--------------|
-| **CR3 compresso limitato** | Alcuni file Canon R5/R6/R7 falliscono | Upstream LibRaw |
-| **Singolo thread decodifica** | Non sfrutta tutti i core per file singolo | Architetturale |
-| **Meta API semplificata** | Solo token/ID base, no album selection | v2.51 |
-| **Google Drive mock** | Log solo, upload reale da implementare | v2.51 |
-
----
-
-## 📋 Checklist Qualità Pre-Rilascio v2.50.1
-
-- [x] Build su Windows 11 24H2 pulito
-- [x] Test su Windows 10 22H2 VM
-- [x] Conversione 200+ file misti (ARW, NEF, CR2, CR3, RAF, ORF, RW2, DNG)
-- [x] Test pipeline Lab: contrasto, vivacità, nitidezza
-- [x] Test watermark su sfondi chiari/scuri/pattern
-- [x] Test EXIF: orientamento, GPS, impostazioni camera
-- [x] Test tethering: hot-folder Wi-Fi → elaborazione → cloud
-- [x] Test annullamento mid-batch
-- [x] Test collisione nomi file (`_1`, `_2`…)
-- [x] Verifica memoria stabile (500 file sequenziali)
-- [x] Avvio a freddo < 3s (GUI complessa), caldo < 1s
-- [x] VirusTotal scan (0/70+ motori)
-- [x] SHA-256 documentato
-- [x] Documentazione completa aggiornata v2.50.1
-
----
-
-## 📥 Download v2.50.1
-
-| Piattaforma | Link |
-|-------------|------|
-| **GitHub Releases** | https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.50.1 |
-| **Direct Download** | https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe |
-| **FileCR** | https://filecr.com/windows/franchetti-raw-converter-pro/ |
-| **Itch.io** | https://franchetti.itch.io/franchetti-raw-converter-pro |
-| **SourceForge** | https://sourceforge.net/projects/franchetti-raw-converter-pro/ |
-
-**SHA-256**: `[da calcolare al rilascio]`  
-**Dimensione**: ~23 MB (UPX compressed)  
-**Firma**: Unsigned (open source, verifica hash)
-
----
-
-## 🙏 Ringraziamenti
-
-- **LibRaw Team** — Decodifica RAW di riferimento (AMaZE demosaic)
-- **rawpy maintainers** — Binding Python eccellenti
-- **scikit-image** — Elaborazione CIE Lab professionale
-- **CustomTkinter** — Modern dark UI framework
-- **Watchdog** — Filesystem events cross-platform
-- **Pillow Contributors** — Imaging library robusta
-- **Python Software Foundation** — Runtime solido
-
----
-
-## 📞 Supporto v2.50.1
-
-| Canale | Per |
-|--------|-----|
-| GitHub Issues | Bug, crash, feature request |
-| GitHub Discussions | Domande, workflow, tips |
-| Email | `support@franchetti.dev` (licensing, security) |
-
----
-
-*Release Notes v2.50.1 — Gennaio 2025*
+- **Portable**: [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe)
+- **Installer**: [Franchetti_Raw_Converter_Setup_v2.55.0.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.55.0.exe)
+- **Release**: [v2.55.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.55.0)
+
+Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.

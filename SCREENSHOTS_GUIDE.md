@@ -1,6 +1,6 @@
 # Guida Screenshot per uptodown.dev / Store
 
-**Franchetti Raw Converter Pro v2.50.1**
+**Franchetti Raw Converter Pro v2.55.0**
 
 ---
 
@@ -38,7 +38,7 @@
 **Contenuto**:
 - Focus su sezione **3. Opzioni Conversione**
 - Menu a tendina **Dimensione max** aperto (mostra preset 640–4000 + 0)
-- Spinbox **Qualità JPG** su 85
+- Spinbox **Qualità JPG** su 90
 - Campo **Testo Copyright** con testo esempio: `© Mario Rossi 2024 | mariorossi.photo`
 - Spinbox **Font size** su 16
 - Checkbox **Mantieni nome** spuntato + prefisso `MR_`
@@ -50,7 +50,7 @@
 **Nome file**: `03_conversion_progress.png`
 **Contenuto**:
 - Barra progresso al ~60% (es. 42/70 file)
-- Label status: `42/70 - OK: DSC_0042.NEF → DSC_0042.jpg (1920x1280)`
+- Label status: `42/70 - OK: DSC_0042.NEF → DSC_0042.jpg (3000x2000)`
 - Log visibile con **colorazione**:
   - 🟢 Righe verdi "OK: ..."
   - 🔵 Righe blu "=== AVVIO ==="
@@ -164,4 +164,4 @@ screenshots/
 
 ---
 
-*Guida Screenshot v2.50.1 — Gennaio 2025*
+*Guida Screenshot v2.55.0 — Gennaio 2025*

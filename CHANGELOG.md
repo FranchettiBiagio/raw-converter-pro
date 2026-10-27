@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.55.0] - 2026-10-27
+
+### Added
+- **Denoise ibrido ISO**: al guided filter si aggiunge **non-local means** applicato solo alle zone piatte (cieli, pareti, ombre). I dettagli strutturati restano affidati al coring, quindi la grana sparisce senza effetto plastica.
+- **Nitidezza controllata**: maschera con soglia stimata sul rumore. La nitidezza non amplifica più la grana nelle aree uniformi.
+- **Profilo predefinito qualità**: **3000 px**, JPEG **90**, denoise automatico **ON**, riduzione rumore **88/92**, nitidezza **0,9 / 0,9**.
+- **Tethering multi-marca**: istruzioni per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica tramite software del produttore + hot-folder. Sony conserva il controllo Wi-Fi diretto.
+
+### Changed
+- **RIMUOVI GRANA (AUTO ISO)** spostato subito sotto **PIÙ LUMINOSA** sia nel tab Batch sia nel tab Sviluppo RAW; è attivo di default.
+- Tutti i preset ora usano denoise automatico, 3000 px (dove previsto), nitidezza controllata e nessuna grana sintetica di default.
+- **PIÙ LUMINOSA**: limite più conservativo sulle ombre profonde, vividezza ridotta e rimosso il micro-contrasto finale che faceva riemergere la grana. L'esposizione resta applicata alla sola luminanza.
+- Intestazione aggiornata a **Tethering multi-marca**.
+
+### Fixed
+- **Grana residua a 100%** dopo ridimensionamento e nitidezza: il nuovo ordine curva → denoise → nitidezza e la soglia sul rumore eliminano il residuo nelle zone piatte.
+- **Notturni con PIÙ LUMINOSA**: l'esposizione automatica non spinge più al massimo le ombre, evitando immagini innaturalmente chiare e rumorose.
+- **JPEG troppo grandi**: il profilo 3000 px / qualità 90 mantiene i file in genere tra 0,6 e 1,3 MB.
+
+### Performance
+- 4 RAW Sony A7S da 24 MP a **3000 px** con denoise automatico: **12,8 s** totali in batch, output **743 / 639 / 609 / 915 KB**.
+- Conversione singola 3000 px: circa **8–9 s**; preset full-res con denoise non-locale: circa **40-45 s** per foto.
+- Testata la qualità al 100% su pareti, statue e ritratti: texture reale conservata, grana piatta rimossa.
+
+### Documentation
+- Aggiornati README, guida completa Markdown/HTML, FAQ, note di rilascio, version info e installer per la **2.55.0**.
+
+---
+
 ## [2.54.0] - 2026-10-27
 
 ### Added

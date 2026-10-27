@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guida completa - Franchetti Raw Converter Pro v2.54.0</title>
+<title>Guida completa - Franchetti Raw Converter Pro v2.55.0</title>
 <meta name="description" content="Guida elementare a tutte le funzioni di Franchetti Raw Converter Pro: batch, sviluppo RAW, denoise ISO, tethering, cloud, preset e impostazioni consigliate.">
 <style>
 :root{--blue:#0066cc;--dark:#17212b;--muted:#5f6b76;--line:#dfe5eb;--bg:#f5f7fa;--card:#fff}
@@ -44,13 +44,13 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </head>
 <body>
 <header class="top"><div class="inner">
-<div class="kicker">Franchetti Raw Converter Pro &middot; v2.54.0</div>
+<div class="kicker">Franchetti Raw Converter Pro &middot; v2.55.0</div>
 <h1>Guida completa</h1>
 <p>Ogni funzione spiegata in modo semplice, con le impostazioni migliori per web, stampa, archivio, ritratti e foto notturne.</p>
 </div></header>
 <main class="wrap"><p style="margin:0 0 16px"><a href="index.html">&larr; Torna al sito</a></p><article>
 <h1 id="guida-completa-a-franchetti-raw-converter-pro">Guida completa a Franchetti Raw Converter Pro</h1>
-<p><strong>Versione 2.54.0 — Windows 10/11 — Italiano</strong></p>
+<p><strong>Versione 2.55.0 — Windows 10/11 — Italiano</strong></p>
 <p>Questa guida spiega, in modo semplice, <strong>tutte le funzioni</strong> del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.</p>
 <blockquote>
 <p><strong>Regola d'oro:</strong> il programma <strong>non modifica mai i file originali</strong>. Lavora sempre su una copia e scrive i risultati nella cartella di destinazione. Tieni comunque un backup delle foto importanti.</p>
@@ -101,7 +101,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 <tr>
 <td><strong>Tethering &amp; Cloud</strong></td>
-<td>Collega una Sony via Wi-Fi, monitora una cartella e invia i risultati a Telegram o Dropbox.</td>
+<td>Monitora una cartella per Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre marche; per Sony è disponibile anche il controllo Wi-Fi diretto. Invia i risultati a Telegram o Dropbox.</td>
 </tr>
 <tr>
 <td><strong>Log</strong></td>
@@ -164,7 +164,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 <tr>
 <td><strong>1920</strong></td>
-<td><strong>Impostazione predefinita consigliata</strong> per web e social</td>
+<td>Web classico, Full HD, file molto leggeri</td>
 </tr>
 <tr>
 <td><strong>2048</strong></td>
@@ -176,7 +176,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 <tr>
 <td><strong>3000</strong></td>
-<td>Stampe 20×30 cm, ritratti</td>
+<td><strong>Impostazione predefinita consigliata</strong>: dettaglio, ingrandimenti, ritratti e stampe 20×30 cm</td>
 </tr>
 <tr>
 <td><strong>4000</strong></td>
@@ -196,10 +196,11 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <blockquote>
 <p>Il programma <strong>non ingrandisce</strong> mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.</p>
 </blockquote>
+<p><strong>Profilo predefinito v2.55.0:</strong> <strong>3000 px</strong>, <strong>JPEG qualità 90</strong>, <strong>RIMUOVI GRANA (AUTO ISO) attivo</strong>, riduzione rumore <strong>88/92</strong> e nitidezza <strong>0,9 / 0,9</strong>. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.</p>
 <h4 id="qualita">Qualità</h4>
 <ul>
 <li>Valore da <strong>1 a 100</strong>.</li>
-<li><strong>JPEG:</strong> 85 è ottimo per il web; 90–95 per clienti e stampe; 100 è il massimo ma il file è molto più grande e non sempre si vede la differenza.</li>
+<li><strong>JPEG:</strong> <strong>90 è il default</strong> e il miglior compromesso per web, clienti e ingrandimenti; 85 per file più leggeri; 95 per stampe e consegne; 100 è il massimo ma il file è molto più grande e non sempre si vede la differenza.</li>
 <li><strong>WebP:</strong> usa gli stessi valori; 80–90 è di solito più che sufficiente.</li>
 <li><strong>PNG e TIFF:</strong> la qualità non si applica; PNG è senza perdita (file grandi), TIFF usa compressione LZW senza perdita.</li>
 </ul>
@@ -252,15 +253,16 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h4 id="piu-luminosa-beta">PIÙ LUMINOSA (BETA)</h4>
 <p>È un intervento automatico e conservativo:</p>
 <ul>
-<li>schiarisce le foto scure;</li>
+<li>schiarisce le foto scure con un limite intelligente: evita di trasformare una notte in giorno e di far esplodere la grana nelle ombre profonde;</li>
 <li>recupera le alte luci solo quando sono realmente bruciate;</li>
-<li>aggiunge <strong>vividezza</strong> ai colori spenti (circa +10–16%);</li>
-<li>applica un micro-contrasto leggerissimo;</li>
-<li>lascia invariati i bianchi e i neri assoluti e i grigi neutri già esposti correttamente.</li>
+<li>aggiunge <strong>vividezza</strong> ai colori spenti (circa +8–13%);</li>
+<li>lascia invariati i bianchi e i neri assoluti e i grigi neutri già esposti correttamente;</li>
+<li><strong>non applica più un secondo micro-contrasto</strong>: la nitidezza arriva dopo il denoise, con una soglia che protegge le zone piatte.</li>
 </ul>
 <p><strong>Quando attivarla:</strong> foto scure, controluce, interni, giornate nuvolose, foto da smartphone o RAW sottoesposti.</p>
 <p><strong>Quando evitarla:</strong> foto già esposte bene, still life con colori delicati, foto bianco e nero, immagini in cui vuoi mantenere l'atmosfera scura.</p>
 <blockquote>
+<p>Se la foto è molto scura, PIÙ LUMINOSA la schiarisce ma non recupera un'esposizione impossibile. Per i notturni è spesso meglio lasciarla spenta e usare <strong>Esposizione</strong>, <strong>Ombre</strong> e <strong>RIMUOVI GRANA</strong>.</p>
 <p>Non è un miracolo: se la foto è completamente nera o bruciata, non può recuperare ciò che non c'è. In quel caso usa le regolazioni manuali di <strong>Esposizione</strong>, <strong>Ombre</strong> e <strong>Luci</strong>.</p>
 </blockquote>
 <h4 id="usa-tutti-i-core">USA TUTTI I CORE</h4>
@@ -305,32 +307,32 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 <tr>
 <td><strong>Web / Social</strong></td>
-<td>2048 px, JPEG 85, contrasto 0,35, vivacità 0,40, nitidezza 1,2, chiarezza 0,15, dehaze 0,05</td>
+<td>2048 px, JPEG 90, contrasto 0,30, vivacità 0,35, nitidezza 0,8 raggio 0,8, chiarezza 0,08, dehaze 0,02, denoise 88/92</td>
 </tr>
 <tr>
 <td><strong>Stampa Fine Art</strong></td>
-<td>Originale, TIFF, qualità 100, contrasto 0,25, vivacità 0,25, nitidezza 1,6 raggio 1,8, chiarezza 0,10</td>
+<td>Originale, TIFF, qualità 100, contrasto 0,22, vivacità 0,25, nitidezza 0,7 raggio 1,0, chiarezza 0,06, denoise 88/92</td>
 </tr>
 <tr>
 <td><strong>Archivio JPEG</strong></td>
-<td>Originale, JPEG 95, contrasto 0,20, vivacità 0,20, nitidezza 0,8, EXIF attivo</td>
+<td>Originale, JPEG 95, contrasto 0,18, vivacità 0,20, nitidezza 0,6 raggio 1,0, denoise 88/92, EXIF attivo</td>
 </tr>
 <tr>
 <td><strong>Ritratto</strong></td>
-<td>3000 px, JPEG 92, contrasto 0,22, vivacità 0,20, saturazione 0,95, chiarezza 0,05, ombre +12, luci -8, nitidezza 0,9, riduzione rumore 15/20</td>
+<td>3000 px, JPEG 92, contrasto 0,22, vivacità 0,20, saturazione 0,97, chiarezza 0,02, ombre +6, luci −4, nitidezza 0,8 raggio 0,9, denoise 88/92</td>
 </tr>
 <tr>
 <td><strong>Paesaggio</strong></td>
-<td>3840 px, JPEG 92, contrasto 0,42, vivacità 0,45, chiarezza 0,30, dehaze 0,20, nitidezza 1,8 raggio 1,6, verdi +12, blu +10</td>
+<td>3000 px, JPEG 92, contrasto 0,35, vivacità 0,35, chiarezza 0,15, dehaze 0,08, nitidezza 1,0 raggio 1,0, verdi +8, blu +6, denoise 88/92</td>
 </tr>
 <tr>
 <td><strong>Bianco e Nero</strong></td>
-<td>3000 px, JPEG 92, saturazione 0, contrasto 0,45, chiarezza 0,25, nitidezza 1,5, grana 12</td>
+<td>3000 px, JPEG 92, saturazione 0, contrasto 0,38, chiarezza 0,15, nitidezza 0,9 raggio 0,9, grana 0, denoise 88/92</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>I preset <strong>non</strong> sono vincolanti. Dopo averli applicati puoi spostare gli slider. Il preset <strong>Ritratto</strong> imposta una riduzione rumore manuale (15/20): è già attiva anche se il pulsante <strong>RIMUOVI GRANA</strong> non è evidenziato.</p>
+<p>I preset <strong>non</strong> sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.55.0 attivano <strong>RIMUOVI GRANA (AUTO ISO)</strong> e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.</p>
 </blockquote>
 <p><strong>Salva config</strong> e <strong>Carica config</strong> salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.</p>
 <blockquote>
@@ -340,7 +342,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <ul>
 <li><strong>AVVIA CONVERSIONE BATCH:</strong> avvia il lavoro con le impostazioni correnti.</li>
 <li><strong>ANNULLA:</strong> interrompe il batch e rimuove i file parziali. I file già completati restano.</li>
-<li><strong>RIMUOVI GRANA (AUTO ISO):</strong> attiva o disattiva il preset intelligente di riduzione rumore. Quando è attivo diventa verde e mostra <strong>GRANA RIMOSSA (AUTO ISO)</strong>.</li>
+<li><strong>RIMUOVI GRANA (AUTO ISO):</strong> attiva o disattiva il preset intelligente di riduzione rumore. È <strong>attivo di default</strong> e si trova subito sotto <strong>PIÙ LUMINOSA</strong>. Quando è attivo diventa verde e mostra <strong>GRANA RIMOSSA (AUTO ISO)</strong>.</li>
 <li><strong>Barra di avanzamento:</strong> mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati.</li>
 <li><strong>Apri cartella output:</strong> apre la destinazione.</li>
 </ul>
@@ -511,26 +513,26 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <td><strong>Riduzione rumore luminanza</strong></td>
 <td>0 … 100</td>
 <td>Toglie il rumore chiaro/scuro (grana)</td>
-<td>0 per ISO bassi; 40–70 per ISO alti</td>
+<td>88 con AUTO; 30–60 solo se vuoi più texture</td>
 </tr>
 <tr>
 <td><strong>Riduzione rumore colore</strong></td>
 <td>0 … 100</td>
 <td>Toglie le macchie colorate</td>
-<td>0 per ISO bassi; 50–80 per ISO alti</td>
+<td>92 con AUTO; 50–75 per interventi manuali</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Come funziona la nitidezza:</strong> viene applicata solo alla luminanza, quindi non crea bordi colorati. Per questo puoi usare valori più alti rispetto ad altri programmi, ma non esagerare.</p>
-<p><strong>Come funziona la riduzione rumore:</strong> lavora separatamente su luminanza e colore. Protegge i bordi e lascia un piccolo residuo di grana per non rendere la pelle “di plastica”. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.</p>
+<p><strong>Come funziona la nitidezza:</strong> viene applicata solo alla luminanza, quindi non crea bordi colorati. La maschera ha una <strong>soglia sul rumore</strong>: interviene sui dettagli veri e lascia pulite le zone piatte, così la grana non torna visibile dopo la nitidezza.</p>
+<p><strong>Come funziona la riduzione rumore:</strong> è un <strong>denoise ibrido</strong>. Un guided filter separa base e dettaglio; il dettaglio viene “coringato” per spegnere solo la grana fine. Nelle zone realmente piatte (cieli, pareti, ombre) interviene anche un secondo passaggio <strong>non-local means</strong> che elimina i residui senza toccare visi, capelli e tessuti. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.</p>
 <h3 id="46-rimuovi-grana-auto-iso">4.6 RIMUOVI GRANA (AUTO ISO)</h3>
-<p>Questo è il pulsante <strong>un clic</strong> per le foto rumorose.</p>
+<p>Questo è il pulsante <strong>un clic</strong> per le foto rumorose. È <strong>attivo di default</strong> e si trova subito sotto <strong>PIÙ LUMINOSA</strong>, sia nel tab Batch sia nel tab Sviluppo RAW.</p>
 <p><strong>Quando lo premi, imposta:</strong></p>
 <ul>
-<li>riduzione rumore luminanza <strong>60</strong>;</li>
-<li>riduzione rumore colore <strong>70</strong>;</li>
-<li>nitidezza quantità almeno <strong>1,25</strong>;</li>
-<li>nitidezza raggio <strong>1,20</strong>.</li>
+<li>riduzione rumore luminanza <strong>88</strong>;</li>
+<li>riduzione rumore colore <strong>92</strong>;</li>
+<li>nitidezza quantità <strong>0,9</strong>;</li>
+<li>nitidezza raggio <strong>0,9</strong>.</li>
 </ul>
 <p>La forza della riduzione si adatta automaticamente all'ISO del RAW:</p>
 <table>
@@ -542,24 +544,32 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </thead>
 <tbody>
 <tr>
-<td>fino a 400</td>
-<td>0,60 (delicato)</td>
+<td>fino a 200</td>
+<td>0,45 (molto delicato)</td>
+</tr>
+<tr>
+<td>201–400</td>
+<td>0,60</td>
 </tr>
 <tr>
 <td>401–800</td>
-<td>0,78</td>
+<td>0,76</td>
 </tr>
 <tr>
 <td>801–1600</td>
-<td>0,92</td>
+<td>0,90</td>
 </tr>
 <tr>
-<td>1601–3200</td>
+<td>1601–2000</td>
+<td>0,97</td>
+</tr>
+<tr>
+<td>2001–3200</td>
 <td>1,08</td>
 </tr>
 <tr>
 <td>3201–6400</td>
-<td>1,22</td>
+<td>1,20</td>
 </tr>
 <tr>
 <td>oltre 6400</td>
@@ -567,7 +577,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 </tbody>
 </table>
-<p><strong>Quando usarlo:</strong> ISO 800+, interni, sera, concerti, sport, foto con ombre sollevate.</p>
+<p><strong>Quando usarlo:</strong> ISO 800+, interni, sera, concerti, sport, foto con ombre sollevate. Con il profilo predefinito è già attivo: non devi fare nulla.</p>
 <p><strong>Quando non usarlo:</strong> ISO 100–400 con luce buona, still life puliti, foto in cui vuoi conservare la grana.</p>
 <p><strong>Come annullarlo:</strong> premi di nuovo il pulsante. Il programma ripristina i valori che avevi prima (quantità e raggio di nitidezza compresi). Il pulsante torna viola e la scritta torna <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</p>
 <blockquote>
@@ -647,7 +657,25 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <p>Riporta gli slider, la curva e lo split toning ai valori predefiniti. <strong>Non</strong> cancella il watermark, la destinazione, i nomi file o le credenziali cloud. Se il pulsante <strong>RIMUOVI GRANA</strong> era attivo, viene disattivato.</p>
 <hr />
 <h2 id="5-scheda-tethering-cloud">5. Scheda Tethering &amp; Cloud</h2>
-<h3 id="51-sony-wi-fi-smart-remote-control">5.1 Sony Wi-Fi — Smart Remote Control</h3>
+<h3 id="51-tutte-le-marche-canon-nikon-fujifilm-panasonic-om-system-leica">5.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica</h3>
+<p>Il programma <strong>non pilota direttamente</strong> il corpo macchina di queste marche. Usa il software di tethering del produttore, che salva gli scatti in una cartella: il programma monitora quella cartella e applica automaticamente la pipeline completa.</p>
+<ol>
+<li>Apri il software di tethering della tua fotocamera:
+   - <strong>Canon:</strong> EOS Utility / Canon tethering;
+   - <strong>Nikon:</strong> NX Tether (o SnapBridge, se il modello lo prevede);
+   - <strong>Fujifilm:</strong> X Acquire / tethering Fujifilm;
+   - <strong>Panasonic:</strong> Lumix Tether;
+   - <strong>OM System / Olympus:</strong> OM Capture;
+   - <strong>Leica:</strong> Leica Tethered / Image Shuttle.</li>
+<li>Imposta nel software la <strong>cartella di destinazione</strong> degli scatti (per esempio <code>Immagini\Tethering</code>).</li>
+<li>Nel programma apri <strong>Tethering &amp; Cloud</strong>, scegli quella cartella come <strong>Cartella fotocamera</strong> e una cartella output diversa.</li>
+<li>Premi <strong>AVVIA MONITORAGGIO CARTELLA</strong>.</li>
+<li>Scatta: appena il file è completo, il programma lo sviluppa con le impostazioni correnti e lo salva nella cartella output.</li>
+</ol>
+<blockquote>
+<p>Per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica il flusso è quindi <strong>software del produttore + hot-folder</strong>. Non serve installare driver proprietari nel programma.</p>
+</blockquote>
+<h3 id="52-sony-wi-fi-smart-remote-control">5.2 Sony Wi-Fi — Smart Remote Control</h3>
 <p>Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La fotocamera <strong>non invia da sola</strong> le foto: è il programma a comandarla.</p>
 <p><strong>Preparazione:</strong></p>
 <ol>
@@ -665,7 +693,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Se la fotocamera si spegne, riconnetti la rete Wi-Fi e premi di nuovo <strong>CONNETTI FOTOCAMERA</strong>.</li>
 <li>La distanza ideale è di pochi metri, senza muri spessi.</li>
 </ul>
-<h3 id="52-hot-folder-cartella-monitorata">5.2 Hot-folder (cartella monitorata)</h3>
+<h3 id="53-hot-folder-cartella-monitorata">5.3 Hot-folder (cartella monitorata)</h3>
 <p>È il modo più semplice per automatizzare l'arrivo delle foto.</p>
 <ol>
 <li><strong>Cartella fotocamera:</strong> la cartella da controllare (per esempio una cartella sincronizzata da Dropbox, Google Drive, Imaging Edge o una cartella di rete).</li>
@@ -674,7 +702,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </ol>
 <p>Quando arriva un file supportato, il programma aspetta che la scrittura sia finita (dimensione stabile), poi lo converte con le impostazioni correnti della scheda Batch. Ignora la cartella di output e i file già prodotti, quindi non entra in un ciclo infinito.</p>
 <p><strong>Consiglio:</strong> usa una cartella di appoggio dedicata solo all'arrivo delle foto. Non puntare il monitoraggio sulla cartella che contiene l'intero archivio: sarebbe inutile e lento.</p>
-<h3 id="53-credenziali-cloud">5.3 Credenziali Cloud</h3>
+<h3 id="54-credenziali-cloud">5.4 Credenziali Cloud</h3>
 <p><strong>Telegram (operativo):</strong></p>
 <ul>
 <li><strong>Telegram Bot Token:</strong> lo ottieni da <code>@BotFather</code> su Telegram.</li>
@@ -715,112 +743,20 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <hr />
 <h2 id="7-impostazioni-consigliate-per-tipo-di-foto">7. Impostazioni consigliate per tipo di foto</h2>
 <h3 id="71-tabella-rapida">7.1 Tabella rapida</h3>
-<table>
-<thead>
-<tr>
-<th>Tipo di foto</th>
-<th style="text-align: right;">Lato max</th>
-<th style="text-align: right;">Qualità</th>
-<th>Formato</th>
-<th>PIÙ LUMINOSA</th>
-<th>Rimuovi grana</th>
-<th>Nitidezza</th>
-<th>Watermark</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Web / social</td>
-<td style="text-align: right;">1920</td>
-<td style="text-align: right;">90</td>
-<td>JPEG</td>
-<td>Solo se scura</td>
-<td>ISO 800+</td>
-<td>1,2 / 1,2</td>
-<td>Sì, piccolo</td>
-</tr>
-<tr>
-<td>Social alta qualità</td>
-<td style="text-align: right;">2048</td>
-<td style="text-align: right;">90</td>
-<td>JPEG</td>
-<td>Solo se scura</td>
-<td>ISO 800+</td>
-<td>1,2 / 1,2</td>
-<td>Sì</td>
-</tr>
-<tr>
-<td>Stampa fine art</td>
-<td style="text-align: right;">Originale</td>
-<td style="text-align: right;">95–100</td>
-<td>TIFF</td>
-<td>No</td>
-<td>ISO 1600+</td>
-<td>1,6 / 1,8</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Archivio</td>
-<td style="text-align: right;">Originale</td>
-<td style="text-align: right;">95</td>
-<td>JPEG</td>
-<td>No</td>
-<td>No</td>
-<td>0,8 / 1,5</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Ritratto</td>
-<td style="text-align: right;">3000</td>
-<td style="text-align: right;">92</td>
-<td>JPEG</td>
-<td>Sì, se scuro</td>
-<td>ISO 800+</td>
-<td>0,9 / 1,2</td>
-<td>Solo se richiesto</td>
-</tr>
-<tr>
-<td>Paesaggio</td>
-<td style="text-align: right;">3000–3840</td>
-<td style="text-align: right;">92</td>
-<td>JPEG</td>
-<td>Solo se scuro</td>
-<td>ISO 800+</td>
-<td>1,5–1,8 / 1,6</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Notte / concerto</td>
-<td style="text-align: right;">1920–3000</td>
-<td style="text-align: right;">92</td>
-<td>JPEG</td>
-<td>No</td>
-<td>Sì</td>
-<td>1,0 / 1,2</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Bianco e nero</td>
-<td style="text-align: right;">3000</td>
-<td style="text-align: right;">92</td>
-<td>JPEG</td>
-<td>No</td>
-<td>ISO 1600+</td>
-<td>1,5 / 1,5</td>
-<td>Facoltativo</td>
-</tr>
-<tr>
-<td>Prova rapida</td>
-<td style="text-align: right;">1200</td>
-<td style="text-align: right;">85</td>
-<td>JPEG</td>
-<td>No</td>
-<td>No</td>
-<td>1,0 / 1,5</td>
-<td>No</td>
-</tr>
-</tbody>
-</table>
+<p>| Tipo di foto | Lato max | Qualità | Formato | PIÙ LUMINOSA | Rimuovi grana | Nitidezza | Watermark |
+|---|---|---:|---:|---|---|---|---|---|
+| Web / social | 2048 | 90 | JPEG | Solo se scura | AUTO | 0,8 / 0,8 | Sì, piccolo |
+| Social alta qualità | 3000 | 90 | JPEG | Solo se scura | AUTO | 0,9 / 0,9 | Sì |
+| Stampa fine art | Originale | 100 | TIFF | No | AUTO | 0,7 / 1,0 | No |
+| Archivio | Originale | 95 | JPEG | No | AUTO | 0,6 / 1,0 | No |
+| Ritratto | 3000 | 92 | JPEG | Solo se scuro | AUTO | 0,8 / 0,9 | Solo se richiesto |
+| Paesaggio | 3000 | 92 | JPEG | Solo se scuro | AUTO | 1,0 / 1,0 | No |
+| Notte / concerto | 3000 | 92 | JPEG | No | AUTO | 0,9 / 0,9 | No |
+| Bianco e nero | 3000 | 92 | JPEG | No | AUTO | 0,9 / 0,9 | Facoltativo |
+| Prova rapida | 1200 | 88 | JPEG | No | AUTO | 0,8 / 0,8 | No |</p>
+<blockquote>
+<p>“AUTO” significa <strong>RIMUOVI GRANA (AUTO ISO)</strong> attivo: la forza viene calibrata sull'ISO del RAW. È il profilo predefinito, non un'eccezione.</p>
+</blockquote>
 <h3 id="72-consigli-per-iso">7.2 Consigli per ISO</h3>
 <table>
 <thead>
@@ -833,37 +769,42 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <tbody>
 <tr>
 <td>100–400</td>
-<td>0 / 0</td>
-<td>Lascia il dettaglio naturale</td>
+<td>AUTO (0,45–0,60)</td>
+<td>Lascia il dettaglio naturale, grana quasi assente</td>
 </tr>
 <tr>
 <td>400–800</td>
-<td>15–25 / 20–30</td>
+<td>AUTO (0,76)</td>
 <td>Solo se vedi rumore nelle ombre</td>
 </tr>
 <tr>
 <td>800–1600</td>
-<td>30–45 / 40–55</td>
-<td>Il pulsante AUTO è già adatto</td>
+<td>AUTO (0,90)</td>
+<td>Il pulsante è già calibrato</td>
 </tr>
 <tr>
-<td>1600–3200</td>
-<td>45–60 / 55–70</td>
-<td>AUTO consigliato</td>
+<td>1600–2000</td>
+<td>AUTO (0,97)</td>
+<td>Pulito senza effetto plastica</td>
 </tr>
 <tr>
-<td>3200–6400</td>
-<td>60–70 / 70–80</td>
+<td>2001–3200</td>
+<td>AUTO (1,08)</td>
+<td>Controlla la pelle nei ritratti</td>
+</tr>
+<tr>
+<td>3201–6400</td>
+<td>AUTO (1,20)</td>
 <td>AUTO; controlla la pelle</td>
 </tr>
 <tr>
 <td>Oltre 6400</td>
-<td>70–80 / 80–90</td>
+<td>AUTO (1,35)</td>
 <td>AUTO; valuta un formato più piccolo</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Regola:</strong> meglio un po' di grana che una pelle “liscia come plastica”. Se il risultato è troppo morbido, abbassa la riduzione luminanza di 10–15 punti.</p>
+<p><strong>Regola:</strong> meglio un po' di grana che una pelle “liscia come plastica”. Se il risultato è troppo morbido, abbassa la riduzione luminanza di 10–15 punti. Il denoise ibrido lavora soprattutto nelle zone piatte, quindi conserva meglio i dettagli rispetto a un filtro unico.</p>
 <h3 id="73-consigli-per-ritratti">7.3 Consigli per ritratti</h3>
 <ul>
 <li><strong>Esposizione:</strong> +0,2…+0,4 se la pelle è scura.</li>
@@ -873,8 +814,8 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li><strong>Vivacità:</strong> 0,15–0,25.</li>
 <li><strong>Saturazione:</strong> 0,95–1,00.</li>
 <li><strong>Chiarezza:</strong> 0,05–0,10.</li>
-<li><strong>Nitidezza:</strong> 0,8–1,0, raggio 1,2.</li>
-<li><strong>Riduzione rumore:</strong> solo se serve; il preset <strong>Ritratto</strong> è un buon punto di partenza.</li>
+<li><strong>Nitidezza:</strong> 0,8–1,0, raggio 0,9.</li>
+<li><strong>Riduzione rumore:</strong> AUTO; il preset <strong>Ritratto</strong> è un buon punto di partenza.</li>
 </ul>
 <h3 id="74-consigli-per-paesaggi">7.4 Consigli per paesaggi</h3>
 <ul>
@@ -882,51 +823,51 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li><strong>Vivacità:</strong> 0,30–0,45.</li>
 <li><strong>Chiarezza:</strong> 0,20–0,30.</li>
 <li><strong>Dehaze:</strong> 0,10–0,20.</li>
-<li><strong>Verdi:</strong> +8…+15.</li>
-<li><strong>Blu:</strong> +5…+10, ma non esagerare con il cielo.</li>
-<li><strong>Nitidezza:</strong> 1,5–1,8, raggio 1,6.</li>
+<li><strong>Verdi:</strong> +5…+12.</li>
+<li><strong>Blu:</strong> +3…+8, ma non esagerare con il cielo.</li>
+<li><strong>Nitidezza:</strong> 0,9–1,2, raggio 1,0.</li>
 </ul>
 <h3 id="75-consigli-per-notte-e-concerti">7.5 Consigli per notte e concerti</h3>
 <ul>
-<li>Non alzare troppo l'esposizione: il rumore aumenta.</li>
-<li>Usa <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</li>
+<li>Non alzare troppo l'esposizione: il rumore aumenta. Se usi <strong>PIÙ LUMINOSA</strong>, controlla il risultato al 100%: il limite automatico evita eccessi, ma un notturno resta un notturno.</li>
+<li>Lascia attivo <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</li>
 <li>Riduci il contrasto a 0,20–0,30 per non perdere dettaglio nelle ombre.</li>
-<li>Nitidezza 0,9–1,2, raggio 1,2.</li>
-<li>Se i colori sono troppo sporchi, alza la riduzione rumore colore a 75–85.</li>
-<li>Converti a 1920–3000 px: il rumore è meno visibile e il file è più gestibile.</li>
+<li>Nitidezza 0,9–1,0, raggio 0,9.</li>
+<li>Se i colori sono troppo sporchi, alza la riduzione rumore colore a 95.</li>
+<li>Converti a 3000 px: il rumore è meno visibile, i dettagli restano e il file è più gestibile.</li>
 </ul>
 <hr />
 <h2 id="8-flussi-di-lavoro-pronti-alluso">8. Flussi di lavoro pronti all'uso</h2>
 <h3 id="81-web-e-social-in-4-passi">8.1 Web e social in 4 passi</h3>
 <ol>
 <li>Seleziona la cartella RAW.</li>
-<li>Scegli <strong>1920</strong> px, <strong>JPEG</strong>, qualità <strong>90</strong>.</li>
+<li>Scegli <strong>2048</strong> px, <strong>JPEG</strong>, qualità <strong>90</strong>.</li>
 <li>Attiva <strong>PIÙ LUMINOSA</strong> solo se le foto sono scure.</li>
-<li>Avvia. Per le foto a ISO alto, attiva <strong>RIMUOVI GRANA</strong>.</li>
+<li>Avvia. <strong>RIMUOVI GRANA (AUTO ISO)</strong> è già attivo: non serve altro per ISO alti.</li>
 </ol>
 <h3 id="82-consegna-al-cliente">8.2 Consegna al cliente</h3>
 <ol>
-<li><strong>3000</strong> px, <strong>JPEG</strong>, qualità <strong>95</strong>.</li>
+<li><strong>3000</strong> px, <strong>JPEG</strong>, qualità <strong>95</strong> (o preset <strong>Ritratto</strong>).</li>
 <li><strong>PIÙ LUMINOSA</strong> attiva solo sulle foto sottoesposte.</li>
-<li><strong>RIMUOVI GRANA</strong> per ISO 800+.</li>
+<li><strong>RIMUOVI GRANA (AUTO ISO)</strong> già attivo.</li>
 <li>Watermark solo se previsto dal contratto.</li>
 <li>Controlla 5 foto campione prima di consegnare tutto.</li>
 </ol>
 <h3 id="83-stampa-fine-art">8.3 Stampa fine art</h3>
 <ol>
-<li><strong>Originale</strong>, <strong>TIFF</strong>, qualità <strong>100</strong>.</li>
+<li><strong>Originale</strong>, <strong>TIFF</strong>, qualità <strong>100</strong> (preset <strong>Stampa Fine Art</strong>).</li>
 <li><strong>PIÙ LUMINOSA</strong> spenta.</li>
-<li>Nitidezza <strong>1,6</strong>, raggio <strong>1,8</strong>.</li>
-<li><strong>RIMUOVI GRANA</strong> solo se necessario.</li>
+<li>Nitidezza <strong>0,7</strong>, raggio <strong>1,0</strong>.</li>
+<li><strong>RIMUOVI GRANA (AUTO ISO)</strong> attivo: a risoluzione piena il denoise non-locale richiede più tempo, ma il file resta pulito.</li>
 <li>Nessun watermark.</li>
 <li>Verifica la stampa con il laboratorio: il TIFF è senza perdita.</li>
 </ol>
 <h3 id="84-archivio">8.4 Archivio</h3>
 <ol>
-<li><strong>Originale</strong>, <strong>JPEG</strong>, qualità <strong>95</strong>.</li>
+<li><strong>Originale</strong>, <strong>JPEG</strong>, qualità <strong>95</strong> (preset <strong>Archivio JPEG</strong>).</li>
 <li>EXIF attivo.</li>
 <li>Nessun watermark.</li>
-<li>Nessuna riduzione rumore, salvo RAW molto rumorosi.</li>
+<li><strong>RIMUOVI GRANA (AUTO ISO)</strong> attivo, salvo RAW già puliti a ISO basso.</li>
 <li>Conserva anche i RAW originali su un disco separato.</li>
 </ol>
 <h3 id="85-bianco-e-nero">8.5 Bianco e nero</h3>
@@ -940,9 +881,9 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </ol>
 <h3 id="86-tethering-in-studio">8.6 Tethering in studio</h3>
 <ol>
-<li>Collega la Sony via Wi-Fi.</li>
+<li>Per Canon, Nikon, Fujifilm, Panasonic, OM System o Leica apri il software di tethering della marca e imposta la sua cartella di destinazione. Per Sony puoi usare il Wi-Fi diretto.</li>
 <li>Apri <strong>Tethering &amp; Cloud</strong>.</li>
-<li>Scegli la cartella di arrivo e la cartella output.</li>
+<li>Scegli la cartella di arrivo (o la cartella del software del produttore) e la cartella output.</li>
 <li>Avvia il monitoraggio.</li>
 <li>Scatta: il programma converte automaticamente.</li>
 <li>Se necessario, attiva <strong>Telegram</strong> o <strong>Dropbox</strong> per l'invio immediato.</li>
@@ -952,10 +893,11 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h3 id="il-programma-e-lento-perche">Il programma è lento. Perché?</h3>
 <ul>
 <li>La prima conversione è più lenta: il programma carica le librerie.</li>
-<li><strong>Originale</strong> e <strong>denoise</strong> richiedono più tempo e RAM.</li>
+<li>Il profilo predefinito <strong>3000 px + denoise ibrido</strong> richiede più tempo di un 1920 px senza denoise: su 4 RAW da 24 MP servono circa 13 secondi in parallelo.</li>
+<li><strong>Originale</strong> e <strong>Stampa Fine Art</strong> richiedono più tempo e RAM: il denoise non-locale lavora anche a 24 MP (circa 40-45 secondi per foto).</li>
 <li>Con RAW da 50–60 MP il numero di processi viene ridotto per non esaurire la memoria.</li>
 <li>Chiudi browser, giochi e altri programmi pesanti.</li>
-<li>Per il web usa <strong>1920 px</strong>: è molto più veloce e spesso sufficiente.</li>
+<li>Per il web leggerissimo usa <strong>2048 px</strong> o disattiva <strong>RIMUOVI GRANA</strong>: è molto più veloce e spesso sufficiente.</li>
 <li>Non convertire due volte la stessa cartella nella stessa destinazione.</li>
 </ul>
 <h3 id="un-file-da-errore-cosa-faccio">Un file dà errore. Cosa faccio?</h3>
@@ -990,6 +932,8 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Disattiva VPN e firewall per quella rete.</li>
 <li>Riavvia la fotocamera e riconnetti.</li>
 </ul>
+<h3 id="uso-canon-nikon-fujifilm-panasonic-om-system-o-leica-posso-collegarle-direttamente">Uso Canon, Nikon, Fujifilm, Panasonic, OM System o Leica: posso collegarle direttamente?</h3>
+<p>Il programma non controlla direttamente questi corpi macchina. Apri il software di tethering del produttore (EOS Utility, NX Tether, X Acquire, Lumix Tether, OM Capture, Leica Tethered), fai salvare gli scatti in una cartella e monitora quella cartella in <strong>Tethering &amp; Cloud</strong>. Il risultato finale è lo stesso: ogni scatto viene sviluppato automaticamente.</p>
 <h3 id="telegram-non-invia">Telegram non invia.</h3>
 <ul>
 <li>Controlla <strong>Bot Token</strong> e <strong>Chat ID</strong>.</li>
@@ -1012,7 +956,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h3 id="posso-annullare-un-batch-lungo">Posso annullare un batch lungo?</h3>
 <p>Sì. Premi <strong>ANNULLA</strong>. I file già completati restano; quelli in corso vengono interrotti e i file parziali vengono rimossi.</p>
 <h3 id="perche-il-file-jpeg-e-piu-pesante-del-solito">Perché il file JPEG è più pesante del solito?</h3>
-<p>Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità 85–90. Per la stampa è normale che il file sia grande.</p>
+<p>Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità <strong>90</strong> e <strong>2048 px</strong>; per la stampa è normale che il file sia grande. Con il profilo predefinito 3000 px / qualità 90 i JPEG restano in genere tra 0,6 e 1,3 MB.</p>
 <hr />
 <h2 id="10-glossario-semplice">10. Glossario semplice</h2>
 <table>
@@ -1073,7 +1017,11 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 <tr>
 <td><strong>Guided filter</strong></td>
-<td>Filtro intelligente che toglie il rumore nelle zone piatte e protegge i bordi.</td>
+<td>Filtro intelligente che separa base e dettaglio: spegne la grana fine e protegge i bordi.</td>
+</tr>
+<tr>
+<td><strong>Non-local means</strong></td>
+<td>Secondo passaggio di denoise che confronta zone simili dell'immagine; viene applicato solo alle aree piatte.</td>
 </tr>
 <tr>
 <td><strong>Demosaic</strong></td>
@@ -1113,12 +1061,12 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h2 id="11-scheda-riassuntiva-da-stampare">11. Scheda riassuntiva da stampare</h2>
 <h3 id="web-social">Web / social</h3>
 <ul>
-<li>Lato max: <strong>1920</strong></li>
+<li>Lato max: <strong>2048</strong></li>
 <li>Qualità: <strong>90</strong></li>
 <li>Formato: <strong>JPEG</strong></li>
 <li>PIÙ LUMINOSA: <strong>solo se scura</strong></li>
-<li>Rimuovi grana: <strong>ISO 800+</strong></li>
-<li>Nitidezza: <strong>1,2 / 1,2</strong></li>
+<li>Rimuovi grana: <strong>AUTO</strong></li>
+<li>Nitidezza: <strong>0,8 / 0,8</strong></li>
 <li>Watermark: <strong>sì, 14–18 px</strong></li>
 </ul>
 <h3 id="consegna-cliente">Consegna cliente</h3>
@@ -1127,8 +1075,8 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Qualità: <strong>95</strong></li>
 <li>Formato: <strong>JPEG</strong></li>
 <li>PIÙ LUMINOSA: <strong>solo se scura</strong></li>
-<li>Rimuovi grana: <strong>ISO 800+</strong></li>
-<li>Nitidezza: <strong>1,2 / 1,3</strong></li>
+<li>Rimuovi grana: <strong>AUTO</strong></li>
+<li>Nitidezza: <strong>0,8 / 0,9</strong></li>
 <li>Watermark: <strong>secondo accordo</strong></li>
 </ul>
 <h3 id="stampa-fine-art">Stampa fine art</h3>
@@ -1137,8 +1085,8 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Qualità: <strong>100</strong></li>
 <li>Formato: <strong>TIFF</strong></li>
 <li>PIÙ LUMINOSA: <strong>no</strong></li>
-<li>Rimuovi grana: <strong>solo se serve</strong></li>
-<li>Nitidezza: <strong>1,6 / 1,8</strong></li>
+<li>Rimuovi grana: <strong>AUTO</strong></li>
+<li>Nitidezza: <strong>0,7 / 1,0</strong></li>
 <li>Watermark: <strong>no</strong></li>
 </ul>
 <h3 id="archivio">Archivio</h3>
@@ -1147,23 +1095,23 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Qualità: <strong>95</strong></li>
 <li>Formato: <strong>JPEG</strong></li>
 <li>PIÙ LUMINOSA: <strong>no</strong></li>
-<li>Rimuovi grana: <strong>no</strong></li>
-<li>Nitidezza: <strong>0,8 / 1,5</strong></li>
+<li>Rimuovi grana: <strong>AUTO</strong></li>
+<li>Nitidezza: <strong>0,6 / 1,0</strong></li>
 <li>EXIF: <strong>sì</strong></li>
 <li>Watermark: <strong>no</strong></li>
 </ul>
 <h3 id="notte-iso-alto">Notte / ISO alto</h3>
 <ul>
-<li>Lato max: <strong>1920–3000</strong></li>
+<li>Lato max: <strong>3000</strong></li>
 <li>Qualità: <strong>92</strong></li>
 <li>Formato: <strong>JPEG</strong></li>
 <li>PIÙ LUMINOSA: <strong>no</strong></li>
-<li>Rimuovi grana: <strong>sì</strong></li>
-<li>Nitidezza: <strong>1,0 / 1,2</strong></li>
+<li>Rimuovi grana: <strong>AUTO</strong></li>
+<li>Nitidezza: <strong>0,9 / 0,9</strong></li>
 <li>Watermark: <strong>no</strong></li>
 </ul>
 <hr />
-<p><strong>Franchetti Raw Converter Pro v2.54.0</strong> — Guida completa.
+<p><strong>Franchetti Raw Converter Pro v2.55.0</strong> — Guida completa.
 Per assistenza, salva il <strong>Log</strong> e descrivi il passaggio che ha causato il problema.</p>
 </article></main>
 </body>

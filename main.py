@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.54.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.55.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
              sensore (LibRaw con fallback AMaZE/AHD/PPG/LINEAR), ottimizzazione
              in spazio Y/Cb/Cr, denoise ISO, correzioni colore complete, ridimensionamento,
-             watermarking, tethering Wi-Fi automatico (Hot-Folder), Cloud
+             watermarking, tethering automatico multi-marca (Hot-Folder) e Sony Wi-Fi, Cloud
              (Telegram/Dropbox) ed elaborazione batch su tutti i core.
 ================================================================================
 """
@@ -22,6 +22,7 @@ import logging
 import threading
 import traceback
 import multiprocessing
+from datetime import datetime
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from tkinter import filedialog, messagebox
 
@@ -32,7 +33,8 @@ try:
     import customtkinter as ctk
     from PIL import Image, ImageFilter, ImageOps, ImageDraw, ImageFont
     from skimage import color, filters
-    from scipy.ndimage import uniform_filter
+    from skimage.restoration import denoise_nl_means
+    from scipy.ndimage import gaussian_filter, uniform_filter
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
     import requests
@@ -42,7 +44,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.54.0"
+APP_VERSION = "2.55.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -121,11 +123,14 @@ def parametri_default():
         "saturazione": 1.0,
         "chiarezza": 0.0,
         "dehaze": 0.0,
-        "nr_luminanza": 0.0,
-        "nr_colore": 0.0,
-        "rimuovi_grana_auto": False,
-        "nitidezza_raggio": 1.5,
-        "nitidezza_quantita": 1.0,
+        # Profilo qualita' predefinito: denoise ISO attivo e nitidezza
+        # controllata. Il rumore viene tolto nelle zone piatte senza
+        # cancellare i dettagli, quindi i file restano leggeri ma puliti.
+        "nr_luminanza": 88.0,
+        "nr_colore": 92.0,
+        "rimuovi_grana_auto": True,
+        "nitidezza_raggio": 0.9,
+        "nitidezza_quantita": 0.9,
         "vignettatura": 0.0,
         "grana": 0.0,
         "curva_tonale": "Lineare",
@@ -140,7 +145,9 @@ def parametri_default():
         "use_camera_wb": True,
         "profilo_colore": "sRGB",
         # --- Output ---
-        "max_dim": 1920,
+        # 3000 px e' il miglior compromesso per ingrandimenti nitidi e
+        # file JPEG da circa 1 MB con qualita' 90.
+        "max_dim": 3000,
         "qualita_jpeg": 90,
         "formato": "JPEG",
         "preserva_exif": True,
@@ -155,7 +162,7 @@ def parametri_default():
         "ricorsivo": True,
         # --- Watermark ---
         "watermark_attivo": True,
-        "watermark_text": "\u00a9 Franchetti 2025",
+        "watermark_text": "\u00a9 Franchetti " + str(datetime.now().year),
         "font_size": 14,
         "watermark_posizione": "Basso a destra",
         "watermark_opacita": 0.85,
@@ -902,28 +909,44 @@ class ImageEngine:
             dtype=np.float32,
         )
 
+    @staticmethod
+    def _stima_rumore(y):
+        """Stima robusta del rumore fine (scala 0-1) tramite MAD.
+
+        La mediana assoluta delle deviazioni e' poco influenzata dai bordi
+        veri: e' quindi adatta a distinguere grana e dettaglio strutturato.
+        """
+        dettaglio = y - filters.gaussian(y, sigma=1.0, preserve_range=True)
+        mediana = float(np.median(dettaglio))
+        return float(1.4826 * np.median(np.abs(dettaglio - mediana)))
+
     @classmethod
     def _riduci_grana(cls, img, p, nrl, nrc):
-        """Riduzione grana ISO con preservazione di bordi, contrasto e dettaglio.
+        """Denoise ISO progressivo in Y/Cb/Cr con recupero del dettaglio.
 
-        Lavora in Y/Cb/Cr: il canale di luminanza usa un guided filter
-        auto-guidato, la crominanza un guided filter guidato dalla luminanza.
-        Il rumore viene tolto nelle zone piatte, mentre i bordi e i dettagli
-        fini restano intatti. La forza si adatta all'ISO del RAW.
+        Il filtro guided crea una base priva di rumore mantenendo i bordi.
+        La differenza tra originale e base viene poi "coringata": le
+        variazioni molto piccole (grana) vengono spente, mentre i dettagli
+        con ampiezza reale vengono conservati. In questo modo non si ottiene
+        l'effetto plastica e la grana non torna visibile dopo la nitidezza.
         """
         iso = float(p.get("_iso", 0) or 0)
         fattore = 1.0
         if p.get("rimuovi_grana_auto") and iso > 0:
-            if iso <= 400:
+            if iso <= 200:
+                fattore = 0.45
+            elif iso <= 400:
                 fattore = 0.60
             elif iso <= 800:
-                fattore = 0.78
+                fattore = 0.76
             elif iso <= 1600:
-                fattore = 0.92
+                fattore = 0.90
+            elif iso <= 2000:
+                fattore = 0.97
             elif iso <= 3200:
                 fattore = 1.08
             elif iso <= 6400:
-                fattore = 1.22
+                fattore = 1.20
             else:
                 fattore = 1.35
         nrl = max(0.0, min(1.0, nrl * fattore))
@@ -939,31 +962,70 @@ class ImageEngine:
         cr = r - y
 
         if nrl > 1e-4:
-            raggio = max(1, int(round(1.0 + nrl * 4.0)))
-            epsilon = 0.00015 + (nrl * nrl) * 0.0012
-            y_pulita = cls._guided_auto(y, raggio, epsilon)
-            # Il guided filter preserva i bordi; lasciamo un 2% del residuo
-            # per non rendere la pelle "di plastica".
-            y = y_pulita + (y - y_pulita) * 0.02
+            raggio = max(1, int(round(1.0 + nrl * 3.0)))
+            epsilon = max(0.00015, (nrl * nrl) * 0.003)
+            base = cls._guided_auto(y, raggio, epsilon)
+            dettaglio = y - base
+
+            # Il rumore dipende dall'ISO ma anche dalla risoluzione finale:
+            # a 3000 px la grana e' piu' fine e va trattata con una soglia
+            # leggermente piu' alta rispetto a un output da 2048 px.
+            massimo = max(y.shape)
+            rumore_misurato = cls._stima_rumore(y)
+            rumore_iso = max(0.0025, iso * 5e-6 * (massimo / 2048.0) ** 0.75) if iso > 0 else 0.003
+            sigma = max(0.0025, min(0.05, max(rumore_misurato, rumore_iso)))
+
+            # gain=1 sui dettagli forti, gain~0 sulla grana a bassa ampiezza.
+            k = 2.0 + 18.0 * nrl * nrl
+            gain = (dettaglio * dettaglio) / (
+                dettaglio * dettaglio + k * sigma * sigma + 1e-12
+            )
+            y_pulita = base + dettaglio * gain
+
+            # Secondo passaggio non-locale SOLO nelle zone piatte: elimina la
+            # grana residua di pareti, cieli e ombre senza toccare i dettagli
+            # (visi, capelli, tessuti), che restano affidati al coring.
+            if nrl > 0.20 and min(y.shape) >= 8:
+                try:
+                    h_nlm = max(0.008, min(0.055, sigma * 1.55))
+                    y_nlm = denoise_nl_means(
+                        y,
+                        patch_size=5,
+                        patch_distance=6,
+                        h=h_nlm,
+                        fast_mode=True,
+                        sigma=0.0,
+                        preserve_range=True,
+                    )
+                    attivita = gaussian_filter(
+                        np.abs(y - gaussian_filter(y, sigma=2.0, mode="reflect")),
+                        sigma=3.0,
+                        mode="reflect",
+                    )
+                    bordo = np.clip(
+                        (attivita - 0.9 * sigma) / (1.8 * sigma + 1e-12), 0.0, 1.0
+                    )
+                    bordo = bordo * bordo * (3.0 - 2.0 * bordo)
+                    piatto = 1.0 - bordo
+                    y_pulita = y_pulita * (1.0 - piatto) + y_nlm * piatto
+                except Exception as errore:
+                    logging.debug("Denoise non-locale non applicato: %s", errore)
+            y = y_pulita
 
         if nrc > 1e-4:
-            raggio = max(3, int(round(3.0 + nrc * 11.0)))
-            epsilon = 0.0003 + (nrc * nrc) * 0.004
+            raggio = max(3, int(round(3.0 + nrc * 9.0)))
+            epsilon = max(0.0003, (nrc * nrc) * 0.004)
             # La crominanza e' a bassa frequenza: denoise a meta' risoluzione,
             # poi ricostruzione lineare. 4x piu' veloce, stesso risultato visivo.
             y_small = cls._down2(y)
             cb_small = cls._down2(cb)
             cr_small = cls._down2(cr)
-            if cb_small is not cb:
-                raggio_small = max(2, raggio // 2)
-                cb_pulito = cls._guided(y_small, cb_small, raggio_small, epsilon)
-                cr_pulito = cls._guided(y_small, cr_small, raggio_small, epsilon)
-                cb_pulito = cls._up2(cb_pulito, cb.shape[1], cb.shape[0])
-                cr_pulito = cls._up2(cr_pulito, cr.shape[1], cr.shape[0])
-            else:
-                cb_pulito = cls._guided(y, cb, raggio, epsilon)
-                cr_pulito = cls._guided(y, cr, raggio, epsilon)
-            beta = min(0.98, 0.70 + nrc * 0.28)
+            raggio_small = max(2, raggio // 2)
+            cb_pulito = cls._guided(y_small, cb_small, raggio_small, epsilon)
+            cr_pulito = cls._guided(y_small, cr_small, raggio_small, epsilon)
+            cb_pulito = cls._up2(cb_pulito, cb.shape[1], cb.shape[0])
+            cr_pulito = cls._up2(cr_pulito, cr.shape[1], cr.shape[0])
+            beta = min(0.995, 0.78 + nrc * 0.215)
             cb = cb * (1.0 - beta) + cb_pulito * beta
             cr = cr * (1.0 - beta) + cr_pulito * beta
 
@@ -973,13 +1035,36 @@ class ImageEngine:
         return np.clip(np.stack((r2, g2, b2), axis=-1), 0.0, 1.0)
 
     @classmethod
-    def _fase_lab(cls, img, p):
-        """Grana, curva tonale e nitidezza senza conversioni Lab pesanti."""
-        nrl = float(p.get("nr_luminanza", 0.0)) / 100.0
-        nrc = float(p.get("nr_colore", 0.0)) / 100.0
-        if nrl > 1e-4 or nrc > 1e-4:
-            img = cls._riduci_grana(img, p, nrl, nrc)
+    def _nitidezza_controllata(cls, img, quantita, raggio):
+        """Nitidezza con soglia sul rumore: niente grana amplificata.
 
+        Il classico unsharp mask agisce anche sulle differenze minime e fa
+        riemergere la grana. Qui la maschera interviene solo sui dettagli
+        realmente sopra la soglia di rumore; le zone piatte restano pulite.
+        """
+        quantita = float(quantita)
+        if quantita <= 1e-4:
+            return img
+        y = np.clip(cls._luma(img), 0.0, 1.0)
+        scala = max(1.0, (max(img.shape[:2]) / 2048.0) ** 0.35)
+        raggio = max(0.5, min(4.0, float(raggio) * scala))
+        dettaglio = y - gaussian_filter(y, sigma=raggio, mode="reflect")
+        sigma = cls._stima_rumore(y)
+        soglia = max(0.0035, min(0.018, sigma * 1.15))
+        maschera = np.clip(
+            (np.abs(dettaglio) - soglia) / (2.0 * soglia + 1e-12), 0.0, 1.0
+        )
+        maschera = maschera * maschera * (3.0 - 2.0 * maschera)
+        y = np.clip(y + dettaglio * quantita * maschera, 0.0, 1.0)
+        return cls._applica_luminanza(img, y)
+
+    @classmethod
+    def _fase_lab(cls, img, p):
+        """Curva tonale, denoise ISO e nitidezza controllata.
+
+        La curva viene applicata prima del denoise: se aumenta il contrasto,
+        la grana viene poi rimossa dal filtro invece di essere amplificata.
+        """
         curva = p.get("curva_tonale", "Lineare")
         if curva and curva != "Lineare":
             lum = np.clip(cls._luma(img), 0.0, 1.0)
@@ -987,12 +1072,16 @@ class ImageEngine:
             indici = np.clip((lum * 255.0).astype(np.int32), 0, 255)
             img = cls._applica_luminanza(img, lut[indici])
 
+        nrl = float(p.get("nr_luminanza", 0.0)) / 100.0
+        nrc = float(p.get("nr_colore", 0.0)) / 100.0
+        if nrl > 1e-4 or nrc > 1e-4:
+            img = cls._riduci_grana(img, p, nrl, nrc)
+
         q = float(p.get("nitidezza_quantita", 0.0))
         if q > 1e-4:
-            raggio = float(p.get("nitidezza_raggio", 1.5))
-            lum = np.clip(cls._luma(img), 0.0, 1.0)
-            lum = filters.unsharp_mask(lum, radius=raggio, amount=q, preserve_range=True)
-            img = cls._applica_luminanza(img, np.clip(lum, 0.0, 1.0))
+            img = cls._nitidezza_controllata(
+                img, q, float(p.get("nitidezza_raggio", 0.9))
+            )
 
         return np.clip(img, 0.0, 1.0)
 
@@ -1216,10 +1305,12 @@ class ImageEngine:
 
         gamma = 1.0
         if 0.01 < mediana < 0.40:
-            # Foto scura: schiarisce fino a portare la mediana verso il centro
+            # Foto scura: schiarisce senza trasformare la notte in giorno.
+            # Il limite 0.48 evita di amplificare a dismisura il rumore nelle
+            # ombre profonde (es. notturne), mantenendo un risultato pulito.
             obiettivo = 0.48 if mediana < 0.26 else 0.44
             gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
-            gamma = max(0.32, min(1.0, gamma))
+            gamma = max(0.48, min(1.0, gamma))
         elif luci > 0.985 and mediana < 0.995:
             # Solo alte luci realmente clipped: schiaritura contenuta, senza
             # scurire drasticamente una parete chiara ma correttamente esposta.
@@ -1254,19 +1345,14 @@ class ImageEngine:
         )
         grigio = lum2[..., None]
         saturazione = base.max(axis=2) - base.min(axis=2)
-        spinta = 0.10 + 0.06 * (1.0 - np.clip(saturazione, 0.0, 1.0))
+        spinta = 0.08 + 0.05 * (1.0 - np.clip(saturazione, 0.0, 1.0))
         base = grigio + (base - grigio) * (1.0 + spinta[..., None])
         base = np.clip(base, 0.0, 1.0)
         if abs(gamma - 1.0) < 1e-6 and saturazione_max < 0.002 and luci <= 0.985:
             return pil_img
-        risultato = Image.fromarray((base * 255.0 + 0.5).astype(np.uint8), "RGB")
-
-        # Micro-contrasto finale molto leggero: nessun effetto plastica.
-        if min(risultato.size) > 4:
-            risultato = risultato.filter(
-                ImageFilter.UnsharpMask(radius=0.8, percent=20, threshold=5)
-            )
-        return risultato
+        # La nitidezza viene applicata dopo il denoise, con soglia sul rumore:
+        # qui non serve un altro unsharp che farebbe riemergere la grana.
+        return Image.fromarray((base * 255.0 + 0.5).astype(np.uint8), "RGB")
 
     _demosaic_ok = None
 
@@ -1359,16 +1445,23 @@ class ImageEngine:
         img = cls._fase_tono(img, p)
         img = cls._fase_colore(img, p)
         img = cls._fase_dettaglio(img, p)
+
+        # 2b. Miglioramento automatico dell'esposizione (BETA "Piu' luminosa").
+        # Va applicato PRIMA del denoise: schiarire le ombre fa emergere il
+        # rumore, che deve poi essere ripulito insieme al resto dell'immagine.
+        if p.get("auto_luminosita"):
+            pil_auto = Image.fromarray(
+                (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8), "RGB"
+            )
+            pil_auto = cls.correggi_luminosita_auto(pil_auto)
+            img = np.asarray(pil_auto, dtype=np.float32) / 255.0
+            nota("Bilanciamento automatico della luminosita' e vividezza applicati")
+
         img = cls._fase_lab(img, p)
         img = cls._fase_effetti(img, p)
 
         img_finale = (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
         pil_img = Image.fromarray(img_finale, "RGB")
-
-        # 2b. Miglioramento automatico dell'esposizione (BETA "Piu' luminosa")
-        if p.get("auto_luminosita"):
-            pil_img = cls.correggi_luminosita_auto(pil_img)
-            nota("Bilanciamento automatico della luminosita' e vividezza applicati")
 
         # 4. Watermark: logo + testo
         posizione = p.get("watermark_posizione", "Basso a destra")
@@ -1896,11 +1989,12 @@ class FranchettiApp(ctk.CTk):
         self._batch_files = []
         self._batch_attivo = False
         self._slider_widgets = {}
-        self._grana_precedente = (0.0, 0.0, 1.0, 1.5)
+        self._grana_precedente = (0.0, 0.0, 0.9, 0.9)
         self._ultima_cartella = os.path.expanduser("~")
         self._coda = queue.Queue()
 
         self._crea_interfaccia()
+        self._aggiorna_stato_grana()
         self.protocol("WM_DELETE_WINDOW", self._chiudi_app)
         # Dopo il mapping della finestra normalizza lo scaling DPI: nell'exe
         # PyInstaller il fattore 125% può essere applicato due volte e tagliare
@@ -1974,7 +2068,7 @@ class FranchettiApp(ctk.CTk):
         ).grid(row=0, column=1, padx=(0, 14), pady=(22, 4), sticky="w")
         ctk.CTkLabel(
             header,
-            text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Tethering & Cloud",
+            text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Tethering multi-marca",
             font=ctk.CTkFont(size=10),
             text_color="#8ab4f8",
         ).grid(row=0, column=2, padx=10, pady=10, sticky="w")
@@ -2084,7 +2178,7 @@ class FranchettiApp(ctk.CTk):
 
         ctk.CTkLabel(dim, text="Lato max (px)").grid(row=0, column=0, padx=6, pady=4, sticky="w")
         self.entry_max_dim = ctk.CTkEntry(dim, width=90)
-        self.entry_max_dim.insert(0, "1920")
+        self.entry_max_dim.insert(0, "3000")
         self.entry_max_dim.grid(row=0, column=1, padx=6, pady=2, sticky="w")
         self.entry_max_dim.bind("<KeyRelease>", self._aggiorna_evidenzia_da_campo)
         ctk.CTkLabel(dim, text="misura pronta o valore (0 = originale)",
@@ -2112,7 +2206,7 @@ class FranchettiApp(ctk.CTk):
             # Sei misure per riga: restano dentro la colonna anche a 1024 px.
             bottone.grid(row=indice // 6, column=indice % 6, padx=2, pady=2)
             self._bottoni_misure.append((valore, bottone))
-        self._evidenzia_max_dim(1920)
+        self._evidenzia_max_dim(3000)
 
         ctk.CTkLabel(dim, text="Qualità").grid(row=2, column=0, padx=6, pady=4, sticky="w")
         self.entry_qualita = ctk.CTkEntry(dim, width=80)
@@ -2154,6 +2248,21 @@ class FranchettiApp(ctk.CTk):
         )
         self.sw_auto_luminosita.grid(row=5, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
 
+        # Denoise ISO: subito sotto PIU' LUMINOSA, nello stesso blocco.
+        self.btn_rimuovi_grana = ctk.CTkButton(
+            dim,
+            text="RIMUOVI GRANA (AUTO ISO)",
+            height=30,
+            width=210,
+            fg_color="#6a4c93",
+            hover_color="#7e5aa8",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self.toggle_rimuovi_grana,
+        )
+        self.btn_rimuovi_grana.grid(
+            row=6, column=0, columnspan=2, padx=6, pady=(2, 1), sticky="w"
+        )
+
         # Elaborazione su tutti i core del processore
         self.chk_multicore = ctk.CTkCheckBox(
             dim,
@@ -2161,7 +2270,7 @@ class FranchettiApp(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
         )
         self.chk_multicore.select()
-        self.chk_multicore.grid(row=6, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
+        self.chk_multicore.grid(row=7, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
 
         # ================= BLOCCO NOMI / WATERMARK / PRESET =================
         dx = ctk.CTkFrame(contenuto, fg_color="transparent")
@@ -2284,18 +2393,6 @@ class FranchettiApp(ctk.CTk):
         )
         self.btn_annulla.grid(row=0, column=1, padx=4, pady=6)
 
-        self.btn_rimuovi_grana = ctk.CTkButton(
-            azioni,
-            text="RIMUOVI GRANA (AUTO ISO)",
-            height=42,
-            width=210,
-            fg_color="#6a4c93",
-            hover_color="#7e5aa8",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            command=self.toggle_rimuovi_grana,
-        )
-        self.btn_rimuovi_grana.grid(row=0, column=2, padx=(10, 4), pady=6, sticky="w")
-
         self.progress = ctk.CTkProgressBar(azioni)
         self.progress.grid(row=1, column=0, columnspan=3, padx=4, pady=(2, 4), sticky="ew")
         self.progress.set(0)
@@ -2325,7 +2422,20 @@ class FranchettiApp(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
             command=lambda: self._toggle_auto_luminosita(self.sw_auto_sviluppo.get()),
         )
-        self.sw_auto_sviluppo.pack(padx=10, pady=10, anchor="w")
+        self.sw_auto_sviluppo.pack(padx=10, pady=(10, 4), anchor="w")
+
+        # Denoise ISO subito sotto PIU' LUMINOSA, come nel tab Batch.
+        self.btn_rimuovi_grana_sviluppo = ctk.CTkButton(
+            card_auto,
+            text="RIMUOVI GRANA (AUTO ISO)",
+            height=30,
+            width=210,
+            fg_color="#6a4c93",
+            hover_color="#7e5aa8",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self.toggle_rimuovi_grana,
+        )
+        self.btn_rimuovi_grana_sviluppo.pack(padx=10, pady=(0, 10), anchor="w")
 
         sezioni = [
             ("ESPOSIZIONE E BILANCIAMENTO", [
@@ -2350,10 +2460,10 @@ class FranchettiApp(ctk.CTk):
             ("DETTAGLIO E NITIDEZZA", [
                 ("chiarezza", "Chiarezza (micro-contrasto)", 0.0, 1.0, 0.0, "{:.2f}"),
                 ("dehaze", "Dehaze (rimozione velo)", 0.0, 1.0, 0.0, "{:.2f}"),
-                ("nitidezza_quantita", "Nitidezza (quantità)", 0.0, 5.0, 1.0, "{:.2f}"),
-                ("nitidezza_raggio", "Nitidezza (raggio)", 0.5, 4.0, 1.5, "{:.1f}"),
-                ("nr_luminanza", "Riduzione rumore luminanza", 0.0, 100.0, 0.0, "{:.0f}"),
-                ("nr_colore", "Riduzione rumore colore", 0.0, 100.0, 0.0, "{:.0f}"),
+                ("nitidezza_quantita", "Nitidezza (quantità)", 0.0, 5.0, 0.9, "{:.2f}"),
+                ("nitidezza_raggio", "Nitidezza (raggio)", 0.5, 4.0, 0.9, "{:.1f}"),
+                ("nr_luminanza", "Riduzione rumore luminanza", 0.0, 100.0, 88.0, "{:.0f}"),
+                ("nr_colore", "Riduzione rumore colore", 0.0, 100.0, 92.0, "{:.0f}"),
             ]),
             ("EFFETTI", [
                 ("vignettatura", "Vignettatura (- scura / + schiarisci)", -100.0, 100.0, 0.0, "{:+.0f}"),
@@ -2370,20 +2480,7 @@ class FranchettiApp(ctk.CTk):
             )
             for idx, (chiave, etichetta, minimo, massimo, default, fmt) in enumerate(sliders, start=1):
                 self._crea_slider(card, idx, chiave, etichetta, minimo, massimo, default, fmt)
-            if titolo == "DETTAGLIO E NITIDEZZA":
-                self.btn_rimuovi_grana_sviluppo = ctk.CTkButton(
-                    card,
-                    text="RIMUOVI GRANA (AUTO ISO)",
-                    height=30,
-                    fg_color="#6a4c93",
-                    hover_color="#7e5aa8",
-                    font=ctk.CTkFont(size=12, weight="bold"),
-                    command=self.toggle_rimuovi_grana,
-                )
-                self.btn_rimuovi_grana_sviluppo.grid(
-                    row=len(sliders) + 1, column=0, columnspan=3,
-                    padx=10, pady=(8, 10), sticky="ew",
-                )
+
 
         # curva tonale + split toning
         card2 = ctk.CTkFrame(scroll)
@@ -2469,13 +2566,10 @@ class FranchettiApp(ctk.CTk):
                 float(self.parametri.get("nitidezza_quantita", 1.0)),
                 float(self.parametri.get("nitidezza_raggio", 1.5)),
             )
-            self._imposta_parametro_slider("nr_luminanza", 60.0)
-            self._imposta_parametro_slider("nr_colore", 70.0)
-            self._imposta_parametro_slider(
-                "nitidezza_quantita",
-                max(float(self.parametri.get("nitidezza_quantita", 1.0)), 1.25),
-            )
-            self._imposta_parametro_slider("nitidezza_raggio", 1.2)
+            self._imposta_parametro_slider("nr_luminanza", 88.0)
+            self._imposta_parametro_slider("nr_colore", 92.0)
+            self._imposta_parametro_slider("nitidezza_quantita", 0.9)
+            self._imposta_parametro_slider("nitidezza_raggio", 0.9)
             self.parametri["rimuovi_grana_auto"] = True
         self._aggiorna_stato_grana()
 
@@ -2499,8 +2593,8 @@ class FranchettiApp(ctk.CTk):
             slider.set(default)
             label.configure(text=fmt.format(default))
             self.parametri[chiave] = default
-        self.parametri["rimuovi_grana_auto"] = False
-        self._grana_precedente = (0.0, 0.0, 1.0, 1.5)
+        self.parametri["rimuovi_grana_auto"] = True
+        self._grana_precedente = (0.0, 0.0, 0.9, 0.9)
         self._aggiorna_stato_grana()
         self.combo_curva.set("Lineare")
         self.parametri["curva_tonale"] = "Lineare"
@@ -2512,18 +2606,19 @@ class FranchettiApp(ctk.CTk):
         tab.grid_rowconfigure(0, weight=1)
         tab.grid_propagate(False)
 
-        scroll = ctk.CTkScrollableFrame(tab, label_text="Tethering Wi-Fi e distribuzione Cloud", height=320)
+        scroll = ctk.CTkScrollableFrame(tab, label_text="Tethering multi-marca e distribuzione Cloud", height=320)
         scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         scroll.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(scroll, text="SONY WI-FI - SMART REMOTE CONTROL", font=ctk.CTkFont(size=12, weight="bold")).grid(
+        ctk.CTkLabel(scroll, text="TETHERAGGIO MULTI-MARCA - SONY WI-FI DIRETTO", font=ctk.CTkFont(size=12, weight="bold")).grid(
             row=0, column=0, columnspan=3, padx=8, pady=(8, 2), sticky="w"
         )
         ctk.CTkLabel(
             scroll,
             text=(
-                "1) Sulla A7S apri l'app 'Smart Remote Control' (PlayMemories Camera Apps).\n"
-                "2) Collega il PC alla rete Wi-Fi della fotocamera (DIRECT-xxxx:ILCE-7S).\n"
+                "SONY (A7S e modelli compatibili con Smart Remote Control):\n"
+                "1) Apri l'app 'Smart Remote Control' sulla fotocamera.\n"
+                "2) Collega il PC alla rete Wi-Fi della fotocamera (DIRECT-xxxx).\n"
                 "3) Premi CONNETTI FOTOCAMERA, poi SCATTA E SCARICA.\n"
                 "La fotocamera non invia da sola le foto al PC: e' il programma a comandarla."
             ),
@@ -2565,14 +2660,36 @@ class FranchettiApp(ctk.CTk):
         )
         self.btn_sony_scatta.grid(row=0, column=2, padx=(5, 0), sticky="ew")
 
-        ctk.CTkLabel(scroll, text="HOT-FOLDER (CARTELLA MONITORATA)", font=ctk.CTkFont(size=12, weight="bold")).grid(
+        ctk.CTkLabel(
+            scroll,
+            text="ALTRI MARCHI: CANON, NIKON, FUJIFILM, PANASONIC, OM SYSTEM, LEICA",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=4, column=0, columnspan=3, padx=8, pady=(12, 2), sticky="w")
+        ctk.CTkLabel(
+            scroll,
+            text=(
+                "Collega la fotocamera via USB e usa il software di tethering del produttore: "
+                "Canon EOS Utility, Nikon NX Tether/Transfer 2, Fujifilm X Acquire, "
+                "Panasonic Lumix Tether, OM Capture, Leica Tethered. Imposta come destinazione "
+                "la cartella monitorata qui sotto: la conversione parte da sola a ogni scatto. "
+                "Funziona anche con qualsiasi altra marca che salvi su cartella locale, scheda o rete."
+            ),
+            justify="left",
+            anchor="w",
+            font=ctk.CTkFont(size=11),
+            text_color="#9aa0a6",
+            wraplength=900,
+        ).grid(row=5, column=0, columnspan=3, padx=8, pady=(0, 4), sticky="w")
+
+        ctk.CTkLabel(scroll, text="HOT-FOLDER MULTI-MARCA (CARTELLA MONITORATA)", font=ctk.CTkFont(size=12, weight="bold")).grid(
             row=6, column=0, columnspan=3, padx=8, pady=(14, 2), sticky="w"
         )
         ctk.CTkLabel(
             scroll,
             text=(
-                "Utile con USB + Imaging Edge Desktop, con cartelle sincronizzate "
-                "(Google Drive/Dropbox) o con fotocamere che salvano su cartella di rete."
+                "Scegli la cartella in cui Canon EOS Utility, Nikon Transfer 2, Fujifilm X Acquire, "
+                "Panasonic Lumix Tether, Sony Imaging Edge Desktop o un'altra app salvano gli scatti. "
+                "Va bene anche una cartella sincronizzata (Google Drive/Dropbox) o di rete."
             ),
             justify="left",
             anchor="w",
@@ -2765,36 +2882,42 @@ class FranchettiApp(ctk.CTk):
     def applica_preset(self, nome):
         preset = {
             "Web / Social": {
-                "max_dim": 2048, "qualita_jpeg": 85, "formato": "JPEG",
-                "contrasto": 0.35, "vivacita": 0.40, "nitidezza_quantita": 1.2,
-                "chiarezza": 0.15, "dehaze": 0.05,
+                "max_dim": 2048, "qualita_jpeg": 90, "formato": "JPEG",
+                "contrasto": 0.30, "vivacita": 0.35, "nitidezza_quantita": 0.8,
+                "nitidezza_raggio": 0.8, "chiarezza": 0.08, "dehaze": 0.02,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
             "Stampa Fine Art": {
                 "max_dim": 0, "qualita_jpeg": 100, "formato": "TIFF",
-                "contrasto": 0.25, "vivacita": 0.25, "nitidezza_quantita": 1.6,
-                "nitidezza_raggio": 1.8, "chiarezza": 0.10,
+                "contrasto": 0.22, "vivacita": 0.25, "nitidezza_quantita": 0.7,
+                "nitidezza_raggio": 1.0, "chiarezza": 0.06,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
             "Archivio JPEG": {
                 "max_dim": 0, "qualita_jpeg": 95, "formato": "JPEG",
-                "contrasto": 0.20, "vivacita": 0.20, "nitidezza_quantita": 0.8,
-                "preserva_exif": True,
+                "contrasto": 0.18, "vivacita": 0.20, "nitidezza_quantita": 0.6,
+                "nitidezza_raggio": 1.0, "preserva_exif": True,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
             "Ritratto": {
                 "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
-                "contrasto": 0.22, "vivacita": 0.20, "saturazione": 0.95,
-                "chiarezza": 0.05, "ombre": 12, "luci": -8,
-                "nitidezza_quantita": 0.9, "nr_luminanza": 15, "nr_colore": 20,
+                "contrasto": 0.22, "vivacita": 0.20, "saturazione": 0.97,
+                "chiarezza": 0.02, "ombre": 6, "luci": -4,
+                "nitidezza_quantita": 0.8, "nitidezza_raggio": 0.9,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
             "Paesaggio": {
-                "max_dim": 3840, "qualita_jpeg": 92, "formato": "JPEG",
-                "contrasto": 0.42, "vivacita": 0.45, "chiarezza": 0.30,
-                "dehaze": 0.20, "nitidezza_quantita": 1.8, "nitidezza_raggio": 1.6,
-                "hsl_verde": 12, "hsl_blu": 10,
+                "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
+                "contrasto": 0.35, "vivacita": 0.35, "chiarezza": 0.15,
+                "dehaze": 0.08, "nitidezza_quantita": 1.0, "nitidezza_raggio": 1.0,
+                "hsl_verde": 8, "hsl_blu": 6,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
             "Bianco e Nero": {
                 "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
-                "saturazione": 0.0, "contrasto": 0.45, "chiarezza": 0.25,
-                "nitidezza_quantita": 1.5, "grana": 12,
+                "saturazione": 0.0, "contrasto": 0.38, "chiarezza": 0.15,
+                "nitidezza_quantita": 0.9, "nitidezza_raggio": 0.9, "grana": 0,
+                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
             },
         }.get(nome)
 
@@ -2886,9 +3009,9 @@ class FranchettiApp(ctk.CTk):
                 pass
 
         self.entry_max_dim.delete(0, "end")
-        self.entry_max_dim.insert(0, str(self.parametri.get("max_dim", 1920)))
+        self.entry_max_dim.insert(0, str(self.parametri.get("max_dim", 3000)))
         try:
-            self._evidenzia_max_dim(int(self.parametri.get("max_dim", 1920)))
+            self._evidenzia_max_dim(int(self.parametri.get("max_dim", 3000)))
         except (TypeError, ValueError):
             pass
         self.entry_qualita.delete(0, "end")
@@ -2985,7 +3108,7 @@ class FranchettiApp(ctk.CTk):
         try:
             self.parametri["max_dim"] = int(self.entry_max_dim.get() or 0)
         except ValueError:
-            self.parametri["max_dim"] = 1920
+            self.parametri["max_dim"] = 3000
         try:
             self._evidenzia_max_dim(int(self.parametri["max_dim"]))
         except (TypeError, ValueError):

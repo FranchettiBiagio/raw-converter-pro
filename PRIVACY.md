@@ -1,8 +1,8 @@
 # Privacy Policy
 
 **Effective Date**: January 25, 2025  
-**Last Updated**: January 25, 2025  
-**Version**: 2.50.1
+**Last Updated**: October 27, 2026  
+**Version**: 2.55.0
 
 ---
 
@@ -201,4 +201,4 @@ You can verify our claims:
 
 ---
 
-*This policy reflects the actual behavior of Franchetti Raw Converter Pro v2.50.1. If you observe any discrepancy, please contact privacy@franchetti.dev immediately.*
+*This policy reflects the actual behavior of Franchetti Raw Converter Pro v2.55.0. If you observe any discrepancy, please contact privacy@franchetti.dev immediately.*

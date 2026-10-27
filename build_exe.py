@@ -21,8 +21,8 @@ VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.54.0"
-VERSION_TUPLE = (2, 54, 0, 0)
+VERSION = "2.55.0"
+VERSION_TUPLE = (2, 55, 0, 0)
 
 
 def run_cmd(cmd, cwd=None):
@@ -112,6 +112,7 @@ def main():
         "--hidden-import=skimage",
         "--hidden-import=skimage.color",
         "--hidden-import=skimage.filters",
+        "--hidden-import=skimage.restoration",
         "--hidden-import=customtkinter",
         "--hidden-import=watchdog",
         "--hidden-import=watchdog.observers",

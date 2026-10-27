@@ -1,6 +1,6 @@
 # User Manual
 
-**Franchetti Raw Converter Pro v2.54.0**  
+**Franchetti Raw Converter Pro v2.55.0**  
 > **Guida in italiano, semplice e completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - tutte le funzioni e le impostazioni consigliate. Versione HTML: [GUIDA_COMPLETA.html](GUIDA_COMPLETA.html).
 
 *Complete guide for photographers — Enterprise Edition*
@@ -51,7 +51,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Franchetti Raw Converter Pro v2.54.0                    [×] [−] [□] │
+│  Franchetti Raw Converter Pro v2.55.0                    [×] [−] [□] │
 ├─────────────────────────────────────────────────────────────────┤
 │  Franchetti Raw Converter Pro                                   │
 │  Converti RAW → JPG ridotto + watermark copyright               │
@@ -69,8 +69,8 @@
 │  [ C:\Users\Franchetti\Pictures\Converted          ] [Scegli] [Apri] │
 ├─────────────────────────────────────────────────────────────────┤
 │  3. OPZIONI CONVERSIONE                                           │
-│  Dimensione max (px lato lungo): [1920 ▼] (0 = nessuna riduzione)│
-│  Qualità JPG (1-100):              [85]  (85 = ottimo equilibrio)│
+│  Dimensione max (px lato lungo): [3000 ▼] (0 = nessuna riduzione)│
+│  Qualità JPG (1-100):              [90]  (90 = ottimo equilibrio)│
 │  Testo Copyright:                  [© Franchetti 2024        ]   │
 │  Dimensione font watermark:        [14]  (14 = piccolo, discreto)│
 │  ☑ Mantieni nome file originale    Prefisso: [FR_         ]     │
@@ -120,8 +120,8 @@
 #### Step 3: Configure Options (Optional)
 | Setting | Default | When to Change |
 |---------|---------|----------------|
-| **Dimensione max** | 1920 | Web: 1920, Print: 3000+, Archive: 0 |
-| **Qualità JPG** | 85 | 90-95 for prints, 75-80 for web |
+| **Dimensione max** | 3000 | Web: 2048, Print: 3000+, Archive: 0 |
+| **Qualità JPG** | 90 | 92-95 for prints, 85-90 for web |
 | **Copyright** | `© Franchetti` | Your name/brand/year |
 | **Font size** | 14 | 10-12 subtle, 16-20 visible |
 | **Mantieni nome** | ON | OFF for batch rename with prefix |
@@ -148,10 +148,10 @@
 | 1024 | Standard web | 1024 px |
 | 1280 | HD ready (720p) | 1280 px |
 | 1600 | High-res web | 1600 px |
-| **1920** | **Full HD (1080p)** | **1920 px** |
-| 2048 | 2K reference | 2048 px |
+| 1920 | Full HD (1080p) | 1920 px |
+| 2048 | 2K reference / light web | 2048 px |
 | 2560 | 1440p / QHD | 2560 px |
-| 3000 | Print (A4 @ 300 DPI) | 3000 px |
+| **3000** | **Default: detail, enlargements, A4 print** | **3000 px** |
 | 4000 | Large print | 4000 px |
 | **0** | **Original resolution** | **No resize** |
 
@@ -162,12 +162,12 @@
 | Quality | File Size | Visual Quality | Best For |
 |---------|-----------|----------------|----------|
 | 75 | Small | Good | Web, email, social |
-| **85** | **Balanced** | **Excellent** | **General purpose** |
-| 90 | Larger | Near-lossless | Portfolio, clients |
+| 85 | Balanced | Excellent | General purpose |
+| **90** | **Balanced+** | **Excellent** | **Default: web, portfolio, clients** |
 | 95 | Large | Virtually lossless | Archive, print prep |
 | 100 | Largest | Maximum | Not recommended (diminishing returns) |
 
-> **Recommendation**: 85 is the sweet spot. Difference from 95 is invisible at normal viewing but 30-50% smaller files.
+> **Recommendation**: 90 is the new default and the sweet spot at 3000 px. Difference from 95 is often invisible at normal viewing but files are 30-50% smaller.
 
 ### Watermark Configuration
 
@@ -214,13 +214,13 @@ Franchetti Studio • All Rights Reserved
 
 ### Performance Expectations
 
-| Hardware | Speed (24 MP RAW → 1920px JPG) |
-|----------|--------------------------------|
-| 4 core | ~20 file/min |
-| 8 core | ~40 file/min |
-| 20 core (i9-12900H) | ~60–100 file/min |
+| Hardware | Speed (24 MP RAW → 3000px JPG, denoise ON) |
+|----------|--------------------------------------------|
+| 4 core | ~10–15 file/min |
+| 8 core | ~20–30 file/min |
+| 20 core (i9-12900H) | ~30–50 file/min |
 
-> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale: 6 RAW da 24 MP in 22,1 s con 6 processi (3,06× rispetto al sequenziale).
+> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale v2.55.0: 4 RAW da 24 MP a 3000 px con denoise automatico in **12,8 s** totali. I preset a risoluzione originale richiedono circa 40-45 s per foto perché il denoise non-locale lavora a 24 MP.
 
 ### Memory Management
 
@@ -330,7 +330,7 @@ A: Never. Only reads them. Originals untouched.
 **Q: Can I use it on Mac/Linux?**  
 A: Windows only currently. Source code is cross-platform; PRs welcome for native builds.
 
-**Q: Why 62 MB for a simple tool?**  
+**Q: Why 78 MB for a simple tool?**  
 A: Bundles Python runtime + LibRaw + Pillow + NumPy + scikit-image + CustomTkinter for zero-dependency execution.
 
 ### Technical
@@ -377,4 +377,4 @@ When reporting issues, include:
 
 ---
 
-*Manual v2.54.0 — 27 Ottobre 2026*
+*Manual v2.55.0 — 27 Ottobre 2026*

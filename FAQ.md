@@ -1,6 +1,6 @@
 # Domande Frequenti (FAQ)
 
-**Franchetti Raw Converter Pro v2.54.0**
+**Franchetti Raw Converter Pro v2.55.0**
 
 ---
 
@@ -10,12 +10,12 @@
 **R:** Sì. Licenza **MIT** — uso libero personale e commerciale. Attribuzione apprezzata ma non obbligatoria oltre la licenza.
 
 ### D: Devo installarlo?
-**R:** No. È **portatile** — singolo `.exe` (~62 MB). Doppio clic e funziona. Nessun installer, nessun registro, nessuna cartella AppData.
+**R:** No. È **portatile** — singolo `.exe` (~78 MB). Doppio clic e funziona. Nessun installer, nessun registro, nessuna cartella AppData.
 
 ### D: Funziona su Mac / Linux?
 **R:** Solo Windows 10/11 x64 attualmente. Il codice sorgente è multipiattaforma; contributi per build native benvenuti.
 
-### D: Perché ~62 MB per un "semplice convertitore"?
+### D: Perché ~78 MB per un "semplice convertitore"?
 **R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Y/Cb/Cr e guided filter) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests**. Zero dipendenze esterne = funziona ovunque.
 
 ### D: I miei file RAW originali vengono modificati?
@@ -49,16 +49,17 @@
 **R:** **No: l'output è sempre sRGB con profilo ICC incorporato.** Le opzioni Adobe RGB/ProPhoto non erano realmente implementate e sono state rimosse per evitare risultati errati.
 
 ### D: Quanto è veloce?
-**R:** Dipende dalla CPU. Un RAW Sony A7S da 24 MP richiede circa 10–12 s per core; il batch usa **tutti i core logici** (fino a ~3× su 6 file, misurato su i9-12900H). Con 20 core si elaborano decine di file al minuto.
+**R:** Dipende dalla CPU. Con il profilo predefinito **3000 px + denoise** 4 RAW Sony A7S da 24 MP richiedono circa **12,8 s** in batch e **8–9 s** per una singola foto. I preset a risoluzione originale (Stampa Fine Art / Archivio) richiedono circa **40-45 s per foto**, perché il denoise non-locale lavora anche a 24 MP. Per il web leggerissimo usa 2048 px o disattiva il denoise.
 
 ### D: Quanta RAM usa?
-**R:** Picco ~1–1,5 GB per processo (RAW 24 MP). Il numero di processi viene ridotto automaticamente se la RAM libera non basta.
+**R:** Picco ~1–1,5 GB per processo (RAW 24 MP) e qualcosa in più con il denoise non-locale. Il numero di processi viene ridotto automaticamente se la RAM libera non basta.
 
 ### D: Cos'è la pipeline Y/Cb/Cr?
-**R:** Introdotta nella v2.50.1. Elaborazione in spazio **Y/Cb/Cr** (separazione Luminanza/Crominanza):
+**R:** Elaborazione in spazio **Y/Cb/Cr** (separazione Luminanza/Crominanza):
 - Contrasto sigmoidale (curva logistica a "S")
 - Vivacità selettiva (solo toni spenti)
-- Nitidezza Unsharp Mask su solo canale Y (zero aloni colorati)
+- **Denoise ibrido**: guided filter + non-local means solo nelle zone piatte
+- **Nitidezza controllata** su solo canale Y, con soglia sul rumore (zero aloni colorati e niente grana amplificata)
 - Output con profilo ICC sRGB embedded
 
 ---
@@ -69,7 +70,7 @@
 **R:** Sì. **Testo bianco 80% opacità + ombra nera 1px 50% opacità**. Leggibile su qualsiasi sfondo.
 
 ### D: Posso usare caratteri speciali/emoji?
-**R:** Sì, **Unicode completo**. Es: `© Franchetti 2025`, `📸 Mario Rossi`, `@handle | sito.com`, `日本語 OK`.
+**R:** Sì, **Unicode completo**. Es: `© Franchetti 2026`, `📸 Mario Rossi`, `@handle | sito.com`, `日本語 OK`.
 
 ### D: Quale font usa?
 **R:** Prova `Arial Bold` → `Arial` → `DejaVuSans` → font bitmap di sistema. Dimensione 8–600.
@@ -96,8 +97,12 @@
 ### D: Posso convertire in PNG/WebP invece di JPEG?
 **R:** **Sì.** Formati disponibili: JPEG, PNG, TIFF e WEBP. Tutti con profilo ICC sRGB incorporato.
 
-### D: Come funziona il tethering Wi-Fi?
-**R:** Due modalità: **Hot-Folder** (monitora una cartella e converte automaticamente i file appena arrivano, aspettando la fine della scrittura) e **Sony A7S** (connessione Wi-Fi DIRECT, scatto remoto e download).
+### D: Come funziona il tethering?
+**R:** Due modalità:
+- **Multi-marca / Hot-Folder**: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre marche usano il software di tethering del produttore (EOS Utility, NX Tether, X Acquire, Lumix Tether, OM Capture, Leica Tethered). Il programma monitora la cartella di destinazione e converte ogni scatto appena è completo.
+- **Sony A7S**: connessione Wi-Fi DIRECT, scatto remoto e download diretti.
+
+Per tutte le marche la pipeline applicata è la stessa.
 
 ### D: Quali servizi cloud supporta?
 **R:** **Telegram** (Bot API `sendPhoto`) e **Dropbox** (`files/upload`) sono operativi. Google Drive, Meta e SwissTransfer sono predisposti ma non attivi in questa versione: vengono saltati senza errori.
@@ -141,7 +146,7 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-## 📞 Supporto v2.54.0
+## 📞 Supporto v2.55.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -151,4 +156,4 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-*FAQ v2.54.0 — 26 Ottobre 2026 — Aggiornata ad ogni release*
+*FAQ v2.55.0 — 26 Ottobre 2026 — Aggiornata ad ogni release*

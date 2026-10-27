@@ -1,6 +1,6 @@
 # Guida completa a Franchetti Raw Converter Pro
 
-**Versione 2.54.0 — Windows 10/11 — Italiano**
+**Versione 2.55.0 — Windows 10/11 — Italiano**
 
 Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.
 
@@ -44,7 +44,7 @@ La finestra ha quattro schede:
 |---|---|
 | **Batch** | Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. È la scheda principale. |
 | **Sviluppo RAW** | Imposta esposizione, colore, dettaglio, riduzione grana, nitidezza, vignettatura e split toning. |
-| **Tethering & Cloud** | Collega una Sony via Wi-Fi, monitora una cartella e invia i risultati a Telegram o Dropbox. |
+| **Tethering & Cloud** | Monitora una cartella per Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre marche; per Sony è disponibile anche il controllo Wi-Fi diretto. Invia i risultati a Telegram o Dropbox. |
 | **Log** | Mostra cosa sta facendo il programma e permette di salvare il registro. |
 
 In basso c'è la **barra di stato**: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, rimozione grana, avanzamento e apertura della cartella.
@@ -86,10 +86,10 @@ Il programma ridimensiona la foto **prima** di applicare contrasto, colore, niti
 | **1024** | Web veloce, documenti, presentazioni |
 | **1200** | Siti web, gallery leggere |
 | **1600** | Web di qualità, social ad alta risoluzione |
-| **1920** | **Impostazione predefinita consigliata** per web e social |
+| **1920** | Web classico, Full HD, file molto leggeri |
 | **2048** | Social molto definiti, schermi 2K |
 | **2560** | Monitor 2K/4K, stampe piccole |
-| **3000** | Stampe 20×30 cm, ritratti |
+| **3000** | **Impostazione predefinita consigliata**: dettaglio, ingrandimenti, ritratti e stampe 20×30 cm |
 | **4000** | Stampe grandi, archival leggero |
 | **6000** | Massima qualità per stampe molto grandi |
 | **Originale** | Nessun ridimensionamento: usa la risoluzione nativa del RAW |
@@ -98,10 +98,12 @@ Puoi anche scrivere un valore personalizzato nel campo. **0** significa **Origin
 
 > Il programma **non ingrandisce** mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.
 
+**Profilo predefinito v2.55.0:** **3000 px**, **JPEG qualità 90**, **RIMUOVI GRANA (AUTO ISO) attivo**, riduzione rumore **88/92** e nitidezza **0,9 / 0,9**. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.
+
 #### Qualità
 
 - Valore da **1 a 100**.
-- **JPEG:** 85 è ottimo per il web; 90–95 per clienti e stampe; 100 è il massimo ma il file è molto più grande e non sempre si vede la differenza.
+- **JPEG:** **90 è il default** e il miglior compromesso per web, clienti e ingrandimenti; 85 per file più leggeri; 95 per stampe e consegne; 100 è il massimo ma il file è molto più grande e non sempre si vede la differenza.
 - **WebP:** usa gli stessi valori; 80–90 è di solito più che sufficiente.
 - **PNG e TIFF:** la qualità non si applica; PNG è senza perdita (file grandi), TIFF usa compressione LZW senza perdita.
 
@@ -137,15 +139,17 @@ Salva nel JPEG i dati di scatto: data, fotocamera, obiettivo, ISO, tempi, diafra
 
 È un intervento automatico e conservativo:
 
-- schiarisce le foto scure;
+- schiarisce le foto scure con un limite intelligente: evita di trasformare una notte in giorno e di far esplodere la grana nelle ombre profonde;
 - recupera le alte luci solo quando sono realmente bruciate;
-- aggiunge **vividezza** ai colori spenti (circa +10–16%);
-- applica un micro-contrasto leggerissimo;
-- lascia invariati i bianchi e i neri assoluti e i grigi neutri già esposti correttamente.
+- aggiunge **vividezza** ai colori spenti (circa +8–13%);
+- lascia invariati i bianchi e i neri assoluti e i grigi neutri già esposti correttamente;
+- **non applica più un secondo micro-contrasto**: la nitidezza arriva dopo il denoise, con una soglia che protegge le zone piatte.
 
 **Quando attivarla:** foto scure, controluce, interni, giornate nuvolose, foto da smartphone o RAW sottoesposti.
 
 **Quando evitarla:** foto già esposte bene, still life con colori delicati, foto bianco e nero, immagini in cui vuoi mantenere l'atmosfera scura.
+
+> Se la foto è molto scura, PIÙ LUMINOSA la schiarisce ma non recupera un'esposizione impossibile. Per i notturni è spesso meglio lasciarla spenta e usare **Esposizione**, **Ombre** e **RIMUOVI GRANA**.
 
 > Non è un miracolo: se la foto è completamente nera o bruciata, non può recuperare ciò che non c'è. In quel caso usa le regolazioni manuali di **Esposizione**, **Ombre** e **Luci**.
 
@@ -188,14 +192,14 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 | Preset | Cosa imposta |
 |---|---|
 | **Personalizzato** | Non cambia nulla: usi le tue impostazioni |
-| **Web / Social** | 2048 px, JPEG 85, contrasto 0,35, vivacità 0,40, nitidezza 1,2, chiarezza 0,15, dehaze 0,05 |
-| **Stampa Fine Art** | Originale, TIFF, qualità 100, contrasto 0,25, vivacità 0,25, nitidezza 1,6 raggio 1,8, chiarezza 0,10 |
-| **Archivio JPEG** | Originale, JPEG 95, contrasto 0,20, vivacità 0,20, nitidezza 0,8, EXIF attivo |
-| **Ritratto** | 3000 px, JPEG 92, contrasto 0,22, vivacità 0,20, saturazione 0,95, chiarezza 0,05, ombre +12, luci -8, nitidezza 0,9, riduzione rumore 15/20 |
-| **Paesaggio** | 3840 px, JPEG 92, contrasto 0,42, vivacità 0,45, chiarezza 0,30, dehaze 0,20, nitidezza 1,8 raggio 1,6, verdi +12, blu +10 |
-| **Bianco e Nero** | 3000 px, JPEG 92, saturazione 0, contrasto 0,45, chiarezza 0,25, nitidezza 1,5, grana 12 |
+| **Web / Social** | 2048 px, JPEG 90, contrasto 0,30, vivacità 0,35, nitidezza 0,8 raggio 0,8, chiarezza 0,08, dehaze 0,02, denoise 88/92 |
+| **Stampa Fine Art** | Originale, TIFF, qualità 100, contrasto 0,22, vivacità 0,25, nitidezza 0,7 raggio 1,0, chiarezza 0,06, denoise 88/92 |
+| **Archivio JPEG** | Originale, JPEG 95, contrasto 0,18, vivacità 0,20, nitidezza 0,6 raggio 1,0, denoise 88/92, EXIF attivo |
+| **Ritratto** | 3000 px, JPEG 92, contrasto 0,22, vivacità 0,20, saturazione 0,97, chiarezza 0,02, ombre +6, luci −4, nitidezza 0,8 raggio 0,9, denoise 88/92 |
+| **Paesaggio** | 3000 px, JPEG 92, contrasto 0,35, vivacità 0,35, chiarezza 0,15, dehaze 0,08, nitidezza 1,0 raggio 1,0, verdi +8, blu +6, denoise 88/92 |
+| **Bianco e Nero** | 3000 px, JPEG 92, saturazione 0, contrasto 0,38, chiarezza 0,15, nitidezza 0,9 raggio 0,9, grana 0, denoise 88/92 |
 
-> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Il preset **Ritratto** imposta una riduzione rumore manuale (15/20): è già attiva anche se il pulsante **RIMUOVI GRANA** non è evidenziato.
+> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.55.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
 
 **Salva config** e **Carica config** salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.
 
@@ -205,7 +209,7 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 
 - **AVVIA CONVERSIONE BATCH:** avvia il lavoro con le impostazioni correnti.
 - **ANNULLA:** interrompe il batch e rimuove i file parziali. I file già completati restano.
-- **RIMUOVI GRANA (AUTO ISO):** attiva o disattiva il preset intelligente di riduzione rumore. Quando è attivo diventa verde e mostra **GRANA RIMOSSA (AUTO ISO)**.
+- **RIMUOVI GRANA (AUTO ISO):** attiva o disattiva il preset intelligente di riduzione rumore. È **attivo di default** e si trova subito sotto **PIÙ LUMINOSA**. Quando è attivo diventa verde e mostra **GRANA RIMOSSA (AUTO ISO)**.
 - **Barra di avanzamento:** mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati.
 - **Apri cartella output:** apre la destinazione.
 
@@ -263,36 +267,38 @@ Lo stesso interruttore della scheda Batch. È un'elaborazione automatica dell'es
 | **Dehaze (rimozione velo)** | 0,00 … 1,00 | Toglie la foschia e aumenta la trasparenza | 0,05–0,20; oltre 0,30 può scurire troppo |
 | **Nitidezza (quantità)** | 0,00 … 5,00 | Quanto forte è la nitidezza | 0,8–1,3 ritratti; 1,2–1,8 paesaggi; 1,5–2,0 stampa |
 | **Nitidezza (raggio)** | 0,50 … 4,00 | Spessore del dettaglio | 1,0–1,5 ritratti; 1,2–1,8 paesaggi |
-| **Riduzione rumore luminanza** | 0 … 100 | Toglie il rumore chiaro/scuro (grana) | 0 per ISO bassi; 40–70 per ISO alti |
-| **Riduzione rumore colore** | 0 … 100 | Toglie le macchie colorate | 0 per ISO bassi; 50–80 per ISO alti |
+| **Riduzione rumore luminanza** | 0 … 100 | Toglie il rumore chiaro/scuro (grana) | 88 con AUTO; 30–60 solo se vuoi più texture |
+| **Riduzione rumore colore** | 0 … 100 | Toglie le macchie colorate | 92 con AUTO; 50–75 per interventi manuali |
 
-**Come funziona la nitidezza:** viene applicata solo alla luminanza, quindi non crea bordi colorati. Per questo puoi usare valori più alti rispetto ad altri programmi, ma non esagerare.
+**Come funziona la nitidezza:** viene applicata solo alla luminanza, quindi non crea bordi colorati. La maschera ha una **soglia sul rumore**: interviene sui dettagli veri e lascia pulite le zone piatte, così la grana non torna visibile dopo la nitidezza.
 
-**Come funziona la riduzione rumore:** lavora separatamente su luminanza e colore. Protegge i bordi e lascia un piccolo residuo di grana per non rendere la pelle “di plastica”. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.
+**Come funziona la riduzione rumore:** è un **denoise ibrido**. Un guided filter separa base e dettaglio; il dettaglio viene “coringato” per spegnere solo la grana fine. Nelle zone realmente piatte (cieli, pareti, ombre) interviene anche un secondo passaggio **non-local means** che elimina i residui senza toccare visi, capelli e tessuti. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.
 
 ### 4.6 RIMUOVI GRANA (AUTO ISO)
 
-Questo è il pulsante **un clic** per le foto rumorose.
+Questo è il pulsante **un clic** per le foto rumorose. È **attivo di default** e si trova subito sotto **PIÙ LUMINOSA**, sia nel tab Batch sia nel tab Sviluppo RAW.
 
 **Quando lo premi, imposta:**
 
-- riduzione rumore luminanza **60**;
-- riduzione rumore colore **70**;
-- nitidezza quantità almeno **1,25**;
-- nitidezza raggio **1,20**.
+- riduzione rumore luminanza **88**;
+- riduzione rumore colore **92**;
+- nitidezza quantità **0,9**;
+- nitidezza raggio **0,9**.
 
 La forza della riduzione si adatta automaticamente all'ISO del RAW:
 
 | ISO | Fattore applicato |
 |---|---|
-| fino a 400 | 0,60 (delicato) |
-| 401–800 | 0,78 |
-| 801–1600 | 0,92 |
-| 1601–3200 | 1,08 |
-| 3201–6400 | 1,22 |
+| fino a 200 | 0,45 (molto delicato) |
+| 201–400 | 0,60 |
+| 401–800 | 0,76 |
+| 801–1600 | 0,90 |
+| 1601–2000 | 0,97 |
+| 2001–3200 | 1,08 |
+| 3201–6400 | 1,20 |
 | oltre 6400 | 1,35 (più forte) |
 
-**Quando usarlo:** ISO 800+, interni, sera, concerti, sport, foto con ombre sollevate.
+**Quando usarlo:** ISO 800+, interni, sera, concerti, sport, foto con ombre sollevate. Con il profilo predefinito è già attivo: non devi fare nulla.
 
 **Quando non usarlo:** ISO 100–400 con luce buona, still life puliti, foto in cui vuoi conservare la grana.
 
@@ -339,7 +345,25 @@ Riporta gli slider, la curva e lo split toning ai valori predefiniti. **Non** ca
 
 ## 5. Scheda Tethering & Cloud
 
-### 5.1 Sony Wi-Fi — Smart Remote Control
+### 5.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica
+
+Il programma **non pilota direttamente** il corpo macchina di queste marche. Usa il software di tethering del produttore, che salva gli scatti in una cartella: il programma monitora quella cartella e applica automaticamente la pipeline completa.
+
+1. Apri il software di tethering della tua fotocamera:
+   - **Canon:** EOS Utility / Canon tethering;
+   - **Nikon:** NX Tether (o SnapBridge, se il modello lo prevede);
+   - **Fujifilm:** X Acquire / tethering Fujifilm;
+   - **Panasonic:** Lumix Tether;
+   - **OM System / Olympus:** OM Capture;
+   - **Leica:** Leica Tethered / Image Shuttle.
+2. Imposta nel software la **cartella di destinazione** degli scatti (per esempio `Immagini\Tethering`).
+3. Nel programma apri **Tethering & Cloud**, scegli quella cartella come **Cartella fotocamera** e una cartella output diversa.
+4. Premi **AVVIA MONITORAGGIO CARTELLA**.
+5. Scatta: appena il file è completo, il programma lo sviluppa con le impostazioni correnti e lo salva nella cartella output.
+
+> Per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica il flusso è quindi **software del produttore + hot-folder**. Non serve installare driver proprietari nel programma.
+
+### 5.2 Sony Wi-Fi — Smart Remote Control
 
 Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La fotocamera **non invia da sola** le foto: è il programma a comandarla.
 
@@ -359,7 +383,7 @@ Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La f
 - Se la fotocamera si spegne, riconnetti la rete Wi-Fi e premi di nuovo **CONNETTI FOTOCAMERA**.
 - La distanza ideale è di pochi metri, senza muri spessi.
 
-### 5.2 Hot-folder (cartella monitorata)
+### 5.3 Hot-folder (cartella monitorata)
 
 È il modo più semplice per automatizzare l'arrivo delle foto.
 
@@ -371,7 +395,7 @@ Quando arriva un file supportato, il programma aspetta che la scrittura sia fini
 
 **Consiglio:** usa una cartella di appoggio dedicata solo all'arrivo delle foto. Non puntare il monitoraggio sulla cartella che contiene l'intero archivio: sarebbe inutile e lento.
 
-### 5.3 Credenziali Cloud
+### 5.4 Credenziali Cloud
 
 **Telegram (operativo):**
 
@@ -419,29 +443,32 @@ La scheda **Log** mostra in tempo reale:
 ### 7.1 Tabella rapida
 
 | Tipo di foto | Lato max | Qualità | Formato | PIÙ LUMINOSA | Rimuovi grana | Nitidezza | Watermark |
-|---|---:|---:|---|---|---|---|---|
-| Web / social | 1920 | 90 | JPEG | Solo se scura | ISO 800+ | 1,2 / 1,2 | Sì, piccolo |
-| Social alta qualità | 2048 | 90 | JPEG | Solo se scura | ISO 800+ | 1,2 / 1,2 | Sì |
-| Stampa fine art | Originale | 95–100 | TIFF | No | ISO 1600+ | 1,6 / 1,8 | No |
-| Archivio | Originale | 95 | JPEG | No | No | 0,8 / 1,5 | No |
-| Ritratto | 3000 | 92 | JPEG | Sì, se scuro | ISO 800+ | 0,9 / 1,2 | Solo se richiesto |
-| Paesaggio | 3000–3840 | 92 | JPEG | Solo se scuro | ISO 800+ | 1,5–1,8 / 1,6 | No |
-| Notte / concerto | 1920–3000 | 92 | JPEG | No | Sì | 1,0 / 1,2 | No |
-| Bianco e nero | 3000 | 92 | JPEG | No | ISO 1600+ | 1,5 / 1,5 | Facoltativo |
-| Prova rapida | 1200 | 85 | JPEG | No | No | 1,0 / 1,5 | No |
+|---|---|---:|---:|---|---|---|---|---|
+| Web / social | 2048 | 90 | JPEG | Solo se scura | AUTO | 0,8 / 0,8 | Sì, piccolo |
+| Social alta qualità | 3000 | 90 | JPEG | Solo se scura | AUTO | 0,9 / 0,9 | Sì |
+| Stampa fine art | Originale | 100 | TIFF | No | AUTO | 0,7 / 1,0 | No |
+| Archivio | Originale | 95 | JPEG | No | AUTO | 0,6 / 1,0 | No |
+| Ritratto | 3000 | 92 | JPEG | Solo se scuro | AUTO | 0,8 / 0,9 | Solo se richiesto |
+| Paesaggio | 3000 | 92 | JPEG | Solo se scuro | AUTO | 1,0 / 1,0 | No |
+| Notte / concerto | 3000 | 92 | JPEG | No | AUTO | 0,9 / 0,9 | No |
+| Bianco e nero | 3000 | 92 | JPEG | No | AUTO | 0,9 / 0,9 | Facoltativo |
+| Prova rapida | 1200 | 88 | JPEG | No | AUTO | 0,8 / 0,8 | No |
+
+> “AUTO” significa **RIMUOVI GRANA (AUTO ISO)** attivo: la forza viene calibrata sull'ISO del RAW. È il profilo predefinito, non un'eccezione.
 
 ### 7.2 Consigli per ISO
 
 | ISO | Riduzione rumore | Note |
 |---|---|---|
-| 100–400 | 0 / 0 | Lascia il dettaglio naturale |
-| 400–800 | 15–25 / 20–30 | Solo se vedi rumore nelle ombre |
-| 800–1600 | 30–45 / 40–55 | Il pulsante AUTO è già adatto |
-| 1600–3200 | 45–60 / 55–70 | AUTO consigliato |
-| 3200–6400 | 60–70 / 70–80 | AUTO; controlla la pelle |
-| Oltre 6400 | 70–80 / 80–90 | AUTO; valuta un formato più piccolo |
+| 100–400 | AUTO (0,45–0,60) | Lascia il dettaglio naturale, grana quasi assente |
+| 400–800 | AUTO (0,76) | Solo se vedi rumore nelle ombre |
+| 800–1600 | AUTO (0,90) | Il pulsante è già calibrato |
+| 1600–2000 | AUTO (0,97) | Pulito senza effetto plastica |
+| 2001–3200 | AUTO (1,08) | Controlla la pelle nei ritratti |
+| 3201–6400 | AUTO (1,20) | AUTO; controlla la pelle |
+| Oltre 6400 | AUTO (1,35) | AUTO; valuta un formato più piccolo |
 
-**Regola:** meglio un po' di grana che una pelle “liscia come plastica”. Se il risultato è troppo morbido, abbassa la riduzione luminanza di 10–15 punti.
+**Regola:** meglio un po' di grana che una pelle “liscia come plastica”. Se il risultato è troppo morbido, abbassa la riduzione luminanza di 10–15 punti. Il denoise ibrido lavora soprattutto nelle zone piatte, quindi conserva meglio i dettagli rispetto a un filtro unico.
 
 ### 7.3 Consigli per ritratti
 
@@ -452,8 +479,8 @@ La scheda **Log** mostra in tempo reale:
 - **Vivacità:** 0,15–0,25.
 - **Saturazione:** 0,95–1,00.
 - **Chiarezza:** 0,05–0,10.
-- **Nitidezza:** 0,8–1,0, raggio 1,2.
-- **Riduzione rumore:** solo se serve; il preset **Ritratto** è un buon punto di partenza.
+- **Nitidezza:** 0,8–1,0, raggio 0,9.
+- **Riduzione rumore:** AUTO; il preset **Ritratto** è un buon punto di partenza.
 
 ### 7.4 Consigli per paesaggi
 
@@ -461,18 +488,18 @@ La scheda **Log** mostra in tempo reale:
 - **Vivacità:** 0,30–0,45.
 - **Chiarezza:** 0,20–0,30.
 - **Dehaze:** 0,10–0,20.
-- **Verdi:** +8…+15.
-- **Blu:** +5…+10, ma non esagerare con il cielo.
-- **Nitidezza:** 1,5–1,8, raggio 1,6.
+- **Verdi:** +5…+12.
+- **Blu:** +3…+8, ma non esagerare con il cielo.
+- **Nitidezza:** 0,9–1,2, raggio 1,0.
 
 ### 7.5 Consigli per notte e concerti
 
-- Non alzare troppo l'esposizione: il rumore aumenta.
-- Usa **RIMUOVI GRANA (AUTO ISO)**.
+- Non alzare troppo l'esposizione: il rumore aumenta. Se usi **PIÙ LUMINOSA**, controlla il risultato al 100%: il limite automatico evita eccessi, ma un notturno resta un notturno.
+- Lascia attivo **RIMUOVI GRANA (AUTO ISO)**.
 - Riduci il contrasto a 0,20–0,30 per non perdere dettaglio nelle ombre.
-- Nitidezza 0,9–1,2, raggio 1,2.
-- Se i colori sono troppo sporchi, alza la riduzione rumore colore a 75–85.
-- Converti a 1920–3000 px: il rumore è meno visibile e il file è più gestibile.
+- Nitidezza 0,9–1,0, raggio 0,9.
+- Se i colori sono troppo sporchi, alza la riduzione rumore colore a 95.
+- Converti a 3000 px: il rumore è meno visibile, i dettagli restano e il file è più gestibile.
 
 ---
 
@@ -481,33 +508,33 @@ La scheda **Log** mostra in tempo reale:
 ### 8.1 Web e social in 4 passi
 
 1. Seleziona la cartella RAW.
-2. Scegli **1920** px, **JPEG**, qualità **90**.
+2. Scegli **2048** px, **JPEG**, qualità **90**.
 3. Attiva **PIÙ LUMINOSA** solo se le foto sono scure.
-4. Avvia. Per le foto a ISO alto, attiva **RIMUOVI GRANA**.
+4. Avvia. **RIMUOVI GRANA (AUTO ISO)** è già attivo: non serve altro per ISO alti.
 
 ### 8.2 Consegna al cliente
 
-1. **3000** px, **JPEG**, qualità **95**.
+1. **3000** px, **JPEG**, qualità **95** (o preset **Ritratto**).
 2. **PIÙ LUMINOSA** attiva solo sulle foto sottoesposte.
-3. **RIMUOVI GRANA** per ISO 800+.
+3. **RIMUOVI GRANA (AUTO ISO)** già attivo.
 4. Watermark solo se previsto dal contratto.
 5. Controlla 5 foto campione prima di consegnare tutto.
 
 ### 8.3 Stampa fine art
 
-1. **Originale**, **TIFF**, qualità **100**.
+1. **Originale**, **TIFF**, qualità **100** (preset **Stampa Fine Art**).
 2. **PIÙ LUMINOSA** spenta.
-3. Nitidezza **1,6**, raggio **1,8**.
-4. **RIMUOVI GRANA** solo se necessario.
+3. Nitidezza **0,7**, raggio **1,0**.
+4. **RIMUOVI GRANA (AUTO ISO)** attivo: a risoluzione piena il denoise non-locale richiede più tempo, ma il file resta pulito.
 5. Nessun watermark.
 6. Verifica la stampa con il laboratorio: il TIFF è senza perdita.
 
 ### 8.4 Archivio
 
-1. **Originale**, **JPEG**, qualità **95**.
+1. **Originale**, **JPEG**, qualità **95** (preset **Archivio JPEG**).
 2. EXIF attivo.
 3. Nessun watermark.
-4. Nessuna riduzione rumore, salvo RAW molto rumorosi.
+4. **RIMUOVI GRANA (AUTO ISO)** attivo, salvo RAW già puliti a ISO basso.
 5. Conserva anche i RAW originali su un disco separato.
 
 ### 8.5 Bianco e nero
@@ -521,9 +548,9 @@ La scheda **Log** mostra in tempo reale:
 
 ### 8.6 Tethering in studio
 
-1. Collega la Sony via Wi-Fi.
+1. Per Canon, Nikon, Fujifilm, Panasonic, OM System o Leica apri il software di tethering della marca e imposta la sua cartella di destinazione. Per Sony puoi usare il Wi-Fi diretto.
 2. Apri **Tethering & Cloud**.
-3. Scegli la cartella di arrivo e la cartella output.
+3. Scegli la cartella di arrivo (o la cartella del software del produttore) e la cartella output.
 4. Avvia il monitoraggio.
 5. Scatta: il programma converte automaticamente.
 6. Se necessario, attiva **Telegram** o **Dropbox** per l'invio immediato.
@@ -535,10 +562,11 @@ La scheda **Log** mostra in tempo reale:
 ### Il programma è lento. Perché?
 
 - La prima conversione è più lenta: il programma carica le librerie.
-- **Originale** e **denoise** richiedono più tempo e RAM.
+- Il profilo predefinito **3000 px + denoise ibrido** richiede più tempo di un 1920 px senza denoise: su 4 RAW da 24 MP servono circa 13 secondi in parallelo.
+- **Originale** e **Stampa Fine Art** richiedono più tempo e RAM: il denoise non-locale lavora anche a 24 MP (circa 40-45 secondi per foto).
 - Con RAW da 50–60 MP il numero di processi viene ridotto per non esaurire la memoria.
 - Chiudi browser, giochi e altri programmi pesanti.
-- Per il web usa **1920 px**: è molto più veloce e spesso sufficiente.
+- Per il web leggerissimo usa **2048 px** o disattiva **RIMUOVI GRANA**: è molto più veloce e spesso sufficiente.
 - Non convertire due volte la stessa cartella nella stessa destinazione.
 
 ### Un file dà errore. Cosa faccio?
@@ -581,6 +609,10 @@ Abbassa **Saturazione blu** e **Vivacità**. Se il cielo è bruciato, usa **Luci
 - Disattiva VPN e firewall per quella rete.
 - Riavvia la fotocamera e riconnetti.
 
+### Uso Canon, Nikon, Fujifilm, Panasonic, OM System o Leica: posso collegarle direttamente?
+
+Il programma non controlla direttamente questi corpi macchina. Apri il software di tethering del produttore (EOS Utility, NX Tether, X Acquire, Lumix Tether, OM Capture, Leica Tethered), fai salvare gli scatti in una cartella e monitora quella cartella in **Tethering & Cloud**. Il risultato finale è lo stesso: ogni scatto viene sviluppato automaticamente.
+
 ### Telegram non invia.
 
 - Controlla **Bot Token** e **Chat ID**.
@@ -612,7 +644,7 @@ Sì. Premi **ANNULLA**. I file già completati restano; quelli in corso vengono 
 
 ### Perché il file JPEG è più pesante del solito?
 
-Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità 85–90. Per la stampa è normale che il file sia grande.
+Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità **90** e **2048 px**; per la stampa è normale che il file sia grande. Con il profilo predefinito 3000 px / qualità 90 i JPEG restano in genere tra 0,6 e 1,3 MB.
 
 ---
 
@@ -632,7 +664,8 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 | **Bilanciamento del bianco** | Corregge la dominante di colore della luce. |
 | **Luminanza** | Informazione di chiaro/scuro, separata dal colore. |
 | **Crominanza** | Informazione di colore, separata dalla luminanza. |
-| **Guided filter** | Filtro intelligente che toglie il rumore nelle zone piatte e protegge i bordi. |
+| **Guided filter** | Filtro intelligente che separa base e dettaglio: spegne la grana fine e protegge i bordi. |
+| **Non-local means** | Secondo passaggio di denoise che confronta zone simili dell'immagine; viene applicato solo alle aree piatte. |
 | **Demosaic** | Ricostruzione del colore dai dati del sensore RAW. |
 | **AMaZE / AHD / PPG** | Algoritmi di demosaic. AMaZE è il più avanzato; il programma ripiega automaticamente se non disponibile. |
 | **Lanczos** | Metodo di ridimensionamento di alta qualità. |
@@ -648,12 +681,12 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ### Web / social
 
-- Lato max: **1920**
+- Lato max: **2048**
 - Qualità: **90**
 - Formato: **JPEG**
 - PIÙ LUMINOSA: **solo se scura**
-- Rimuovi grana: **ISO 800+**
-- Nitidezza: **1,2 / 1,2**
+- Rimuovi grana: **AUTO**
+- Nitidezza: **0,8 / 0,8**
 - Watermark: **sì, 14–18 px**
 
 ### Consegna cliente
@@ -662,8 +695,8 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 - Qualità: **95**
 - Formato: **JPEG**
 - PIÙ LUMINOSA: **solo se scura**
-- Rimuovi grana: **ISO 800+**
-- Nitidezza: **1,2 / 1,3**
+- Rimuovi grana: **AUTO**
+- Nitidezza: **0,8 / 0,9**
 - Watermark: **secondo accordo**
 
 ### Stampa fine art
@@ -672,8 +705,8 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 - Qualità: **100**
 - Formato: **TIFF**
 - PIÙ LUMINOSA: **no**
-- Rimuovi grana: **solo se serve**
-- Nitidezza: **1,6 / 1,8**
+- Rimuovi grana: **AUTO**
+- Nitidezza: **0,7 / 1,0**
 - Watermark: **no**
 
 ### Archivio
@@ -682,22 +715,22 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 - Qualità: **95**
 - Formato: **JPEG**
 - PIÙ LUMINOSA: **no**
-- Rimuovi grana: **no**
-- Nitidezza: **0,8 / 1,5**
+- Rimuovi grana: **AUTO**
+- Nitidezza: **0,6 / 1,0**
 - EXIF: **sì**
 - Watermark: **no**
 
 ### Notte / ISO alto
 
-- Lato max: **1920–3000**
+- Lato max: **3000**
 - Qualità: **92**
 - Formato: **JPEG**
 - PIÙ LUMINOSA: **no**
-- Rimuovi grana: **sì**
-- Nitidezza: **1,0 / 1,2**
+- Rimuovi grana: **AUTO**
+- Nitidezza: **0,9 / 0,9**
 - Watermark: **no**
 
 ---
 
-**Franchetti Raw Converter Pro v2.54.0** — Guida completa.
+**Franchetti Raw Converter Pro v2.55.0** — Guida completa.
 Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.

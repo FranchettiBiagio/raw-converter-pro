@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.54.0**
+**Franchetti Raw Converter Pro v2.55.0**
 
 ---
 
@@ -27,7 +27,7 @@ with rawpy.imread(str(raw_path)) as raw:
     rgb = raw.postprocess(
         use_camera_wb=True,      # Camera white balance
         half_size=False,         # Full resolution
-        no_auto_bright=False,    # Luminosità gestita dalla pipeline Lab
+        no_auto_bright=False,    # Luminosità gestita dalla pipeline Y/Cb/Cr
         output_bps=8             # 8-bit per channel
     )
 ```
@@ -36,18 +36,16 @@ with rawpy.imread(str(raw_path)) as raw:
 - **Demosaicing**: LibRaw AHD (default, high quality)
 - **Color space**: Camera-native → sRGB (implicit)
 
-### Image Processing (Pillow)
-```python
-img = Image.fromarray(rgb, 'RGB')
-if max_dim > 0:
-    img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-if watermark:
-    img = add_watermark(img, text, font_size)
-img.save(out_path, 'JPEG', quality=q, optimize=True, progressive=True)
+### Image Processing Pipeline (v2.55.0)
 ```
-- **Resampling**: Lanczos-3 (high-quality downscaling)
+LibRaw decode -> Lanczos resize -> tone/color -> hybrid denoise -> controlled sharpening -> watermark -> encode
+```
+- **Resampling**: Lanczos-3 before the pipeline, so the denoise works at the final size
+- **Tone/color**: luminance-preserving exposure, sigmoid contrast, selective vibrance, HSL
+- **Denoise**: guided filter + detail coring; non-local means only in flat areas (skipped for images < 8 px on a side)
+- **Sharpening**: luminance-only unsharp mask with a noise-derived threshold
 - **Watermark**: Text rendering with alpha compositing
-- **JPEG**: Optimized Huffman tables, progressive scan
+- **JPEG**: Optimized Huffman tables, progressive scan, quality 90 by default
 
 ### Watermark Algorithm
 ```
@@ -94,15 +92,17 @@ Font: Arial/DejaVuSans fallback → default bitmap
 |-------|------------|-----------------|
 | RAW decode | O(W×H) | LibRaw C++ (un file per processo) |
 | Resize | O(W×H) | Pillow Lanczos (SIMD optimized) |
+| Hybrid denoise | O(W×H) | Guided filter + NLM in flat areas |
 | Watermark | O(text_pixels) | Negligible |
 | JPEG encode | O(W×H) | libjpeg-turbo (SIMD) |
 
-### Benchmarks (Typical)
-| Source | Target | i7-11700 | Ryzen 5800X |
-|--------|--------|----------|-------------|
-| 6000×4000 (24 MP) | 1920px | 0.35 s | 0.28 s |
-| 4000×3000 (12 MP) | 1920px | 0.18 s | 0.14 s |
-| 8000×6000 (48 MP) | 1920px | 0.65 s | 0.52 s |
+### Benchmarks (v2.55.0, measured)
+| Source | Target | Result |
+|--------|--------|--------|
+| 4× RAW 24 MP | 3000px, denoise auto | **12,8 s** batch, 4/4 OK |
+| 1× RAW 24 MP | 3000px, denoise auto | **8–9 s** |
+| 1× RAW 24 MP | Original, TIFF, denoise auto | ~40-45 s |
+| 1× RAW 24 MP | Original, JPEG 95, denoise auto | ~40-45 s |
 
 ### Memory Profile
 | Phase | Peak RSS | Notes |
@@ -110,8 +110,9 @@ Font: Arial/DejaVuSans fallback → default bitmap
 | Idle | 40 MB | Python + GUI |
 | Decode 24 MP | 350 MB | LibRaw workspace |
 | Resize | 400 MB | Temporary buffers |
+| Hybrid denoise | +600 MB | Guided filter + NLM working sets |
 | Encode | 380 MB | JPEG buffers |
-| **Per-file peak** | **~400 MB** | Released after each file |
+| **Per-file peak** | **~1–1,5 GB** | Released after each file |
 
 ---
 
@@ -196,7 +197,7 @@ cmd = [
 | Property | Value |
 |----------|-------|
 | **File** | `FranchettiRawConverterPro.exe` |
-| **Size** | ~62 MB |
+| **Size** | ~78 MB |
 | **Architecture** | x64 (PE32+) |
 | **Subsystem** | Windows GUI (2) |
 | **Dependencies** | None (fully bundled) |
@@ -208,8 +209,8 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.54.0.0 |
-| **ProductVersion** | 2.54.0.0 |
+| **FileVersion** | 2.55.0.0 |
+| **ProductVersion** | 2.55.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
@@ -233,7 +234,7 @@ cmd = [
 
 ---
 
-## Limiti noti (v2.54.0)
+## Limiti noti (v2.55.0)
 
 | Voce | Stato |
 |------|-------|
@@ -254,12 +255,12 @@ cmd = [
 |---------|--------|
 | Avvio (onefile, cold) | ~5–10 s |
 | UI | Reattiva durante il batch (thread separato + coda) |
-| RAW Sony A7S 24 MP | ~10–12 s per core |
-| 6 RAW (6 processi) | 22,1 s (3,06× rispetto a 67,6 s sequenziale) |
-| 12 RAW (12 processi) | 39,8 s, 0 errori |
-| Memoria | ~1–1,5 GB per processo |
+| RAW Sony A7S 24 MP | ~8–9 s a 3000px con denoise |
+| 4 RAW (4 processi) | 12,8 s (3000px, denoise automatico) |
+| Preset full-res | ~40-45 s per foto (denoise non-locale su 24 MP) |
+| Memoria | ~1–1,5 GB per processo, più buffer NLM |
 | Crash rate nei test | 0% |
 
 ---
 
-*Technical specs v2.54.0 — 26 Ottobre 2026*
+*Technical specs v2.55.0 — 26 Ottobre 2026*
