@@ -1,43 +1,48 @@
-# Franchetti Raw Converter Pro v2.53.0
+# Franchetti Raw Converter Pro v2.54.0
 
-[![Version](https://img.shields.io/badge/version-2.53.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.54.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
 [![Size](https://img.shields.io/badge/size-62%20MB-orange.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 
-> **Enterprise RAW Suite** — Pipeline CIE L*a*b*, Tethering Wi-Fi automatico, Cloud Dispatch multi-canale, Watermark professionale, EXIF preservation. Portable, Open Source (MIT), Zero telemetria.
+> **Guida completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - ogni funzione spiegata in modo elementare, con le impostazioni consigliate per web, stampa, ritratto, paesaggio e foto notturne. Versione HTML: [docs/guida.html](docs/guida.html).
+
+> **Enterprise RAW Suite** — Pipeline Y/Cb/Cr e denoise ISO, Tethering Wi-Fi automatico, Cloud Dispatch multi-canale, Watermark professionale, EXIF preservation. Portable, Open Source (MIT), Zero telemetria.
 
 ---
 
-## 🎯 Caratteristiche Principali v2.53.0
+## 🎯 Caratteristiche Principali v2.54.0
 
-### 🧠 **Nuova Pipeline CIE L*a*b* (Avanzata)**
+### 🧠 **Nuova Pipeline Y/Cb/Cr e denoise ISO (Avanzata)**
 | Fase | Descrizione | Controllo |
 |------|-------------|-----------|
 | **Sviluppo RAW** | LibRaw nativo, demosaic **AMaZE** con fallback automatico AHD/PPG/LINEAR, WB camera, sRGB 8-bit | `use_camera_wb` |
 | **Contrasto Sigmoidale** | Curva logistica a "S" protegge luci/ombre senza clipping | `contrasto` 0.1–1.0 |
 | **Vivacità Selettiva** | Satura solo toni spenti, preserva incarnati | `vivacita` 0.0–1.0 |
-| **Lab Color Space** | Separazione Luminanza (L) / Crominanza (a,b) | — |
-| **Nitidezza Unsharp L** | Solo canale L → zero aloni colorati | `raggio` 0.5–3.0, `quantità` 0.5–5.0 |
+| **Y/Cb/Cr** | Luminanza (Y) e crominanza (Cb, Cr) separate, senza conversioni di colore costose | - |
+| **Rimuovi grana ISO** | Guided filter Y/Cb/Cr con crominanza a meta' risoluzione; forza automatica dall'ISO | pulsante **RIMUOVI GRANA (AUTO ISO)** |
+| **Nitidezza Unsharp Y** | Solo canale Y → zero aloni colorati | `raggio` 0.5–3.0, `quantità` 0.5–5.0 |
 | **Output** | uint8 + profilo ICC sRGB embedded | `qualita_jpeg` 50–100 |
 
-> **Perché Lab?** La separazione luminanza/crominanza permette nitidezza pura su dettaglio senza artefatti cromatici (aloni colorati tipici dello sharpening RGB).
+> **Novita' v2.54.0**: **RIMUOVI GRANA (AUTO ISO)** in un clic e **PIU' LUMINOSA** con vividezza. Il batch ridimensiona prima della pipeline e lavora su tutti i core senza errori libjpeg.
 
-### 🚀 **Elaborazione Multi-Core (v2.53.0)**
+> **Perche' Y/Cb/Cr?** Lavorare sulla luminanza permette nitidezza e denoise senza aloni colorati; la crominanza, piu' sporca di rumore, viene pulita separatamente e a meta' risoluzione.
+
+### 🚀 **Elaborazione Multi-Core (v2.54.0)**
 - **Tutti i core logici**: `ProcessPoolExecutor` con un processo per core disponibile
 - **Limite di sicurezza**: il numero di processi si riduce automaticamente se la RAM libera non basta
 - **Isolamento errori**: un file corrotto non blocca gli altri; ogni output viene scritto su file temporaneo e pubblicato solo a conversione completata
 - **Annullamento immediato**: i processi in corso vengono terminati e i file parziali rimossi
-- **Misura reale**: 6 RAW Sony A7S (24 MP) da 67,6 s (sequenziale) a 22,1 s (parallelo) = **3,06×**; 12 RAW in 39,8 s
+- **Misura reale (v2.54.0)**: 4 RAW Sony A7S da 24 MP a 1920 px in 5,6 s; con denoise 5,9 s; a risoluzione originale 14,2 s (denoise 20,8 s)
 
-### 📡 **Tethering Wi-Fi Automatico — Hot-Folder (v2.53.0)**
+### 📡 **Tethering Wi-Fi Automatico — Hot-Folder (v2.54.0)**
 - **Watchdog Observer** monitora cartella in tempo reale (`watchdog` library)
 - **Formati rilevati**: RAW (`.arw, .cr2, .cr3, .nef, .raf, .dng, .orf, .rw2`, …) e immagini standard (`.jpg, .jpeg, .png, .tif, .tiff, .webp`)
 - **Attesa scrittura**: il file viene elaborato solo quando la dimensione resta stabile
 - **Anti-loop**: ignora la cartella di output e i file `_PRO`
-- **Workflow**: Scatta → File arriva via Wi-Fi → Pipeline Lab completa → immagine `_PRO` → Cloud Dispatch → Notifica GUI live
+- **Workflow**: Scatta → File arriva via Wi-Fi → Pipeline Y/Cb/Cr completa → immagine `_PRO` → Cloud Dispatch → Notifica GUI live
 
 ### ☁️ **Cloud Dispatch**
 | Canale | Stato | Configurazione UI |
@@ -100,12 +105,12 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 
 ## 🚀 Quick Start
 
-### Download v2.53.0
+### Download v2.54.0
 | Metodo | Link |
 |--------|------|
-| **GitHub Releases** | [Download v2.53.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.53.0) |
+| **GitHub Releases** | [Download v2.54.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.54.0) |
 | **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
-| **Installer Windows** | [Setup v2.53.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.53.0.exe) |
+| **Installer Windows** | [Setup v2.54.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.54.0.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
@@ -126,7 +131,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 📋 Requisiti di Sistema v2.53.0
+## 📋 Requisiti di Sistema v2.54.0
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -141,7 +146,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 🏗️ Architettura v2.53.0
+## 🏗️ Architettura v2.54.0
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -150,13 +155,13 @@ FranchettiRawConverterPro.exe
 ├─────────────────────────────────────────────────────────────┤
 │  GUI Layer (CustomTkinter - Dark Mode)                      │
 │  ├── Tab Batch: preset, formati, nomi, watermark, EXIF      │
-│  ├── Tab Sviluppo RAW: slider Lab, colore, logo             │
+│  ├── Tab Sviluppo RAW: slider Y/Cb/Cr, colore, logo             │
 │  ├── Tab Tethering & Cloud: hot-folder, Sony A7S, cloud     │
 │  └── Tab Log: timestamp, color-coding, auto-scroll          │
 ├─────────────────────────────────────────────────────────────┤
 │  ImageEngine                                                │
 │  ├── rawpy (LibRaw; AMaZE → AHD → PPG → LINEAR) — RAW→RGB  │
-│  ├── scikit-image — RGB ↔ CIE Lab conversion                │
+│  ├── scikit-image — RGB ↔ Y/Cb/Cr conversion                │
 │  ├── Unsharp Mask su canale L (skimage.filters)             │
 │  ├── Pillow — Watermark alpha composite, JPEG/PNG/TIFF/WEBP │
 │  ├── piexif — EXIF extraction & injection                   │
@@ -183,7 +188,7 @@ FranchettiRawConverterPro.exe
 |----------|----------|-------|
 | **rawpy** | 0.27+ | LibRaw Python bindings (AMaZE quando disponibile, fallback AHD/PPG/LINEAR) |
 | **LibRaw** | 0.21+ | RAW decoding C++ |
-| **scikit-image** | 0.24+ | CIE Lab, Unsharp Mask |
+| **scikit-image** | 0.24+ | Y/Cb/Cr, Unsharp Mask |
 | **customtkinter** | 5.2+ | Modern Dark GUI |
 | **watchdog** | 4.0+ | Filesystem events |
 | **Pillow** | 12.3+ | Imaging, Watermark, JPEG |
@@ -195,7 +200,7 @@ FranchettiRawConverterPro.exe
 
 ## 🔒 Privacy & Sicurezza (by design)
 
-| Caratteristica | Franchetti Raw Converter Pro v2.53.0 |
+| Caratteristica | Franchetti Raw Converter Pro v2.54.0 |
 |----------------|--------------------------------------|
 | **Rete** | Solo se attivi Cloud Dispatch (opzionale, esplicito) |
 | **Telemetria** | ❌ Nessuna |
@@ -228,14 +233,16 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 
 | Documento | Descrizione |
 |-----------|-------------|
+| [Guida Completa Illustrata](GUIDA_COMPLETA.md) | **Tutte le funzioni spiegate in modo elementare + impostazioni consigliate** |
+| [Guida Completa in HTML](docs/guida.html) | Versione web della guida, stampabile |
 | [Manuale Utente](USER_MANUAL.md) | Guida completa con screenshot |
 | [Specifiche Tecniche](TECHNICAL_SPECS.md) | Architettura, algoritmi, formati |
 | [Guida Installazione](INSTALLATION_GUIDE.md) | Deployment enterprise (GPO, Intune) |
 | [FAQ](FAQ.md) | Domande frequenti & troubleshooting |
-| [Changelog](CHANGELOG.md) | Storico versioni (v2.53.0) |
+| [Changelog](CHANGELOG.md) | Storico versioni (v2.54.0) |
 | [Privacy Policy](PRIVACY.md) | Zero data collection |
 | [Security Policy](SECURITY.md) | Responsible disclosure |
-| [Release Notes](RELEASE_NOTES.md) | Note complete v2.53.0 |
+| [Release Notes](RELEASE_NOTES.md) | Note complete v2.54.0 |
 
 ---
 
@@ -294,7 +301,7 @@ in the Software without restriction...
 
 - **LibRaw Team** — Eccezionale libreria decodifica RAW (AMaZE)
 - **rawpy Maintainers** — Binding Python per LibRaw
-- **scikit-image Team** — Elaborazione CIE Lab professionale
+- **scikit-image Team** — Elaborazione Y/Cb/Cr professionale
 - **CustomTkinter** — Modern Dark UI framework
 - **Watchdog** — Filesystem events cross-platform
 - **Pillow Contributors** — Imaging library robusta
@@ -302,7 +309,7 @@ in the Software without restriction...
 
 ---
 
-## 📞 Supporto v2.53.0
+## 📞 Supporto v2.54.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -312,7 +319,7 @@ in the Software without restriction...
 
 ---
 
-## 📊 Statistiche v2.53.0
+## 📊 Statistiche v2.54.0
 
 | Metrica | Valore |
 |---------|--------|
@@ -328,10 +335,10 @@ in the Software without restriction...
 
 **Made with ❤️ per fotografi professionisti da Franchetti**
 
-**v2.53.0 — 26 Ottobre 2026**
+**v2.54.0 — 27 Ottobre 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-FranchettiBiagio%2Fraw--converter--pro-181717?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro)
-[![Download](https://img.shields.io/badge/Download-v2.53.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.53.0)
+[![Download](https://img.shields.io/badge/Download-v2.54.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.54.0)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>

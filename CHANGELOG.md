@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.54.0] - 2026-10-27
+
+### Added
+- **RIMUOVI GRANA (AUTO ISO)**: un clic nel tab Batch e nel tab Sviluppo RAW
+  - denoise in **Y/Cb/Cr** con guided filter: pulisce le zone piatte e conserva bordi e micro-textura
+  - crominanza elaborata a meta' risoluzione (4x piu' veloce) e ricostruita con interpolazione lineare
+  - forza adattata all'ISO del RAW (ISO 1000/2000/3200 testati), con possibilita' di regolare a mano
+  - preset: luminanza 60, colore 70, nitidezza 1.25, raggio 1.2
+- **PIU' LUMINOSA**: ora aumenta anche la **vividezza** (circa +15% di saturazione media), con esposizione applicata alla sola luminanza per non spostare i colori
+- **GUIDA_COMPLETA.md** e **GUIDA_COMPLETA.html**: guida elementare a ogni funzione e impostazione, inclusa nell'installer e nel menu Start
+
+### Changed
+- Il RAW viene ridimensionato **prima** della pipeline: tono, colore, denoise e nitidezza lavorano sulla risoluzione finale
+- Rimosse le conversioni CIE Lab: curva tonale e nitidezza lavorano direttamente sulla luminanza Y
+- Batch: thread OpenMP/BLAS limitati a 1 per processo, per evitare oversubscription della CPU
+- Numero di processi scelto in base alla RAM libera, con stima maggiore per originali 24-60 MP e denoise attivo
+- JPEG salvato senza `optimize=True`: elimina l'errore libjpeg `Suspension not allowed here` / `broken data stream` nei batch paralleli
+
+### Performance
+- 4 RAW Sony A7S da 24 MP a 1920 px: **5,6 s** normali, **5,9 s** con denoise, **6,1 s** con PIU' LUMINOSA
+- 4 RAW a risoluzione originale: **14,2 s** normali, **20,8 s** con denoise
+- Nessun errore, nessun output corrotto e nessun file temporaneo residuo nei test
+
+---
+
 ## [2.53.0] - 2026-10-27
 
 ### Added

@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guida completa - Franchetti Raw Converter Pro v2.54.0</title>
+<meta name="description" content="Guida elementare a tutte le funzioni di Franchetti Raw Converter Pro: batch, sviluppo RAW, denoise ISO, tethering, cloud, preset e impostazioni consigliate.">
+<style>
+:root{--blue:#0066cc;--dark:#17212b;--muted:#5f6b76;--line:#dfe5eb;--bg:#f5f7fa;--card:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--dark);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.top{background:linear-gradient(135deg,#0066cc 0%,#004499 100%);color:#fff;padding:34px 22px 30px}
+.top .inner{max-width:980px;margin:auto}
+.top .kicker{font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.top h1{margin:8px 0 6px;font-size:34px;line-height:1.2}
+.top p{margin:0;opacity:.92}
+.top a{color:#fff}
+.wrap{max-width:980px;margin:0 auto;padding:28px 22px 60px}
+article{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:34px 40px;box-shadow:0 8px 28px rgba(20,35,55,.06)}
+h1,h2,h3,h4{line-height:1.25;color:var(--dark)}
+article>h1:first-child{display:none}
+h2{margin:2.2em 0 .7em;padding-bottom:.25em;border-bottom:2px solid #e8eef5;font-size:27px}
+h3{margin:1.6em 0 .5em;font-size:20px;color:#0b4f91}
+p{margin:.7em 0}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+ul,ol{padding-left:1.5em}
+li{margin:.3em 0}
+blockquote{margin:1.1em 0;padding:.8em 1em;border-left:4px solid #e0a800;background:#fff9e6;border-radius:0 8px 8px 0;color:#5c4a00}
+blockquote p{margin:.2em 0}
+code{background:#eef2f7;padding:.12em .35em;border-radius:4px;font-size:.92em}
+pre{background:#17212b;color:#e9eef4;padding:14px 16px;border-radius:9px;overflow:auto}
+pre code{background:none;color:inherit;padding:0}
+table{width:100%;border-collapse:collapse;margin:1.1em 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#eef4fb;color:#0b4f91;font-weight:650}
+tr:nth-child(even) td{background:#fafcfe}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.note{color:var(--muted);font-size:14px}
+@media(max-width:700px){article{padding:24px 18px}.top h1{font-size:27px}h2{font-size:23px}table{font-size:13px;display:block;overflow-x:auto}}
+@media print{body{background:#fff}.top{background:#fff;color:#000;padding:0 0 10px}.top a{display:none}article{border:0;box-shadow:none;padding:0}.wrap{padding:0}table{font-size:11px}a{color:#000}}
+</style>
+</head>
+<body>
+<header class="top"><div class="inner">
+<div class="kicker">Franchetti Raw Converter Pro &middot; v2.54.0</div>
+<h1>Guida completa</h1>
+<p>Ogni funzione spiegata in modo semplice, con le impostazioni migliori per web, stampa, archivio, ritratti e foto notturne.</p>
+</div></header>
+<main class="wrap"><article>
+<h1 id="guida-completa-a-franchetti-raw-converter-pro">Guida completa a Franchetti Raw Converter Pro</h1>
+<p><strong>Versione 2.54.0 — Windows 10/11 — Italiano</strong></p>
+<p>Questa guida spiega, in modo semplice, <strong>tutte le funzioni</strong> del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.</p>
+<blockquote>
+<p><strong>Regola d'oro:</strong> il programma <strong>non modifica mai i file originali</strong>. Lavora sempre su una copia e scrive i risultati nella cartella di destinazione. Tieni comunque un backup delle foto importanti.</p>
+</blockquote>
+<hr />
+<h2 id="indice">Indice</h2>
+<ol>
+<li><a href="#1-primi-passi-in-2-minuti">Primi passi in 2 minuti</a></li>
+<li><a href="#2-come-e-fatta-la-finestra">Come è fatta la finestra</a></li>
+<li><a href="#3-scheda-batch-conversione-di-tante-foto">Scheda Batch: conversione di tante foto</a></li>
+<li><a href="#4-scheda-sviluppo-raw-regolazioni-fotografiche">Scheda Sviluppo RAW: regolazioni fotografiche</a></li>
+<li><a href="#5-scheda-tethering-cloud">Scheda Tethering &amp; Cloud</a></li>
+<li><a href="#6-scheda-log-messaggi-ed-errori">Scheda Log: messaggi ed errori</a></li>
+<li><a href="#7-impostazioni-consigliate-per-tipo-di-foto">Impostazioni consigliate per tipo di foto</a></li>
+<li><a href="#8-flussi-di-lavoro-pronti-alluso">Flussi di lavoro pronti all'uso</a></li>
+<li><a href="#9-domande-frequenti-e-soluzione-problemi">Domande frequenti e soluzione problemi</a></li>
+<li><a href="#10-glossario-semplice">Glossario semplice</a></li>
+<li><a href="#11-scheda-riassuntiva-da-stampare">Scheda riassuntiva da stampare</a></li>
+</ol>
+<hr />
+<h2 id="1-primi-passi-in-2-minuti">1. Primi passi in 2 minuti</h2>
+<ol>
+<li><strong>Apri il programma.</strong></li>
+<li>Nella scheda <strong>Batch</strong>, premi <strong>Seleziona cartella</strong> e scegli la cartella che contiene i file RAW (oppure <strong>Seleziona file RAW</strong> per scegliere solo alcuni file).</li>
+<li>Premi <strong>Sfoglia</strong> accanto a <strong>Cartella output</strong> e scegli una cartella <strong>diversa</strong> da quella delle foto originali.</li>
+<li>Controlla <strong>Lato max (px)</strong>, <strong>Qualità</strong>, <strong>Formato</strong> e, se vuoi, attiva <strong>PIÙ LUMINOSA</strong> e <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</li>
+<li>Premi <strong>AVVIA CONVERSIONE BATCH</strong>. Attendi la fine e premi <strong>Apri cartella output</strong>.</li>
+</ol>
+<p>Per una prova sicura: usa prima <strong>5–10 foto</strong> in una cartella di prova, guarda i risultati, poi lancia il gruppo completo.</p>
+<hr />
+<h2 id="2-come-e-fatta-la-finestra">2. Come è fatta la finestra</h2>
+<p>La finestra ha quattro schede:</p>
+<table>
+<thead>
+<tr>
+<th>Scheda</th>
+<th>A cosa serve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Batch</strong></td>
+<td>Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. È la scheda principale.</td>
+</tr>
+<tr>
+<td><strong>Sviluppo RAW</strong></td>
+<td>Imposta esposizione, colore, dettaglio, riduzione grana, nitidezza, vignettatura e split toning.</td>
+</tr>
+<tr>
+<td><strong>Tethering &amp; Cloud</strong></td>
+<td>Collega una Sony via Wi-Fi, monitora una cartella e invia i risultati a Telegram o Dropbox.</td>
+</tr>
+<tr>
+<td><strong>Log</strong></td>
+<td>Mostra cosa sta facendo il programma e permette di salvare il registro.</td>
+</tr>
+</tbody>
+</table>
+<p>In basso c'è la <strong>barra di stato</strong>: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, rimozione grana, avanzamento e apertura della cartella.</p>
+<blockquote>
+<p><strong>Importante:</strong> le regolazioni della scheda <strong>Sviluppo RAW</strong> non sono un'anteprima dal vivo. Vengono applicate quando avvii la conversione Batch. Per provarle, converti prima una sola foto.</p>
+</blockquote>
+<hr />
+<h2 id="3-scheda-batch-conversione-di-tante-foto">3. Scheda Batch: conversione di tante foto</h2>
+<h3 id="31-sorgente">3.1 Sorgente</h3>
+<ul>
+<li><strong>File / Cartella:</strong> mostra cosa stai convertendo.</li>
+<li><strong>Seleziona cartella:</strong> converte tutti i file supportati nella cartella scelta.</li>
+<li><strong>Seleziona file RAW:</strong> converte solo i file che selezioni. Puoi selezionare più file con <code>Ctrl</code> o <code>Maiusc</code>.</li>
+<li><strong>Sottocartelle:</strong> se è attivo, il programma entra anche nelle sottocartelle. La cartella di output viene esclusa automaticamente per evitare di rielaborare i risultati.</li>
+<li>Puoi anche scrivere più percorsi nel campo, separati da punto e virgola (<code>;</code>).</li>
+</ul>
+<p><strong>Formati accettati:</strong> RAW di Sony, Canon, Nikon, Fujifilm, Olympus/OM System, Panasonic, Pentax, Samsung, Sigma, Hasselblad, Phase One e altri (<code>.arw</code>, <code>.cr2</code>, <code>.cr3</code>, <code>.nef</code>, <code>.raf</code>, <code>.dng</code>, <code>.orf</code>, <code>.rw2</code>, ecc.) e immagini già pronte (<code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.tif</code>, <code>.tiff</code>, <code>.bmp</code>, <code>.webp</code>).</p>
+<p><strong>Consiglio:</strong> se nella cartella ci sono anche vecchi JPEG, il programma li convertirà come immagini normali. Per un batch di soli RAW, seleziona i file RAW oppure usa una cartella dedicata.</p>
+<h3 id="32-destinazione">3.2 Destinazione</h3>
+<ul>
+<li><strong>Cartella output:</strong> dove vengono salvate le foto finite.</li>
+<li><strong>Regola:</strong> usa una cartella <strong>diversa</strong> dalla sorgente. È più sicuro e rende immediato capire quali file sono nuovi.</li>
+<li><strong>Apri cartella output:</strong> apre Esplora file nella destinazione.</li>
+</ul>
+<h3 id="33-dimensioni-e-formato">3.3 Dimensioni e formato</h3>
+<h4 id="lato-max-px">Lato max (px)</h4>
+<p>Il programma ridimensiona la foto <strong>prima</strong> di applicare contrasto, colore, nitidezza e riduzione grana. Così è molto più veloce e il risultato è ottimizzato per la dimensione finale.</p>
+<table>
+<thead>
+<tr>
+<th>Pulsante</th>
+<th>Uso tipico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>640</strong></td>
+<td>Anteprime, miniature, siti molto leggeri</td>
+</tr>
+<tr>
+<td><strong>800</strong></td>
+<td>Blog, vecchi schermi, immagini piccole</td>
+</tr>
+<tr>
+<td><strong>1024</strong></td>
+<td>Web veloce, documenti, presentazioni</td>
+</tr>
+<tr>
+<td><strong>1200</strong></td>
+<td>Siti web, gallery leggere</td>
+</tr>
+<tr>
+<td><strong>1600</strong></td>
+<td>Web di qualità, social ad alta risoluzione</td>
+</tr>
+<tr>
+<td><strong>1920</strong></td>
+<td><strong>Impostazione predefinita consigliata</strong> per web e social</td>
+</tr>
+<tr>
+<td><strong>2048</strong></td>
+<td>Social molto definiti, schermi 2K</td>
+</tr>
+<tr>
+<td><strong>2560</strong></td>
+<td>Monitor 2K/4K, stampe piccole</td>
+</tr>
+<tr>
+<td><strong>3000</strong></td>
+<td>Stampe 20×30 cm, ritratti</td>
+</tr>
+<tr>
+<td><strong>4000</strong></td>
+<td>Stampe grandi, archival leggero</td>
+</tr>
+<tr>
+<td><strong>6000</strong></td>
+<td>Massima qualità per stampe molto grandi</td>
+</tr>
+<tr>
+<td><strong>Originale</strong></td>
+<td>Nessun ridimensionamento: usa la risoluzione nativa del RAW</td>
+</tr>
+</tbody>
+</table>
+<p>Puoi anche scrivere un valore personalizzato nel campo. <strong>0</strong> significa <strong>Originale</strong>.</p>
+<blockquote>
+<p>Il programma <strong>non ingrandisce</strong> mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.</p>
+</blockquote>
+<h4 id="qualita">Qualità</h4>
+<ul>
+<li>Valore da <strong>1 a 100</strong>.</li>
+<li><strong>JPEG:</strong> 85 è ottimo per il web; 90–95 per clienti e stampe; 100 è il massimo ma il file è molto più grande e non sempre si vede la differenza.</li>
+<li><strong>WebP:</strong> usa gli stessi valori; 80–90 è di solito più che sufficiente.</li>
+<li><strong>PNG e TIFF:</strong> la qualità non si applica; PNG è senza perdita (file grandi), TIFF usa compressione LZW senza perdita.</li>
+</ul>
+<p><strong>Consiglio:</strong> non usare qualità 100 per tutte le foto del web. Qualità <strong>90</strong> è il miglior compromesso tra dettaglio, peso e compatibilità.</p>
+<h4 id="formato">Formato</h4>
+<table>
+<thead>
+<tr>
+<th>Formato</th>
+<th>Quando usarlo</th>
+<th>Attenzione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JPEG</strong></td>
+<td>Web, social, consegna al cliente, condivisione</td>
+<td>Perdita leggera; non riaprire e risalvare molte volte</td>
+</tr>
+<tr>
+<td><strong>PNG</strong></td>
+<td>Grafica, schermate, immagini con testi</td>
+<td>File molto grandi; non serve per normali foto RAW</td>
+</tr>
+<tr>
+<td><strong>TIFF</strong></td>
+<td>Archiviazione, stampa professionale, post-produzione</td>
+<td>File molto grandi; compressione LZW senza perdita</td>
+</tr>
+<tr>
+<td><strong>WEBP</strong></td>
+<td>Siti web moderni, immagini leggere</td>
+<td>Meno compatibile con programmi molto vecchi</td>
+</tr>
+</tbody>
+</table>
+<h4 id="spazio-colore">Spazio colore</h4>
+<p>È fissato a <strong>sRGB</strong>, lo standard più compatibile con web, social, Windows e laboratori di stampa. Non è un'impostazione da cambiare.</p>
+<h4 id="wb-fotocamera">WB fotocamera</h4>
+<p>Se è attivo, usa il bilanciamento del bianco impostato nella fotocamera al momento dello scatto. È la scelta giusta nella maggior parte dei casi.</p>
+<ul>
+<li><strong>Attivo:</strong> colori fedeli allo scatto originale.</li>
+<li><strong>Disattivo:</strong> il programma usa un bilanciamento neutro; utile solo se vuoi ripartire da zero.</li>
+</ul>
+<h4 id="preserva-exif">Preserva EXIF</h4>
+<p>Salva nel JPEG i dati di scatto: data, fotocamera, obiettivo, ISO, tempi, diaframma, GPS e orientamento. È consigliato <strong>attivo</strong>.</p>
+<blockquote>
+<p>L'EXIF viene inserito nei <strong>JPEG</strong>. PNG, TIFF e WebP non ricevono gli stessi metadati in questa versione.</p>
+</blockquote>
+<h4 id="piu-luminosa-beta">PIÙ LUMINOSA (BETA)</h4>
+<p>È un intervento automatico e conservativo:</p>
+<ul>
+<li>schiarisce le foto scure;</li>
+<li>recupera le alte luci solo quando sono realmente bruciate;</li>
+<li>aggiunge <strong>vividezza</strong> ai colori spenti (circa +10–16%);</li>
+<li>applica un micro-contrasto leggerissimo;</li>
+<li>lascia invariati i bianchi e i neri assoluti e i grigi neutri già esposti correttamente.</li>
+</ul>
+<p><strong>Quando attivarla:</strong> foto scure, controluce, interni, giornate nuvolose, foto da smartphone o RAW sottoesposti.</p>
+<p><strong>Quando evitarla:</strong> foto già esposte bene, still life con colori delicati, foto bianco e nero, immagini in cui vuoi mantenere l'atmosfera scura.</p>
+<blockquote>
+<p>Non è un miracolo: se la foto è completamente nera o bruciata, non può recuperare ciò che non c'è. In quel caso usa le regolazioni manuali di <strong>Esposizione</strong>, <strong>Ombre</strong> e <strong>Luci</strong>.</p>
+</blockquote>
+<h4 id="usa-tutti-i-core">USA TUTTI I CORE</h4>
+<p>Il programma usa tutti i processori disponibili e riduce automaticamente il numero di processi se la RAM libera non basta. È consigliato <strong>attivo</strong>.</p>
+<p>Se il computer ha poca RAM o stai convertendo RAW da 50–60 MP, il programma può usare meno processi: è una protezione, non un errore. Con 16 GB di RAM e molti file, lascia attiva l'opzione e chiudi altri programmi pesanti.</p>
+<h3 id="34-nomi-file-e-sovrascrittura">3.4 Nomi file e sovrascrittura</h3>
+<ul>
+<li><strong>Mantieni nome originale:</strong> <code>FOTO (12).ARW</code> diventa <code>FOTO (12).jpg</code>.</li>
+<li><strong>Disattivato:</strong> usa un nome progressivo, per esempio <code>IMG_0001.jpg</code>, <code>IMG_0002.jpg</code>.</li>
+<li><strong>Prefisso:</strong> testo aggiunto prima del nome, per esempio <code>FRC_</code>.</li>
+<li><strong>Suffisso:</strong> testo aggiunto dopo il nome, per esempio <code>_web</code>.</li>
+<li><strong>Se esiste:</strong></li>
+<li><strong>Rinomina:</strong> non sovrascrive; aggiunge <code>_1</code>, <code>_2</code>, ecc.</li>
+<li><strong>Sovrascrivi:</strong> sostituisce il file già presente.</li>
+<li><strong>Salta:</strong> non converte il file e lo conta tra i saltati.</li>
+</ul>
+<p><strong>Consiglio:</strong> per il web usa <strong>Rinomina</strong> o <strong>Salta</strong>; per rigenerare una consegna usa <strong>Sovrascrivi</strong>. Evita di sovrascrivere per sbaglio il lavoro di un'altra persona.</p>
+<p>Se due file di sottocartelle diverse hanno lo stesso nome, il programma li rinomina automaticamente per non farli scontrare. Non ci saranno due processi che scrivono lo stesso file.</p>
+<h3 id="35-watermark">3.5 Watermark</h3>
+<ul>
+<li><strong>Applica testo:</strong> attiva o disattiva la scritta.</li>
+<li><strong>Testo watermark:</strong> il testo da imprimere, per esempio <code>© Mario Rossi 2026</code>.</li>
+<li><strong>Font (px):</strong> dimensione del testo. 12–18 per foto 1920 px; 24–40 per foto 3000–6000 px. Il valore è in pixel, non in punti.</li>
+<li><strong>Posizione:</strong> basso a destra, basso a sinistra, alto a destra, alto a sinistra, centro.</li>
+<li><strong>Logo PNG:</strong> carica un'immagine PNG con trasparenza. Il logo viene ridimensionato al 15% del lato lungo e posizionato nella stessa posizione del testo.</li>
+<li><strong>Carica:</strong> sceglie il file PNG del logo.</li>
+</ul>
+<p><strong>Consiglio:</strong> il watermark deve essere discreto. Per il web usa testo 14–18 px e opacità visibile ma non invadente. Per il logo usa un PNG pulito, senza sfondo bianco. Se il logo ha già il testo, non aggiungere anche il testo del watermark.</p>
+<h3 id="36-preset-e-configurazione">3.6 Preset e configurazione</h3>
+<p>Il menu <strong>Preset</strong> imposta in un colpo solo dimensione, qualità, formato e regolazioni di sviluppo. Puoi comunque modificare i valori dopo.</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Cosa imposta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Personalizzato</strong></td>
+<td>Non cambia nulla: usi le tue impostazioni</td>
+</tr>
+<tr>
+<td><strong>Web / Social</strong></td>
+<td>2048 px, JPEG 85, contrasto 0,35, vivacità 0,40, nitidezza 1,2, chiarezza 0,15, dehaze 0,05</td>
+</tr>
+<tr>
+<td><strong>Stampa Fine Art</strong></td>
+<td>Originale, TIFF, qualità 100, contrasto 0,25, vivacità 0,25, nitidezza 1,6 raggio 1,8, chiarezza 0,10</td>
+</tr>
+<tr>
+<td><strong>Archivio JPEG</strong></td>
+<td>Originale, JPEG 95, contrasto 0,20, vivacità 0,20, nitidezza 0,8, EXIF attivo</td>
+</tr>
+<tr>
+<td><strong>Ritratto</strong></td>
+<td>3000 px, JPEG 92, contrasto 0,22, vivacità 0,20, saturazione 0,95, chiarezza 0,05, ombre +12, luci -8, nitidezza 0,9, riduzione rumore 15/20</td>
+</tr>
+<tr>
+<td><strong>Paesaggio</strong></td>
+<td>3840 px, JPEG 92, contrasto 0,42, vivacità 0,45, chiarezza 0,30, dehaze 0,20, nitidezza 1,8 raggio 1,6, verdi +12, blu +10</td>
+</tr>
+<tr>
+<td><strong>Bianco e Nero</strong></td>
+<td>3000 px, JPEG 92, saturazione 0, contrasto 0,45, chiarezza 0,25, nitidezza 1,5, grana 12</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>I preset <strong>non</strong> sono vincolanti. Dopo averli applicati puoi spostare gli slider. Il preset <strong>Ritratto</strong> imposta una riduzione rumore manuale (15/20): è già attiva anche se il pulsante <strong>RIMUOVI GRANA</strong> non è evidenziato.</p>
+</blockquote>
+<p><strong>Salva config</strong> e <strong>Carica config</strong> salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.</p>
+<blockquote>
+<p><strong>Privacy:</strong> il file di configurazione può contenere anche token di Telegram/Dropbox e percorsi del computer. Conservalo in un posto sicuro e non condividerlo.</p>
+</blockquote>
+<h3 id="37-barra-delle-azioni">3.7 Barra delle azioni</h3>
+<ul>
+<li><strong>AVVIA CONVERSIONE BATCH:</strong> avvia il lavoro con le impostazioni correnti.</li>
+<li><strong>ANNULLA:</strong> interrompe il batch e rimuove i file parziali. I file già completati restano.</li>
+<li><strong>RIMUOVI GRANA (AUTO ISO):</strong> attiva o disattiva il preset intelligente di riduzione rumore. Quando è attivo diventa verde e mostra <strong>GRANA RIMOSSA (AUTO ISO)</strong>.</li>
+<li><strong>Barra di avanzamento:</strong> mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati.</li>
+<li><strong>Apri cartella output:</strong> apre la destinazione.</li>
+</ul>
+<p>Se un file è corrotto o non supportato, il programma lo segnala e <strong>continua con gli altri</strong>. Un errore non blocca l'intero batch.</p>
+<hr />
+<h2 id="4-scheda-sviluppo-raw-regolazioni-fotografiche">4. Scheda Sviluppo RAW: regolazioni fotografiche</h2>
+<p>Queste regolazioni si applicano a tutte le foto del batch. Sono pensate per un risultato naturale: meglio poco e buono che troppo e artificiale.</p>
+<h3 id="41-piu-luminosa-beta">4.1 PIÙ LUMINOSA (BETA)</h3>
+<p>Lo stesso interruttore della scheda Batch. È un'elaborazione automatica dell'esposizione e della vividezza. Attivalo qui o nella scheda Batch: è condiviso.</p>
+<h3 id="42-esposizione-e-bilanciamento">4.2 Esposizione e bilanciamento</h3>
+<table>
+<thead>
+<tr>
+<th>Controllo</th>
+<th>Intervallo</th>
+<th>Cosa fa</th>
+<th>Consiglio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Esposizione (EV)</strong></td>
+<td>-3,00 … +3,00</td>
+<td>Schiarisce o scurisce l'intera foto</td>
+<td>+0,3 per foto un po' scure; -0,3 per foto chiare</td>
+</tr>
+<tr>
+<td><strong>Temperatura</strong></td>
+<td>-100 … +100</td>
+<td>Rende la foto più blu (negativo) o più calda/arancione (positivo)</td>
+<td>+5…+15 per interni caldi; -5…-15 per ombre blu</td>
+</tr>
+<tr>
+<td><strong>Tinta (verde/magenta)</strong></td>
+<td>-100 … +100</td>
+<td>Corregge le dominanti verdi o magenta</td>
+<td>Piccoli valori, ±5…±10</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>La temperatura non è in Kelvin: è un valore <strong>relativo</strong>. Serve a correggere l'atmosfera, non a impostare i gradi esatti.</p>
+</blockquote>
+<h3 id="43-toni">4.3 Toni</h3>
+<table>
+<thead>
+<tr>
+<th>Controllo</th>
+<th>Intervallo</th>
+<th>Cosa fa</th>
+<th>Consiglio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Luci</strong></td>
+<td>-100 … +100</td>
+<td>Recupera o schiarisce le zone chiare</td>
+<td>-10…-25 per cieli e finestre</td>
+</tr>
+<tr>
+<td><strong>Ombre</strong></td>
+<td>-100 … +100</td>
+<td>Apre o chiude le zone scure</td>
+<td>+10…+25 per dettagli nei neri</td>
+</tr>
+<tr>
+<td><strong>Bianchi</strong></td>
+<td>-100 … +100</td>
+<td>Agisce sul punto più chiaro</td>
+<td>-5…-15 se il bianco è bruciato</td>
+</tr>
+<tr>
+<td><strong>Neri</strong></td>
+<td>-100 … +100</td>
+<td>Agisce sul punto più scuro</td>
+<td>-5…-15 per neri più profondi</td>
+</tr>
+<tr>
+<td><strong>Contrasto (curva sigmoide)</strong></td>
+<td>0,00 … 1,00</td>
+<td>Aumenta la separazione tra luci e ombre</td>
+<td>0,20–0,35 naturale; 0,45+ per effetto deciso</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attenzione:</strong> il contrasto predefinito è <strong>0,35</strong>, già presente. Se aumenti anche luci/ombre, il risultato può diventare troppo duro. Guarda sempre la foto alla dimensione finale.</p>
+<h3 id="44-colore">4.4 Colore</h3>
+<table>
+<thead>
+<tr>
+<th>Controllo</th>
+<th>Intervallo</th>
+<th>Cosa fa</th>
+<th>Consiglio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Vivacità selettiva</strong></td>
+<td>0,00 … 1,00</td>
+<td>Rende più vivi i colori spenti senza esagerare con quelli già saturi</td>
+<td>0,20–0,45</td>
+</tr>
+<tr>
+<td><strong>Saturazione</strong></td>
+<td>0,00 … 2,00</td>
+<td>Aumenta o riduce tutti i colori</td>
+<td>0,95–1,10; 0 per bianco e nero</td>
+</tr>
+<tr>
+<td><strong>Saturazione rossi</strong></td>
+<td>-100 … +100</td>
+<td>Corregge rossi, arancioni e incarnati</td>
+<td>-10…+10; attenzione alla pelle</td>
+</tr>
+<tr>
+<td><strong>Saturazione verdi</strong></td>
+<td>-100 … +100</td>
+<td>Corregge prati, foglie, vegetazione</td>
+<td>+5…+15 per paesaggi</td>
+</tr>
+<tr>
+<td><strong>Saturazione blu</strong></td>
+<td>-100 … +100</td>
+<td>Corregge cielo e acqua</td>
+<td>+5…+15 per paesaggi; -10 se il cielo è troppo carico</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regola per i ritratti:</strong> saturazione sotto 1,00 e vivacità moderata. La pelle non deve diventare arancione o “plastica”.</p>
+<h3 id="45-dettaglio-e-nitidezza">4.5 Dettaglio e nitidezza</h3>
+<table>
+<thead>
+<tr>
+<th>Controllo</th>
+<th>Intervallo</th>
+<th>Cosa fa</th>
+<th>Consiglio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chiarezza (micro-contrasto)</strong></td>
+<td>0,00 … 1,00</td>
+<td>Aumenta il contrasto locale e la sensazione di dettaglio</td>
+<td>0,05–0,20 ritratti; 0,20–0,35 paesaggi</td>
+</tr>
+<tr>
+<td><strong>Dehaze (rimozione velo)</strong></td>
+<td>0,00 … 1,00</td>
+<td>Toglie la foschia e aumenta la trasparenza</td>
+<td>0,05–0,20; oltre 0,30 può scurire troppo</td>
+</tr>
+<tr>
+<td><strong>Nitidezza (quantità)</strong></td>
+<td>0,00 … 5,00</td>
+<td>Quanto forte è la nitidezza</td>
+<td>0,8–1,3 ritratti; 1,2–1,8 paesaggi; 1,5–2,0 stampa</td>
+</tr>
+<tr>
+<td><strong>Nitidezza (raggio)</strong></td>
+<td>0,50 … 4,00</td>
+<td>Spessore del dettaglio</td>
+<td>1,0–1,5 ritratti; 1,2–1,8 paesaggi</td>
+</tr>
+<tr>
+<td><strong>Riduzione rumore luminanza</strong></td>
+<td>0 … 100</td>
+<td>Toglie il rumore chiaro/scuro (grana)</td>
+<td>0 per ISO bassi; 40–70 per ISO alti</td>
+</tr>
+<tr>
+<td><strong>Riduzione rumore colore</strong></td>
+<td>0 … 100</td>
+<td>Toglie le macchie colorate</td>
+<td>0 per ISO bassi; 50–80 per ISO alti</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Come funziona la nitidezza:</strong> viene applicata solo alla luminanza, quindi non crea bordi colorati. Per questo puoi usare valori più alti rispetto ad altri programmi, ma non esagerare.</p>
+<p><strong>Come funziona la riduzione rumore:</strong> lavora separatamente su luminanza e colore. Protegge i bordi e lascia un piccolo residuo di grana per non rendere la pelle “di plastica”. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.</p>
+<h3 id="46-rimuovi-grana-auto-iso">4.6 RIMUOVI GRANA (AUTO ISO)</h3>
+<p>Questo è il pulsante <strong>un clic</strong> per le foto rumorose.</p>
+<p><strong>Quando lo premi, imposta:</strong></p>
+<ul>
+<li>riduzione rumore luminanza <strong>60</strong>;</li>
+<li>riduzione rumore colore <strong>70</strong>;</li>
+<li>nitidezza quantità almeno <strong>1,25</strong>;</li>
+<li>nitidezza raggio <strong>1,20</strong>.</li>
+</ul>
+<p>La forza della riduzione si adatta automaticamente all'ISO del RAW:</p>
+<table>
+<thead>
+<tr>
+<th>ISO</th>
+<th>Fattore applicato</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fino a 400</td>
+<td>0,60 (delicato)</td>
+</tr>
+<tr>
+<td>401–800</td>
+<td>0,78</td>
+</tr>
+<tr>
+<td>801–1600</td>
+<td>0,92</td>
+</tr>
+<tr>
+<td>1601–3200</td>
+<td>1,08</td>
+</tr>
+<tr>
+<td>3201–6400</td>
+<td>1,22</td>
+</tr>
+<tr>
+<td>oltre 6400</td>
+<td>1,35 (più forte)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quando usarlo:</strong> ISO 800+, interni, sera, concerti, sport, foto con ombre sollevate.</p>
+<p><strong>Quando non usarlo:</strong> ISO 100–400 con luce buona, still life puliti, foto in cui vuoi conservare la grana.</p>
+<p><strong>Come annullarlo:</strong> premi di nuovo il pulsante. Il programma ripristina i valori che avevi prima (quantità e raggio di nitidezza compresi). Il pulsante torna viola e la scritta torna <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</p>
+<blockquote>
+<p>Se preferisci, puoi regolare a mano <strong>Riduzione rumore luminanza</strong> e <strong>Riduzione rumore colore</strong>. Il pulsante è solo una scorciatoia: non blocca i valori manuali.</p>
+</blockquote>
+<h3 id="47-curva-tonale-e-split-toning">4.7 Curva tonale e split toning</h3>
+<p><strong>Curva tonale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Voce</th>
+<th>Effetto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lineare</strong></td>
+<td>Nessuna curva: massimo controllo naturale</td>
+</tr>
+<tr>
+<td><strong>Media</strong></td>
+<td>Contrasto leggero</td>
+</tr>
+<tr>
+<td><strong>Forte</strong></td>
+<td>Contrasto deciso</td>
+</tr>
+<tr>
+<td><strong>Contrasto Alto</strong></td>
+<td>Contrasto molto marcato</td>
+</tr>
+<tr>
+<td><strong>Schiarisci</strong></td>
+<td>Immagine più luminosa e aperta</td>
+</tr>
+<tr>
+<td><strong>Scurisci</strong></td>
+<td>Immagine più scura e densa</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Split toning:</strong></p>
+<ul>
+<li><strong>Split toning ombre (intensità):</strong> 0–100; colora le zone scure.</li>
+<li><strong>Colore ombre:</strong> colore in formato esadecimale, per esempio <code>#2b4c7e</code> (blu).</li>
+<li><strong>Split toning luci (intensità):</strong> 0–100; colora le zone chiare.</li>
+<li><strong>Colore luci:</strong> per esempio <code>#e0b070</code> (caldo).</li>
+</ul>
+<p><strong>Consiglio:</strong> split toning a <strong>5–15</strong> è elegante; oltre 30 diventa un effetto stilizzato. Per un look cinema: ombre blu e luci calde, entrambe a 10–15.</p>
+<h3 id="48-effetti">4.8 Effetti</h3>
+<table>
+<thead>
+<tr>
+<th>Controllo</th>
+<th>Intervallo</th>
+<th>Cosa fa</th>
+<th>Consiglio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Vignettatura</strong></td>
+<td>-100 … +100</td>
+<td>Negativo scurisce gli angoli; positivo li schiarisce</td>
+<td>-10…-25 per concentrare l'attenzione</td>
+</tr>
+<tr>
+<td><strong>Grana</strong></td>
+<td>0 … 100</td>
+<td>Aggiunge grana fotografica</td>
+<td>8–15 per bianco e nero o look pellicola</td>
+</tr>
+</tbody>
+</table>
+<p>La grana viene generata in modo casuale ma <strong>ripetibile</strong>: la stessa foto produce sempre lo stesso risultato.</p>
+<h3 id="49-ripristina-tutti-i-parametri-di-sviluppo">4.9 Ripristina tutti i parametri di sviluppo</h3>
+<p>Riporta gli slider, la curva e lo split toning ai valori predefiniti. <strong>Non</strong> cancella il watermark, la destinazione, i nomi file o le credenziali cloud. Se il pulsante <strong>RIMUOVI GRANA</strong> era attivo, viene disattivato.</p>
+<hr />
+<h2 id="5-scheda-tethering-cloud">5. Scheda Tethering &amp; Cloud</h2>
+<h3 id="51-sony-wi-fi-smart-remote-control">5.1 Sony Wi-Fi — Smart Remote Control</h3>
+<p>Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La fotocamera <strong>non invia da sola</strong> le foto: è il programma a comandarla.</p>
+<p><strong>Preparazione:</strong></p>
+<ol>
+<li>Sulla fotocamera apri l'app <strong>Smart Remote Control</strong> (PlayMemories Camera Apps).</li>
+<li>Collega il PC alla rete Wi-Fi creata dalla fotocamera: il nome è simile a <code>DIRECT-xxxx:ILCE-7S</code>.</li>
+<li>Attendi che il PC abbia un indirizzo di rete (di solito <code>192.168.122.x</code>).</li>
+<li>Nel programma premi <strong>CONNETTI FOTOCAMERA</strong>.</li>
+<li>Premi <strong>SCATTA E SCARICA</strong> per scattare e trasferire la foto.</li>
+<li><strong>DIAGNOSI</strong> mostra informazioni utili se la connessione non funziona.</li>
+</ol>
+<p><strong>Consigli:</strong></p>
+<ul>
+<li>Disattiva temporaneamente il firewall di Windows solo per la rete della fotocamera, se la connessione viene bloccata.</li>
+<li>Non usare contemporaneamente VPN o reti aziendali restrittive.</li>
+<li>Se la fotocamera si spegne, riconnetti la rete Wi-Fi e premi di nuovo <strong>CONNETTI FOTOCAMERA</strong>.</li>
+<li>La distanza ideale è di pochi metri, senza muri spessi.</li>
+</ul>
+<h3 id="52-hot-folder-cartella-monitorata">5.2 Hot-folder (cartella monitorata)</h3>
+<p>È il modo più semplice per automatizzare l'arrivo delle foto.</p>
+<ol>
+<li><strong>Cartella fotocamera:</strong> la cartella da controllare (per esempio una cartella sincronizzata da Dropbox, Google Drive, Imaging Edge o una cartella di rete).</li>
+<li><strong>Cartella output:</strong> dove salvare le foto sviluppate.</li>
+<li>Premi <strong>AVVIA MONITORAGGIO CARTELLA</strong>. Il pulsante diventa <strong>DISATTIVA MONITORAGGIO</strong>.</li>
+</ol>
+<p>Quando arriva un file supportato, il programma aspetta che la scrittura sia finita (dimensione stabile), poi lo converte con le impostazioni correnti della scheda Batch. Ignora la cartella di output e i file già prodotti, quindi non entra in un ciclo infinito.</p>
+<p><strong>Consiglio:</strong> usa una cartella di appoggio dedicata solo all'arrivo delle foto. Non puntare il monitoraggio sulla cartella che contiene l'intero archivio: sarebbe inutile e lento.</p>
+<h3 id="53-credenziali-cloud">5.3 Credenziali Cloud</h3>
+<p><strong>Telegram (operativo):</strong></p>
+<ul>
+<li><strong>Telegram Bot Token:</strong> lo ottieni da <code>@BotFather</code> su Telegram.</li>
+<li><strong>Telegram Chat ID:</strong> l'ID della chat o del canale che deve ricevere le foto.</li>
+<li>Attiva la casella <strong>Telegram</strong>.</li>
+<li>Il programma invia una foto alla volta al termine dell'elaborazione. Non invia cartelle né file non immagine.</li>
+</ul>
+<p><strong>Dropbox (operativo):</strong></p>
+<ul>
+<li><strong>Dropbox Access Token:</strong> crea un token con i permessi di scrittura nel tuo account Dropbox.</li>
+<li>Attiva la casella <strong>Dropbox</strong>.</li>
+<li>Il file viene caricato nella radice dell'account (o nella cartella consentita dal token), con rinomina automatica se esiste già un file con lo stesso nome.</li>
+</ul>
+<p><strong>Canali non attivi:</strong></p>
+<ul>
+<li><strong>Google Drive (non attivo)</strong></li>
+<li><strong>Meta FB/IG (non attivo)</strong></li>
+<li><strong>SwissTransfer (non attivo)</strong></li>
+</ul>
+<p>Questi campi sono predisposti, ma l'invio viene saltato senza errori. Non perdere tempo a configurarli in questa versione.</p>
+<p><strong>Privacy:</strong> i token sono credenziali sensibili. Non condividerli, non metterli in screenshot e non salvarli in un file di configurazione che poi condividi.</p>
+<hr />
+<h2 id="6-scheda-log-messaggi-ed-errori">6. Scheda Log: messaggi ed errori</h2>
+<p>La scheda <strong>Log</strong> mostra in tempo reale:</p>
+<ul>
+<li>file avviati, completati, saltati o falliti;</li>
+<li>algoritmo di demosaic usato (AMaZE, AHD, PPG o LINEAR);</li>
+<li>numero di processi attivati;</li>
+<li>
+<p>messaggi di tethering, cloud ed eventuali errori.</p>
+</li>
+<li>
+<p><strong>Svuota log:</strong> cancella il contenuto visualizzato.</p>
+</li>
+<li><strong>Salva log su file:</strong> salva un file di testo utile per assistenza o per capire un errore.</li>
+</ul>
+<p><strong>Consiglio:</strong> se un file non viene convertito, salva il log e controlla la riga con <strong>Errore</strong>. Spesso il problema è un file corrotto, un percorso non accessibile o un formato non supportato.</p>
+<hr />
+<h2 id="7-impostazioni-consigliate-per-tipo-di-foto">7. Impostazioni consigliate per tipo di foto</h2>
+<h3 id="71-tabella-rapida">7.1 Tabella rapida</h3>
+<table>
+<thead>
+<tr>
+<th>Tipo di foto</th>
+<th style="text-align: right;">Lato max</th>
+<th style="text-align: right;">Qualità</th>
+<th>Formato</th>
+<th>PIÙ LUMINOSA</th>
+<th>Rimuovi grana</th>
+<th>Nitidezza</th>
+<th>Watermark</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web / social</td>
+<td style="text-align: right;">1920</td>
+<td style="text-align: right;">90</td>
+<td>JPEG</td>
+<td>Solo se scura</td>
+<td>ISO 800+</td>
+<td>1,2 / 1,2</td>
+<td>Sì, piccolo</td>
+</tr>
+<tr>
+<td>Social alta qualità</td>
+<td style="text-align: right;">2048</td>
+<td style="text-align: right;">90</td>
+<td>JPEG</td>
+<td>Solo se scura</td>
+<td>ISO 800+</td>
+<td>1,2 / 1,2</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>Stampa fine art</td>
+<td style="text-align: right;">Originale</td>
+<td style="text-align: right;">95–100</td>
+<td>TIFF</td>
+<td>No</td>
+<td>ISO 1600+</td>
+<td>1,6 / 1,8</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Archivio</td>
+<td style="text-align: right;">Originale</td>
+<td style="text-align: right;">95</td>
+<td>JPEG</td>
+<td>No</td>
+<td>No</td>
+<td>0,8 / 1,5</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Ritratto</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">92</td>
+<td>JPEG</td>
+<td>Sì, se scuro</td>
+<td>ISO 800+</td>
+<td>0,9 / 1,2</td>
+<td>Solo se richiesto</td>
+</tr>
+<tr>
+<td>Paesaggio</td>
+<td style="text-align: right;">3000–3840</td>
+<td style="text-align: right;">92</td>
+<td>JPEG</td>
+<td>Solo se scuro</td>
+<td>ISO 800+</td>
+<td>1,5–1,8 / 1,6</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Notte / concerto</td>
+<td style="text-align: right;">1920–3000</td>
+<td style="text-align: right;">92</td>
+<td>JPEG</td>
+<td>No</td>
+<td>Sì</td>
+<td>1,0 / 1,2</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Bianco e nero</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">92</td>
+<td>JPEG</td>
+<td>No</td>
+<td>ISO 1600+</td>
+<td>1,5 / 1,5</td>
+<td>Facoltativo</td>
+</tr>
+<tr>
+<td>Prova rapida</td>
+<td style="text-align: right;">1200</td>
+<td style="text-align: right;">85</td>
+<td>JPEG</td>
+<td>No</td>
+<td>No</td>
+<td>1,0 / 1,5</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-consigli-per-iso">7.2 Consigli per ISO</h3>
+<table>
+<thead>
+<tr>
+<th>ISO</th>
+<th>Riduzione rumore</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100–400</td>
+<td>0 / 0</td>
+<td>Lascia il dettaglio naturale</td>
+</tr>
+<tr>
+<td>400–800</td>
+<td>15–25 / 20–30</td>
+<td>Solo se vedi rumore nelle ombre</td>
+</tr>
+<tr>
+<td>800–1600</td>
+<td>30–45 / 40–55</td>
+<td>Il pulsante AUTO è già adatto</td>
+</tr>
+<tr>
+<td>1600–3200</td>
+<td>45–60 / 55–70</td>
+<td>AUTO consigliato</td>
+</tr>
+<tr>
+<td>3200–6400</td>
+<td>60–70 / 70–80</td>
+<td>AUTO; controlla la pelle</td>
+</tr>
+<tr>
+<td>Oltre 6400</td>
+<td>70–80 / 80–90</td>
+<td>AUTO; valuta un formato più piccolo</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regola:</strong> meglio un po' di grana che una pelle “liscia come plastica”. Se il risultato è troppo morbido, abbassa la riduzione luminanza di 10–15 punti.</p>
+<h3 id="73-consigli-per-ritratti">7.3 Consigli per ritratti</h3>
+<ul>
+<li><strong>Esposizione:</strong> +0,2…+0,4 se la pelle è scura.</li>
+<li><strong>Luci:</strong> -10…-15 per non bruciare il viso.</li>
+<li><strong>Ombre:</strong> +10…+20 per aprire gli occhi.</li>
+<li><strong>Contrasto:</strong> 0,20–0,30.</li>
+<li><strong>Vivacità:</strong> 0,15–0,25.</li>
+<li><strong>Saturazione:</strong> 0,95–1,00.</li>
+<li><strong>Chiarezza:</strong> 0,05–0,10.</li>
+<li><strong>Nitidezza:</strong> 0,8–1,0, raggio 1,2.</li>
+<li><strong>Riduzione rumore:</strong> solo se serve; il preset <strong>Ritratto</strong> è un buon punto di partenza.</li>
+</ul>
+<h3 id="74-consigli-per-paesaggi">7.4 Consigli per paesaggi</h3>
+<ul>
+<li><strong>Contrasto:</strong> 0,30–0,45.</li>
+<li><strong>Vivacità:</strong> 0,30–0,45.</li>
+<li><strong>Chiarezza:</strong> 0,20–0,30.</li>
+<li><strong>Dehaze:</strong> 0,10–0,20.</li>
+<li><strong>Verdi:</strong> +8…+15.</li>
+<li><strong>Blu:</strong> +5…+10, ma non esagerare con il cielo.</li>
+<li><strong>Nitidezza:</strong> 1,5–1,8, raggio 1,6.</li>
+</ul>
+<h3 id="75-consigli-per-notte-e-concerti">7.5 Consigli per notte e concerti</h3>
+<ul>
+<li>Non alzare troppo l'esposizione: il rumore aumenta.</li>
+<li>Usa <strong>RIMUOVI GRANA (AUTO ISO)</strong>.</li>
+<li>Riduci il contrasto a 0,20–0,30 per non perdere dettaglio nelle ombre.</li>
+<li>Nitidezza 0,9–1,2, raggio 1,2.</li>
+<li>Se i colori sono troppo sporchi, alza la riduzione rumore colore a 75–85.</li>
+<li>Converti a 1920–3000 px: il rumore è meno visibile e il file è più gestibile.</li>
+</ul>
+<hr />
+<h2 id="8-flussi-di-lavoro-pronti-alluso">8. Flussi di lavoro pronti all'uso</h2>
+<h3 id="81-web-e-social-in-4-passi">8.1 Web e social in 4 passi</h3>
+<ol>
+<li>Seleziona la cartella RAW.</li>
+<li>Scegli <strong>1920</strong> px, <strong>JPEG</strong>, qualità <strong>90</strong>.</li>
+<li>Attiva <strong>PIÙ LUMINOSA</strong> solo se le foto sono scure.</li>
+<li>Avvia. Per le foto a ISO alto, attiva <strong>RIMUOVI GRANA</strong>.</li>
+</ol>
+<h3 id="82-consegna-al-cliente">8.2 Consegna al cliente</h3>
+<ol>
+<li><strong>3000</strong> px, <strong>JPEG</strong>, qualità <strong>95</strong>.</li>
+<li><strong>PIÙ LUMINOSA</strong> attiva solo sulle foto sottoesposte.</li>
+<li><strong>RIMUOVI GRANA</strong> per ISO 800+.</li>
+<li>Watermark solo se previsto dal contratto.</li>
+<li>Controlla 5 foto campione prima di consegnare tutto.</li>
+</ol>
+<h3 id="83-stampa-fine-art">8.3 Stampa fine art</h3>
+<ol>
+<li><strong>Originale</strong>, <strong>TIFF</strong>, qualità <strong>100</strong>.</li>
+<li><strong>PIÙ LUMINOSA</strong> spenta.</li>
+<li>Nitidezza <strong>1,6</strong>, raggio <strong>1,8</strong>.</li>
+<li><strong>RIMUOVI GRANA</strong> solo se necessario.</li>
+<li>Nessun watermark.</li>
+<li>Verifica la stampa con il laboratorio: il TIFF è senza perdita.</li>
+</ol>
+<h3 id="84-archivio">8.4 Archivio</h3>
+<ol>
+<li><strong>Originale</strong>, <strong>JPEG</strong>, qualità <strong>95</strong>.</li>
+<li>EXIF attivo.</li>
+<li>Nessun watermark.</li>
+<li>Nessuna riduzione rumore, salvo RAW molto rumorosi.</li>
+<li>Conserva anche i RAW originali su un disco separato.</li>
+</ol>
+<h3 id="85-bianco-e-nero">8.5 Bianco e nero</h3>
+<ol>
+<li>Preset <strong>Bianco e Nero</strong>.</li>
+<li>Saturazione <strong>0</strong>.</li>
+<li>Contrasto <strong>0,40–0,50</strong>.</li>
+<li>Chiarezza <strong>0,20–0,30</strong>.</li>
+<li>Grana <strong>8–15</strong>.</li>
+<li>Nitidezza <strong>1,3–1,6</strong>.</li>
+</ol>
+<h3 id="86-tethering-in-studio">8.6 Tethering in studio</h3>
+<ol>
+<li>Collega la Sony via Wi-Fi.</li>
+<li>Apri <strong>Tethering &amp; Cloud</strong>.</li>
+<li>Scegli la cartella di arrivo e la cartella output.</li>
+<li>Avvia il monitoraggio.</li>
+<li>Scatta: il programma converte automaticamente.</li>
+<li>Se necessario, attiva <strong>Telegram</strong> o <strong>Dropbox</strong> per l'invio immediato.</li>
+</ol>
+<hr />
+<h2 id="9-domande-frequenti-e-soluzione-problemi">9. Domande frequenti e soluzione problemi</h2>
+<h3 id="il-programma-e-lento-perche">Il programma è lento. Perché?</h3>
+<ul>
+<li>La prima conversione è più lenta: il programma carica le librerie.</li>
+<li><strong>Originale</strong> e <strong>denoise</strong> richiedono più tempo e RAM.</li>
+<li>Con RAW da 50–60 MP il numero di processi viene ridotto per non esaurire la memoria.</li>
+<li>Chiudi browser, giochi e altri programmi pesanti.</li>
+<li>Per il web usa <strong>1920 px</strong>: è molto più veloce e spesso sufficiente.</li>
+<li>Non convertire due volte la stessa cartella nella stessa destinazione.</li>
+</ul>
+<h3 id="un-file-da-errore-cosa-faccio">Un file dà errore. Cosa faccio?</h3>
+<ol>
+<li>Apri il <strong>Log</strong> e cerca la riga con <strong>Errore</strong>.</li>
+<li>Verifica che il file si apra con un altro programma.</li>
+<li>Prova a convertirlo da solo.</li>
+<li>Se è corrotto, escludilo: il batch continuerà con gli altri.</li>
+<li>Salva il log e segnala il problema con il nome del file e il messaggio.</li>
+</ol>
+<h3 id="perche-alcuni-file-vengono-saltati">Perché alcuni file vengono saltati?</h3>
+<p>La politica <strong>Se esiste</strong> è impostata su <strong>Salta</strong> oppure il file non è un formato supportato. Controlla anche che la cartella di output non sia la stessa della sorgente.</p>
+<h3 id="perche-il-watermark-e-troppo-grande-o-troppo-piccolo">Perché il watermark è troppo grande o troppo piccolo?</h3>
+<p>La dimensione è in <strong>pixel</strong>. Per una foto 1920 px usa 14–18; per 3000 px usa 24–32; per 6000 px usa 40–60. Il logo viene ridimensionato al 15% del lato lungo.</p>
+<h3 id="la-foto-e-troppo-chiara-o-troppo-scura">La foto è troppo chiara o troppo scura.</h3>
+<ul>
+<li>Se <strong>PIÙ LUMINOSA</strong> è attiva, disattivala e regola manualmente <strong>Esposizione</strong>.</li>
+<li>Controlla <strong>Luci</strong> e <strong>Ombre</strong>.</li>
+<li>Premi <strong>Ripristina tutti i parametri di sviluppo</strong> e riparti.</li>
+<li>Se la foto è bruciata o nera, non c'è recupero: il RAW non contiene più informazione.</li>
+</ul>
+<h3 id="la-pelle-e-diventata-di-plastica">La pelle è diventata “di plastica”.</h3>
+<p>Hai usato troppa riduzione rumore o troppa nitidezza. Abbassa <strong>Riduzione rumore luminanza</strong> di 10–20 punti e <strong>Nitidezza</strong> a 0,8–1,0. Per i ritratti meglio un po' di grana naturale.</p>
+<h3 id="il-cielo-e-troppo-saturo">Il cielo è troppo saturo.</h3>
+<p>Abbassa <strong>Saturazione blu</strong> e <strong>Vivacità</strong>. Se il cielo è bruciato, usa <strong>Luci</strong> negativo e <strong>Bianchi</strong> negativo.</p>
+<h3 id="la-sony-non-si-connette">La Sony non si connette.</h3>
+<ul>
+<li>La fotocamera deve essere in <strong>Smart Remote Control</strong>.</li>
+<li>Il PC deve essere collegato alla rete Wi-Fi <code>DIRECT-xxxx:ILCE-7S</code>.</li>
+<li>L'indirizzo del PC deve essere <code>192.168.122.x</code>.</li>
+<li>Prova <strong>DIAGNOSI</strong>.</li>
+<li>Disattiva VPN e firewall per quella rete.</li>
+<li>Riavvia la fotocamera e riconnetti.</li>
+</ul>
+<h3 id="telegram-non-invia">Telegram non invia.</h3>
+<ul>
+<li>Controlla <strong>Bot Token</strong> e <strong>Chat ID</strong>.</li>
+<li>Apri il bot su Telegram e premi <strong>Start</strong> almeno una volta.</li>
+<li>La casella <strong>Telegram</strong> deve essere attiva.</li>
+<li>Verifica la connessione Internet e che il token non sia scaduto.</li>
+</ul>
+<h3 id="dropbox-non-carica">Dropbox non carica.</h3>
+<ul>
+<li>Il token deve avere i permessi di scrittura.</li>
+<li>La casella <strong>Dropbox</strong> deve essere attiva.</li>
+<li>Token scaduti o revocati vanno rigenerati.</li>
+</ul>
+<h3 id="posso-usare-il-programma-su-mac">Posso usare il programma su Mac?</h3>
+<p>No: è un'applicazione Windows 10/11.</p>
+<h3 id="il-programma-invia-i-miei-dati">Il programma invia i miei dati?</h3>
+<p>No. Non c'è telemetria. L'unica connessione è quella che attivi tu: Sony Wi-Fi, Telegram o Dropbox. I token restano sul tuo computer.</p>
+<h3 id="dove-sono-i-file-convertiti">Dove sono i file convertiti?</h3>
+<p>Nella <strong>Cartella output</strong> scelta. Il percorso è mostrato anche nella barra di stato in basso. Il pulsante <strong>Apri cartella output</strong> la apre subito.</p>
+<h3 id="posso-annullare-un-batch-lungo">Posso annullare un batch lungo?</h3>
+<p>Sì. Premi <strong>ANNULLA</strong>. I file già completati restano; quelli in corso vengono interrotti e i file parziali vengono rimossi.</p>
+<h3 id="perche-il-file-jpeg-e-piu-pesante-del-solito">Perché il file JPEG è più pesante del solito?</h3>
+<p>Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità 85–90. Per la stampa è normale che il file sia grande.</p>
+<hr />
+<h2 id="10-glossario-semplice">10. Glossario semplice</h2>
+<table>
+<thead>
+<tr>
+<th>Termine</th>
+<th>Significato</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RAW</strong></td>
+<td>File grezzo della fotocamera: contiene molti più dati di un JPEG e permette correzioni migliori.</td>
+</tr>
+<tr>
+<td><strong>JPEG</strong></td>
+<td>Formato compresso, leggero e universale. Ottimo per web e condivisione.</td>
+</tr>
+<tr>
+<td><strong>PNG</strong></td>
+<td>Formato senza perdita, con supporto trasparenza. Utile per grafica, non per foto normali.</td>
+</tr>
+<tr>
+<td><strong>TIFF</strong></td>
+<td>Formato senza perdita, pesante, usato per stampa e archiviazione.</td>
+</tr>
+<tr>
+<td><strong>WebP</strong></td>
+<td>Formato moderno, leggero, per siti web.</td>
+</tr>
+<tr>
+<td><strong>sRGB</strong></td>
+<td>Spazio colore standard, compatibile con la maggior parte di schermi e servizi.</td>
+</tr>
+<tr>
+<td><strong>EXIF</strong></td>
+<td>Dati di scatto salvati nel file: data, fotocamera, ISO, tempi, GPS.</td>
+</tr>
+<tr>
+<td><strong>ISO</strong></td>
+<td>Sensibilità della fotocamera. ISO alto = più rumore.</td>
+</tr>
+<tr>
+<td><strong>EV</strong></td>
+<td>Unità di esposizione: +1 EV raddoppia la luce, -1 EV la dimezza.</td>
+</tr>
+<tr>
+<td><strong>Bilanciamento del bianco</strong></td>
+<td>Corregge la dominante di colore della luce.</td>
+</tr>
+<tr>
+<td><strong>Luminanza</strong></td>
+<td>Informazione di chiaro/scuro, separata dal colore.</td>
+</tr>
+<tr>
+<td><strong>Crominanza</strong></td>
+<td>Informazione di colore, separata dalla luminanza.</td>
+</tr>
+<tr>
+<td><strong>Guided filter</strong></td>
+<td>Filtro intelligente che toglie il rumore nelle zone piatte e protegge i bordi.</td>
+</tr>
+<tr>
+<td><strong>Demosaic</strong></td>
+<td>Ricostruzione del colore dai dati del sensore RAW.</td>
+</tr>
+<tr>
+<td><strong>AMaZE / AHD / PPG</strong></td>
+<td>Algoritmi di demosaic. AMaZE è il più avanzato; il programma ripiega automaticamente se non disponibile.</td>
+</tr>
+<tr>
+<td><strong>Lanczos</strong></td>
+<td>Metodo di ridimensionamento di alta qualità.</td>
+</tr>
+<tr>
+<td><strong>Vignettatura</strong></td>
+<td>Scurimento o schiarimento degli angoli.</td>
+</tr>
+<tr>
+<td><strong>Split toning</strong></td>
+<td>Colorazione separata di ombre e luci.</td>
+</tr>
+<tr>
+<td><strong>Watermark</strong></td>
+<td>Firma o logo sovrapposto alla foto.</td>
+</tr>
+<tr>
+<td><strong>Hot-folder</strong></td>
+<td>Cartella controllata automaticamente: quando arriva un file, viene convertito.</td>
+</tr>
+<tr>
+<td><strong>Tethering</strong></td>
+<td>Controllo della fotocamera dal computer.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-scheda-riassuntiva-da-stampare">11. Scheda riassuntiva da stampare</h2>
+<h3 id="web-social">Web / social</h3>
+<ul>
+<li>Lato max: <strong>1920</strong></li>
+<li>Qualità: <strong>90</strong></li>
+<li>Formato: <strong>JPEG</strong></li>
+<li>PIÙ LUMINOSA: <strong>solo se scura</strong></li>
+<li>Rimuovi grana: <strong>ISO 800+</strong></li>
+<li>Nitidezza: <strong>1,2 / 1,2</strong></li>
+<li>Watermark: <strong>sì, 14–18 px</strong></li>
+</ul>
+<h3 id="consegna-cliente">Consegna cliente</h3>
+<ul>
+<li>Lato max: <strong>3000</strong></li>
+<li>Qualità: <strong>95</strong></li>
+<li>Formato: <strong>JPEG</strong></li>
+<li>PIÙ LUMINOSA: <strong>solo se scura</strong></li>
+<li>Rimuovi grana: <strong>ISO 800+</strong></li>
+<li>Nitidezza: <strong>1,2 / 1,3</strong></li>
+<li>Watermark: <strong>secondo accordo</strong></li>
+</ul>
+<h3 id="stampa-fine-art">Stampa fine art</h3>
+<ul>
+<li>Lato max: <strong>Originale</strong></li>
+<li>Qualità: <strong>100</strong></li>
+<li>Formato: <strong>TIFF</strong></li>
+<li>PIÙ LUMINOSA: <strong>no</strong></li>
+<li>Rimuovi grana: <strong>solo se serve</strong></li>
+<li>Nitidezza: <strong>1,6 / 1,8</strong></li>
+<li>Watermark: <strong>no</strong></li>
+</ul>
+<h3 id="archivio">Archivio</h3>
+<ul>
+<li>Lato max: <strong>Originale</strong></li>
+<li>Qualità: <strong>95</strong></li>
+<li>Formato: <strong>JPEG</strong></li>
+<li>PIÙ LUMINOSA: <strong>no</strong></li>
+<li>Rimuovi grana: <strong>no</strong></li>
+<li>Nitidezza: <strong>0,8 / 1,5</strong></li>
+<li>EXIF: <strong>sì</strong></li>
+<li>Watermark: <strong>no</strong></li>
+</ul>
+<h3 id="notte-iso-alto">Notte / ISO alto</h3>
+<ul>
+<li>Lato max: <strong>1920–3000</strong></li>
+<li>Qualità: <strong>92</strong></li>
+<li>Formato: <strong>JPEG</strong></li>
+<li>PIÙ LUMINOSA: <strong>no</strong></li>
+<li>Rimuovi grana: <strong>sì</strong></li>
+<li>Nitidezza: <strong>1,0 / 1,2</strong></li>
+<li>Watermark: <strong>no</strong></li>
+</ul>
+<hr />
+<p><strong>Franchetti Raw Converter Pro v2.54.0</strong> — Guida completa.
+Per assistenza, salva il <strong>Log</strong> e descrivi il passaggio che ha causato il problema.</p>
+</article></main>
+</body>
+</html>

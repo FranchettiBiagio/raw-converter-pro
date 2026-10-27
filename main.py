@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.53.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.54.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
              sensore (LibRaw con fallback AMaZE/AHD/PPG/LINEAR), ottimizzazione
-             in spazio CIE L*a*b*, correzioni colore complete, ridimensionamento,
+             in spazio Y/Cb/Cr, denoise ISO, correzioni colore complete, ridimensionamento,
              watermarking, tethering Wi-Fi automatico (Hot-Folder), Cloud
              (Telegram/Dropbox) ed elaborazione batch su tutti i core.
 ================================================================================
@@ -30,8 +30,9 @@ try:
     import rawpy
     import piexif
     import customtkinter as ctk
-    from PIL import Image, ImageOps, ImageDraw, ImageFont
+    from PIL import Image, ImageFilter, ImageOps, ImageDraw, ImageFont
     from skimage import color, filters
+    from scipy.ndimage import uniform_filter
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
     import requests
@@ -41,7 +42,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.53.0"
+APP_VERSION = "2.54.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -122,6 +123,7 @@ def parametri_default():
         "dehaze": 0.0,
         "nr_luminanza": 0.0,
         "nr_colore": 0.0,
+        "rimuovi_grana_auto": False,
         "nitidezza_raggio": 1.5,
         "nitidezza_quantita": 1.0,
         "vignettatura": 0.0,
@@ -256,7 +258,7 @@ def normalizza_parametri(parametri):
     p["sovrascrittura"] = politica
 
     for chiave in (
-        "usa_multicore", "auto_luminosita", "preserva_exif", "mantieni_nomi",
+        "usa_multicore", "auto_luminosita", "rimuovi_grana_auto", "preserva_exif", "mantieni_nomi",
         "ricorsivo", "watermark_attivo", "use_camera_wb", "cloud_telegram",
         "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss",
     ):
@@ -298,12 +300,43 @@ def memoria_disponibile_mb():
     return 4096
 
 
-def numero_processi_ottimale(numero_file):
+def numero_processi_ottimale(numero_file, per_processo_mb=1200):
     """Quanti processi usare: tutti i core, limitati dalla RAM disponibile."""
     cpu = os.cpu_count() or 1
-    # Picco stimato per processo su RAW da 24 MP: circa 1,2 GB.
-    per_ram = max(1, int(memoria_disponibile_mb() / 1200))
+    # Picco stimato per processo: 1,2 GB a dimensione web; molto di piu' su
+    # originali 24-60 MP, soprattutto con la riduzione grana attiva.
+    per_ram = max(1, int((memoria_disponibile_mb() * 0.85) / max(256, per_processo_mb)))
     return max(1, min(int(cpu), per_ram, max(1, int(numero_file))))
+
+
+_THREAD_ENV_VARS = (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+)
+
+
+def _limita_thread_per_processi():
+    """Un solo thread BLAS/OpenMP per worker: evita oversubscription.
+
+    Con 12-20 processi paralleli ogni worker non deve aprire a sua volta
+    12-20 thread: si perderebbero decine di secondi in contesa di CPU.
+    """
+    vecchi = {}
+    for nome in _THREAD_ENV_VARS:
+        vecchi[nome] = os.environ.get(nome)
+        os.environ[nome] = "1"
+    return vecchi
+
+
+def _ripristina_thread(vecchi):
+    for nome, valore in (vecchi or {}).items():
+        if valore is None:
+            os.environ.pop(nome, None)
+        else:
+            os.environ[nome] = valore
 
 
 def percorso_unico(percorso):
@@ -549,7 +582,15 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
     if compiti and (cancel_event is None or not cancel_event.is_set()):
         processi = 1
         if params.get("usa_multicore", True) and len(compiti) > 1:
-            processi = numero_processi_ottimale(len(compiti))
+            denoise = (
+                float(params.get("nr_luminanza", 0.0)) > 0.0
+                or float(params.get("nr_colore", 0.0)) > 0.0
+            )
+            max_dim = int(params.get("max_dim", 0) or 0)
+            per_processo = 1200
+            if max_dim == 0:
+                per_processo = 2400 if denoise else 1800
+            processi = numero_processi_ottimale(len(compiti), per_processo)
         if processi > 1:
             nota(f"Elaborazione parallela: {processi} processi su {os.cpu_count() or 1} core CPU.")
         else:
@@ -570,7 +611,12 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                     nota(f"ERRORE su {os.path.basename(percorso)}: {esito['errore']}")
                 avanza(indice, totale, ok, errori, saltati)
         else:
-            esecutore = ProcessPoolExecutor(max_workers=processi)
+            vecchi_thread = _limita_thread_per_processi()
+            try:
+                esecutore = ProcessPoolExecutor(max_workers=processi)
+            except Exception:
+                _ripristina_thread(vecchi_thread)
+                raise
             with _LOCK_ESECUTORI:
                 _ESECUTORI_ATTIVI.add(esecutore)
             futuro_mappa = {}
@@ -643,6 +689,7 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                     esecutore.shutdown(wait=True)
                 with _LOCK_ESECUTORI:
                     _ESECUTORI_ATTIVI.discard(esecutore)
+                _ripristina_thread(vecchi_thread)
 
     annullato = bool(cancel_event is not None and cancel_event.is_set())
     if annullato:
@@ -657,7 +704,7 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
 
 
 # ================================================================================
-# 2. CORE PIPELINE: MOTORE DI ELABORAZIONE IMMAGINI IN SPAZIO CIE L*a*b*
+# 2. CORE PIPELINE: MOTORE DI ELABORAZIONE IMMAGINI IN SPAZIO Y/Cb/Cr
 # ================================================================================
 class ImageEngine:
     """Pipeline completa RAW -> JPEG/TIFF/PNG/WEBP con correzioni fotografiche."""
@@ -806,40 +853,148 @@ class ImageEngine:
 
         return img
 
-    # ----------------------------------------------------- fase 4: Lab + curve
+    # ------------------------------------- fase 4: grana, curva e nitidezza
+    @staticmethod
+    def _box_mean(array, raggio):
+        """Media locale veloce (filtro a finestra separabile)."""
+        raggio = max(0, int(raggio))
+        if raggio <= 0:
+            return array
+        return uniform_filter(array, size=2 * raggio + 1, mode="reflect")
+
+    @classmethod
+    def _guided_auto(cls, y, raggio, epsilon):
+        """Guided filter auto-guidato: leviga il rumore senza tagliare i bordi."""
+        media = cls._box_mean(y, raggio)
+        varianza = np.maximum(cls._box_mean(y * y, raggio) - media * media, 0.0)
+        a = varianza / (varianza + epsilon)
+        b = media * (1.0 - a)
+        return cls._box_mean(a, raggio) * y + cls._box_mean(b, raggio)
+
+    @classmethod
+    def _guided(cls, guida, sorgente, raggio, epsilon):
+        """Guided filter: usa la luminanza come guida per crominanza e colore."""
+        media_g = cls._box_mean(guida, raggio)
+        media_s = cls._box_mean(sorgente, raggio)
+        var_g = np.maximum(cls._box_mean(guida * guida, raggio) - media_g * media_g, 0.0)
+        cov = cls._box_mean(guida * sorgente, raggio) - media_g * media_s
+        a = cov / (var_g + epsilon)
+        b = media_s - a * media_g
+        return cls._box_mean(a, raggio) * guida + cls._box_mean(b, raggio)
+
+    @staticmethod
+    def _down2(array):
+        """Riduce di 2x con media: la crominanza non perde dettaglio utile."""
+        h, w = array.shape
+        h2, w2 = h // 2, w // 2
+        if h2 < 2 or w2 < 2:
+            return array
+        return array[: h2 * 2, : w2 * 2].reshape(h2, 2, w2, 2).mean(axis=(1, 3))
+
+    @staticmethod
+    def _up2(array, larghezza, altezza):
+        """Riporta a dimensione piena un canale float con interpolazione lineare."""
+        if array.shape == (altezza, larghezza):
+            return array
+        canale = Image.fromarray(array.astype(np.float32), mode="F")
+        return np.asarray(
+            canale.resize((larghezza, altezza), Image.Resampling.BILINEAR),
+            dtype=np.float32,
+        )
+
+    @classmethod
+    def _riduci_grana(cls, img, p, nrl, nrc):
+        """Riduzione grana ISO con preservazione di bordi, contrasto e dettaglio.
+
+        Lavora in Y/Cb/Cr: il canale di luminanza usa un guided filter
+        auto-guidato, la crominanza un guided filter guidato dalla luminanza.
+        Il rumore viene tolto nelle zone piatte, mentre i bordi e i dettagli
+        fini restano intatti. La forza si adatta all'ISO del RAW.
+        """
+        iso = float(p.get("_iso", 0) or 0)
+        fattore = 1.0
+        if p.get("rimuovi_grana_auto") and iso > 0:
+            if iso <= 400:
+                fattore = 0.60
+            elif iso <= 800:
+                fattore = 0.78
+            elif iso <= 1600:
+                fattore = 0.92
+            elif iso <= 3200:
+                fattore = 1.08
+            elif iso <= 6400:
+                fattore = 1.22
+            else:
+                fattore = 1.35
+        nrl = max(0.0, min(1.0, nrl * fattore))
+        nrc = max(0.0, min(1.0, nrc * fattore))
+        if nrl <= 1e-4 and nrc <= 1e-4:
+            return img
+
+        r = img[:, :, 0]
+        g = img[:, :, 1]
+        b = img[:, :, 2]
+        y = 0.299 * r + 0.587 * g + 0.114 * b
+        cb = b - y
+        cr = r - y
+
+        if nrl > 1e-4:
+            raggio = max(1, int(round(1.0 + nrl * 4.0)))
+            epsilon = 0.00015 + (nrl * nrl) * 0.0012
+            y_pulita = cls._guided_auto(y, raggio, epsilon)
+            # Il guided filter preserva i bordi; lasciamo un 2% del residuo
+            # per non rendere la pelle "di plastica".
+            y = y_pulita + (y - y_pulita) * 0.02
+
+        if nrc > 1e-4:
+            raggio = max(3, int(round(3.0 + nrc * 11.0)))
+            epsilon = 0.0003 + (nrc * nrc) * 0.004
+            # La crominanza e' a bassa frequenza: denoise a meta' risoluzione,
+            # poi ricostruzione lineare. 4x piu' veloce, stesso risultato visivo.
+            y_small = cls._down2(y)
+            cb_small = cls._down2(cb)
+            cr_small = cls._down2(cr)
+            if cb_small is not cb:
+                raggio_small = max(2, raggio // 2)
+                cb_pulito = cls._guided(y_small, cb_small, raggio_small, epsilon)
+                cr_pulito = cls._guided(y_small, cr_small, raggio_small, epsilon)
+                cb_pulito = cls._up2(cb_pulito, cb.shape[1], cb.shape[0])
+                cr_pulito = cls._up2(cr_pulito, cr.shape[1], cr.shape[0])
+            else:
+                cb_pulito = cls._guided(y, cb, raggio, epsilon)
+                cr_pulito = cls._guided(y, cr, raggio, epsilon)
+            beta = min(0.98, 0.70 + nrc * 0.28)
+            cb = cb * (1.0 - beta) + cb_pulito * beta
+            cr = cr * (1.0 - beta) + cr_pulito * beta
+
+        r2 = y + cr
+        b2 = y + cb
+        g2 = (y - 0.299 * r2 - 0.114 * b2) / 0.587
+        return np.clip(np.stack((r2, g2, b2), axis=-1), 0.0, 1.0)
+
     @classmethod
     def _fase_lab(cls, img, p):
-        lab = color.rgb2lab(np.clip(img, 0.0, 1.0))
-        L = np.clip(lab[:, :, 0], 0.0, 100.0)
-
-        # Curva tonale parametrica
-        lut = cls._curva_lut(p.get("curva_tonale", "Lineare"))
-        indici = np.clip((L / 100.0 * 255.0).astype(np.int32), 0, 255)
-        lab[:, :, 0] = lut[indici]
-
-        # Riduzione rumore cromatico
-        nrc = float(p.get("nr_colore", 0.0)) / 100.0
-        if nrc > 1e-4:
-            sigma = 0.6 + nrc * 2.6
-            lab[:, :, 1] = filters.gaussian(lab[:, :, 1], sigma=sigma, preserve_range=True)
-            lab[:, :, 2] = filters.gaussian(lab[:, :, 2], sigma=sigma, preserve_range=True)
-
-        # Riduzione rumore luminanza
+        """Grana, curva tonale e nitidezza senza conversioni Lab pesanti."""
         nrl = float(p.get("nr_luminanza", 0.0)) / 100.0
-        if nrl > 1e-4:
-            lab[:, :, 0] = filters.gaussian(
-                lab[:, :, 0], sigma=0.35 + nrl * 1.8, preserve_range=True
-            )
+        nrc = float(p.get("nr_colore", 0.0)) / 100.0
+        if nrl > 1e-4 or nrc > 1e-4:
+            img = cls._riduci_grana(img, p, nrl, nrc)
 
-        # Nitidezza sul canale L (nessun alone cromatico)
+        curva = p.get("curva_tonale", "Lineare")
+        if curva and curva != "Lineare":
+            lum = np.clip(cls._luma(img), 0.0, 1.0)
+            lut = cls._curva_lut(curva) / 100.0
+            indici = np.clip((lum * 255.0).astype(np.int32), 0, 255)
+            img = cls._applica_luminanza(img, lut[indici])
+
         q = float(p.get("nitidezza_quantita", 0.0))
         if q > 1e-4:
             raggio = float(p.get("nitidezza_raggio", 1.5))
-            lab[:, :, 0] = filters.unsharp_mask(
-                lab[:, :, 0], radius=raggio, amount=q, preserve_range=True
-            )
+            lum = np.clip(cls._luma(img), 0.0, 1.0)
+            lum = filters.unsharp_mask(lum, radius=raggio, amount=q, preserve_range=True)
+            img = cls._applica_luminanza(img, np.clip(lum, 0.0, 1.0))
 
-        return np.clip(color.lab2rgb(lab), 0.0, 1.0)
+        return np.clip(img, 0.0, 1.0)
 
     # ---------------------------------------------------- fase 5: effetti finali
     @classmethod
@@ -1006,7 +1161,7 @@ class ImageEngine:
         if formato == "JPEG":
             if pil_img.mode not in ("RGB", "L"):
                 pil_img = pil_img.convert("RGB")
-            kwargs = dict(quality=qualita, subsampling=0, optimize=True)
+            kwargs = dict(quality=qualita, subsampling=0, optimize=False)
             if icc:
                 kwargs["icc_profile"] = icc
         elif formato == "PNG":
@@ -1045,45 +1200,73 @@ class ImageEngine:
         Usa una LUT a 256 livelli: veloce anche su immagini grandi.
         """
         arr = np.asarray(pil_img.convert("RGB"), dtype=np.uint8)
+        base = arr.astype(np.float32) / 255.0
         lum = (
-            0.2126 * arr[..., 0].astype(np.float32)
-            + 0.7152 * arr[..., 1].astype(np.float32)
-            + 0.0722 * arr[..., 2].astype(np.float32)
-        ) / 255.0
+            0.2126 * base[..., 0] + 0.7152 * base[..., 1] + 0.0722 * base[..., 2]
+        )
         mediana = float(np.median(lum))
         luci = float(np.percentile(lum, 97))
 
-        # Immagine gia' al massimo (o completamente nera): nulla da recuperare.
-        if mediana >= 0.995:
+        # Bianco/nero assoluti: nulla da recuperare.
+        if mediana <= 0.005 or mediana >= 0.995:
             return pil_img
+        saturazione_max = float(
+            (base.max(axis=2) - base.min(axis=2)).max()
+        )
 
         gamma = 1.0
-        if mediana < 0.40 and mediana > 0.01:
+        if 0.01 < mediana < 0.40:
             # Foto scura: schiarisce fino a portare la mediana verso il centro
             obiettivo = 0.48 if mediana < 0.26 else 0.44
             gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
             gamma = max(0.32, min(1.0, gamma))
-        elif (mediana > 0.56 or luci > 0.96) and mediana < 0.995:
-            # Foto troppo luminosa: riduce e comprime le alte luci
-            obiettivo = 0.50
+        elif luci > 0.985 and mediana < 0.995:
+            # Solo alte luci realmente clipped: schiaritura contenuta, senza
+            # scurire drasticamente una parete chiara ma correttamente esposta.
+            obiettivo = max(0.66, min(0.80, mediana * 0.94))
             gamma = math.log(obiettivo) / math.log(max(mediana, 0.01))
-            gamma = max(1.0, min(2.8, gamma))
-
-        if abs(gamma - 1.0) < 0.02 and luci <= 0.96:
-            return pil_img
+            gamma = max(1.0, min(1.8, gamma))
 
         x = np.linspace(0.0, 1.0, 256, dtype=np.float32)
         y = np.power(x, gamma)
         # Ginocchio morbido sulle alte luci: evita di bruciare i bianchi
-        ginocchio = 0.86
+        ginocchio = 0.88
         sopra = y > ginocchio
         if np.any(sopra):
             y[sopra] = ginocchio + (1.0 - ginocchio) * np.tanh(
                 (y[sopra] - ginocchio) / (1.0 - ginocchio)
             )
         y = np.clip(y / max(float(y[-1]), 1e-6), 0.0, 1.0)
+        # Contrasto delicato: compensa l'appiattimento tipico dello schiarimento
+        y = np.clip(0.5 + (y - 0.5) * 1.035, 0.0, 1.0)
         lut = (y * 255.0 + 0.5).astype(np.uint8)
-        return Image.fromarray(lut[arr], "RGB")
+
+        # Applica la curva alla sola luminanza: la saturazione non esplode.
+        indici = np.clip((lum * 255.0).astype(np.int32), 0, 255)
+        lum_nuova = lut[indici].astype(np.float32) / 255.0
+        rapporto = lum_nuova / np.maximum(lum, 1e-4)
+        base = np.clip(base * rapporto[..., None], 0.0, 1.0)
+
+        # Vividezza misurata: piu' colore nelle zone spente, senza saturare
+        # gli accenti ne' amplificare il rumore cromatico.
+        lum2 = (
+            0.2126 * base[..., 0] + 0.7152 * base[..., 1] + 0.0722 * base[..., 2]
+        )
+        grigio = lum2[..., None]
+        saturazione = base.max(axis=2) - base.min(axis=2)
+        spinta = 0.10 + 0.06 * (1.0 - np.clip(saturazione, 0.0, 1.0))
+        base = grigio + (base - grigio) * (1.0 + spinta[..., None])
+        base = np.clip(base, 0.0, 1.0)
+        if abs(gamma - 1.0) < 1e-6 and saturazione_max < 0.002 and luci <= 0.985:
+            return pil_img
+        risultato = Image.fromarray((base * 255.0 + 0.5).astype(np.uint8), "RGB")
+
+        # Micro-contrasto finale molto leggero: nessun effetto plastica.
+        if min(risultato.size) > 4:
+            risultato = risultato.filter(
+                ImageFilter.UnsharpMask(radius=0.8, percent=20, threshold=5)
+            )
+        return risultato
 
     _demosaic_ok = None
 
@@ -1139,17 +1322,40 @@ class ImageEngine:
         nota(f"Avvio sviluppo: {os.path.basename(percorso_raw)}")
 
         # 1. Decodifica RAW (o immagine standard)
+        iso = 0.0
         if percorso_raw.lower().endswith(RAW_ESTENSIONI):
             with rawpy.imread(percorso_raw) as raw:
                 rgb = cls._decodifica_raw(raw, p, nota)
+                try:
+                    iso = float(raw.other.iso_speed or 0.0)
+                except Exception:
+                    iso = 0.0
         else:
             with Image.open(percorso_raw) as im:
+                try:
+                    iso = float(im.getexif().get(34855, 0) or 0.0)
+                except Exception:
+                    iso = 0.0
                 im = ImageOps.exif_transpose(im).convert("RGB")
                 rgb = np.array(im)
+        p["_iso"] = iso
+
+        # 1b. Ridimensiona subito al lato lungo richiesto: tutta la pipeline
+        # lavora sulla risoluzione finale, non su 24-60 MP inutili.
+        max_dim = int(p.get("max_dim", 0) or 0)
+        if max_dim > 0 and max(rgb.shape[0], rgb.shape[1]) > max_dim:
+            pil_raw = Image.fromarray(rgb, "RGB")
+            fattore = max_dim / float(max(pil_raw.size))
+            nuova = (
+                max(1, int(pil_raw.size[0] * fattore)),
+                max(1, int(pil_raw.size[1] * fattore)),
+            )
+            rgb = np.asarray(pil_raw.resize(nuova, Image.Resampling.LANCZOS))
+            nota(f"Ridimensionato a {nuova[0]}x{nuova[1]} px")
 
         img = rgb.astype(np.float32) / 255.0
 
-        # 2. Pipeline fotografica
+        # 2. Pipeline fotografica (sulla risoluzione finale)
         img = cls._fase_tono(img, p)
         img = cls._fase_colore(img, p)
         img = cls._fase_dettaglio(img, p)
@@ -1162,15 +1368,7 @@ class ImageEngine:
         # 2b. Miglioramento automatico dell'esposizione (BETA "Piu' luminosa")
         if p.get("auto_luminosita"):
             pil_img = cls.correggi_luminosita_auto(pil_img)
-            nota("Bilanciamento automatico della luminosita' applicato")
-
-        # 3. Ridimensionamento (lato lungo)
-        max_dim = int(p.get("max_dim", 0) or 0)
-        if max_dim > 0 and max(pil_img.size) > max_dim:
-            fattore = max_dim / float(max(pil_img.size))
-            nuova = (max(1, int(pil_img.size[0] * fattore)), max(1, int(pil_img.size[1] * fattore)))
-            pil_img = pil_img.resize(nuova, Image.Resampling.LANCZOS)
-            nota(f"Ridimensionato a {nuova[0]}x{nuova[1]} px")
+            nota("Bilanciamento automatico della luminosita' e vividezza applicati")
 
         # 4. Watermark: logo + testo
         posizione = p.get("watermark_posizione", "Basso a destra")
@@ -1698,6 +1896,7 @@ class FranchettiApp(ctk.CTk):
         self._batch_files = []
         self._batch_attivo = False
         self._slider_widgets = {}
+        self._grana_precedente = (0.0, 0.0, 1.0, 1.5)
         self._ultima_cartella = os.path.expanduser("~")
         self._coda = queue.Queue()
 
@@ -2085,6 +2284,18 @@ class FranchettiApp(ctk.CTk):
         )
         self.btn_annulla.grid(row=0, column=1, padx=4, pady=6)
 
+        self.btn_rimuovi_grana = ctk.CTkButton(
+            azioni,
+            text="RIMUOVI GRANA (AUTO ISO)",
+            height=42,
+            width=210,
+            fg_color="#6a4c93",
+            hover_color="#7e5aa8",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            command=self.toggle_rimuovi_grana,
+        )
+        self.btn_rimuovi_grana.grid(row=0, column=2, padx=(10, 4), pady=6, sticky="w")
+
         self.progress = ctk.CTkProgressBar(azioni)
         self.progress.grid(row=1, column=0, columnspan=3, padx=4, pady=(2, 4), sticky="ew")
         self.progress.set(0)
@@ -2159,6 +2370,20 @@ class FranchettiApp(ctk.CTk):
             )
             for idx, (chiave, etichetta, minimo, massimo, default, fmt) in enumerate(sliders, start=1):
                 self._crea_slider(card, idx, chiave, etichetta, minimo, massimo, default, fmt)
+            if titolo == "DETTAGLIO E NITIDEZZA":
+                self.btn_rimuovi_grana_sviluppo = ctk.CTkButton(
+                    card,
+                    text="RIMUOVI GRANA (AUTO ISO)",
+                    height=30,
+                    fg_color="#6a4c93",
+                    hover_color="#7e5aa8",
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    command=self.toggle_rimuovi_grana,
+                )
+                self.btn_rimuovi_grana_sviluppo.grid(
+                    row=len(sliders) + 1, column=0, columnspan=3,
+                    padx=10, pady=(8, 10), sticky="ew",
+                )
 
         # curva tonale + split toning
         card2 = ctk.CTkFrame(scroll)
@@ -2209,6 +2434,64 @@ class FranchettiApp(ctk.CTk):
         if chiave in self._slider_widgets:
             _, label, fmt = self._slider_widgets[chiave]
             label.configure(text=fmt.format(float(valore)))
+        if chiave in ("nr_luminanza", "nr_colore"):
+            if (
+                self.parametri.get("rimuovi_grana_auto")
+                and float(self.parametri.get("nr_luminanza", 0.0)) <= 0.0
+                and float(self.parametri.get("nr_colore", 0.0)) <= 0.0
+            ):
+                self.parametri["rimuovi_grana_auto"] = False
+            self._aggiorna_stato_grana()
+
+    def _imposta_parametro_slider(self, chiave, valore):
+        """Aggiorna slider, etichetta e parametro in un solo passaggio."""
+        valore = float(valore)
+        self.parametri[chiave] = valore
+        if chiave in self._slider_widgets:
+            slider, label, fmt = self._slider_widgets[chiave]
+            slider.set(valore)
+            label.configure(text=fmt.format(valore))
+
+    def toggle_rimuovi_grana(self):
+        """Preset intelligente: denoise ISO con dettaglio, contrasto e nitidezza."""
+        attivo = bool(self.parametri.get("rimuovi_grana_auto", False))
+        if attivo:
+            nrl, nrc, nit, raggio = self._grana_precedente
+            self._imposta_parametro_slider("nr_luminanza", nrl)
+            self._imposta_parametro_slider("nr_colore", nrc)
+            self._imposta_parametro_slider("nitidezza_quantita", nit)
+            self._imposta_parametro_slider("nitidezza_raggio", raggio)
+            self.parametri["rimuovi_grana_auto"] = False
+        else:
+            self._grana_precedente = (
+                float(self.parametri.get("nr_luminanza", 0.0)),
+                float(self.parametri.get("nr_colore", 0.0)),
+                float(self.parametri.get("nitidezza_quantita", 1.0)),
+                float(self.parametri.get("nitidezza_raggio", 1.5)),
+            )
+            self._imposta_parametro_slider("nr_luminanza", 60.0)
+            self._imposta_parametro_slider("nr_colore", 70.0)
+            self._imposta_parametro_slider(
+                "nitidezza_quantita",
+                max(float(self.parametri.get("nitidezza_quantita", 1.0)), 1.25),
+            )
+            self._imposta_parametro_slider("nitidezza_raggio", 1.2)
+            self.parametri["rimuovi_grana_auto"] = True
+        self._aggiorna_stato_grana()
+
+    def _aggiorna_stato_grana(self):
+        attivo = bool(self.parametri.get("rimuovi_grana_auto", False))
+        testo = "GRANA RIMOSSA (AUTO ISO) ✓" if attivo else "RIMUOVI GRANA (AUTO ISO)"
+        colore = "#1f7a3d" if attivo else "#6a4c93"
+        hover = "#258c47" if attivo else "#7e5aa8"
+        for nome in ("btn_rimuovi_grana", "btn_rimuovi_grana_sviluppo"):
+            bottone = getattr(self, nome, None)
+            if bottone is None:
+                continue
+            try:
+                bottone.configure(text=testo, fg_color=colore, hover_color=hover)
+            except Exception:
+                pass
 
     def ripristina_sviluppo(self):
         for chiave, (slider, label, fmt) in self._slider_widgets.items():
@@ -2216,6 +2499,9 @@ class FranchettiApp(ctk.CTk):
             slider.set(default)
             label.configure(text=fmt.format(default))
             self.parametri[chiave] = default
+        self.parametri["rimuovi_grana_auto"] = False
+        self._grana_precedente = (0.0, 0.0, 1.0, 1.5)
+        self._aggiorna_stato_grana()
         self.combo_curva.set("Lineare")
         self.parametri["curva_tonale"] = "Lineare"
         self.scrivi_log("Parametri di sviluppo ripristinati ai valori di default.")
@@ -2537,6 +2823,8 @@ class FranchettiApp(ctk.CTk):
             else:
                 self.chk_exif.deselect()
 
+        self.parametri["rimuovi_grana_auto"] = bool(preset.get("rimuovi_grana_auto", False))
+        self._aggiorna_stato_grana()
         self.scrivi_log(f"Preset applicato: {nome}")
 
     # ============================================================ CONFIG
@@ -2652,6 +2940,7 @@ class FranchettiApp(ctk.CTk):
             pass
 
         self._toggle_auto_luminosita(bool(self.parametri.get("auto_luminosita", False)))
+        self._aggiorna_stato_grana()
 
     # ============================================================ CAMPI
     def _toggle_auto_luminosita(self, attivo):

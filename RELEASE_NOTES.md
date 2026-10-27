@@ -1,3 +1,102 @@
+# Release Notes v2.54.0
+
+**Franchetti Raw Converter Pro** - Release v2.54.0  
+**Data**: 27 Ottobre 2026  
+**Build**: 2.54.0.0
+
+---
+
+## Rimuovi grana in un clic
+
+Nel tab **Batch** e nel tab **Sviluppo RAW** c'e' il nuovo pulsante
+**RIMUOVI GRANA (AUTO ISO)**.
+
+Il denoise lavora in **Y/Cb/Cr**:
+
+- la luminanza usa un guided filter che pulisce le zone piatte e conserva i bordi;
+- la crominanza viene elaborata a meta' risoluzione, dove il rumore colorato vive,
+  poi ricostruita: 4x piu' veloce e senza aloni;
+- la forza si adatta all'ISO del RAW (testati ISO 1000, 2000 e 3200);
+- restano disponibili gli slider manuali per regolare l'intensita';
+- la nitidezza viene riapplicata dopo il denoise, per non perdere dettaglio.
+
+Il preset del pulsante e': luminanza **60**, colore **70**, nitidezza **1.25**,
+raggio **1.2**. Un secondo clic ripristina i valori precedenti.
+
+Confronto 100% su RAW ISO 3200: la grana della parete scende di circa il 60%,
+mentre occhi, capelli e contorni del soggetto restano definiti.
+
+---
+
+## PIU' LUMINOSA: piu' luce e piu' colore
+
+**PIU' LUMINOSA** ora corregge l'esposizione **e** aumenta la vividezza:
+
+- la curva di esposizione viene applicata alla sola luminanza, quindi i colori
+  non si spostano e le dominanti restano stabili;
+- le zone spente ricevono circa il 10-16% di saturazione in piu';
+- le alte luci sono protette da un ginocchio morbido;
+- un micro-contrasto leggero recupera la nitidezza dopo la schiaritura.
+
+Le foto gia' corrette restano praticamente invariate; bianco e nero puri non
+vengono alterati.
+
+---
+
+## Batch piu' veloce e senza errori
+
+- Il RAW viene ridimensionato **prima** della pipeline: tutte le fasi lavorano
+  sulla risoluzione finale, non su 24-60 MP inutili.
+- Rimosse le conversioni CIE Lab: tono e nitidezza lavorano sulla luminanza Y.
+- Ogni processo usa **un solo thread** OpenMP/BLAS: niente contesa tra 20 core.
+- Il numero di processi tiene conto della RAM libera, dei RAW originali e del
+  denoise attivo.
+- JPEG salvato senza `optimize=True`: sparisce l'errore libjpeg
+  `Suspension not allowed here` / `broken data stream` che poteva bloccare o
+  corrompere i batch paralleli.
+
+| Test (4 RAW Sony A7S, 24 MP) | Tempo |
+|------------------------------|-------|
+| 1920 px, pipeline normale | **5,6 s** |
+| 1920 px, con Rimuovi grana | **5,9 s** |
+| 1920 px, con PIU' LUMINOSA | **6,1 s** |
+| Risoluzione originale, normale | **14,2 s** |
+| Risoluzione originale, con denoise | **20,8 s** |
+
+Tutti i test: 4/4 file convertiti, 0 errori, 0 file temporanei residui.
+
+---
+
+## Qualita' verificata
+
+- rumore nelle zone piatte ridotto del 35-67% a seconda dell'ISO;
+- bordi forti conservati (99esimo percentile del gradiente: 60-97%);
+- dominante colore stabile (differenza media massima < 0,002);
+- vividezza aumentata del 16-24% sulle foto a colori;
+- output JPEG validi, senza `NaN` o immagini troncate.
+
+---
+
+## Guida completa inclusa
+
+Questa release include **GUIDA_COMPLETA.md** e **GUIDA_COMPLETA.html**:
+una spiegazione elementare di ogni scheda, pulsante, slider e impostazione,
+con valori consigliati per web, social, stampa, archivio, ritratto, paesaggio,
+bianco e nero e foto notturne. L'installer aggiunge anche la voce
+**Guida completa** nel menu Start.
+
+---
+
+## Download
+
+| Pacchetto | File |
+|-----------|------|
+| **Portable** | `FranchettiRawConverterPro.exe` |
+| **Installer** | `Franchetti_Raw_Converter_Setup_v2.54.0.exe` |
+| **Guida** | `GUIDA_COMPLETA.html` (leggibile nel browser) |
+
+---
+
 # Release Notes v2.53.0
 
 **Franchetti Raw Converter Pro** - Release v2.53.0  

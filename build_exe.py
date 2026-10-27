@@ -21,8 +21,8 @@ VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.53.0"
-VERSION_TUPLE = (2, 53, 0, 0)
+VERSION = "2.54.0"
+VERSION_TUPLE = (2, 54, 0, 0)
 
 
 def run_cmd(cmd, cwd=None):

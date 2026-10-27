@@ -1,6 +1,6 @@
 # Domande Frequenti (FAQ)
 
-**Franchetti Raw Converter Pro v2.53.0**
+**Franchetti Raw Converter Pro v2.54.0**
 
 ---
 
@@ -16,7 +16,7 @@
 **R:** Solo Windows 10/11 x64 attualmente. Il codice sorgente è multipiattaforma; contributi per build native benvenuti.
 
 ### D: Perché ~62 MB per un "semplice convertitore"?
-**R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Lab processing) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests**. Zero dipendenze esterne = funziona ovunque.
+**R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Y/Cb/Cr e guided filter) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests**. Zero dipendenze esterne = funziona ovunque.
 
 ### D: I miei file RAW originali vengono modificati?
 **R:** **Mai.** L'app li apre in **sola lettura**. Scrive solo i nuovi JPEG nella cartella di destinazione scelta.
@@ -54,11 +54,11 @@
 ### D: Quanta RAM usa?
 **R:** Picco ~1–1,5 GB per processo (RAW 24 MP). Il numero di processi viene ridotto automaticamente se la RAM libera non basta.
 
-### D: Cos'è la pipeline CIE L*a*b*?
-**R:** Introdotta nella v2.50.1. Elaborazione in spazio **CIE L*a*b*** (separazione Luminanza/Crominanza):
+### D: Cos'è la pipeline Y/Cb/Cr?
+**R:** Introdotta nella v2.50.1. Elaborazione in spazio **Y/Cb/Cr** (separazione Luminanza/Crominanza):
 - Contrasto sigmoidale (curva logistica a "S")
 - Vivacità selettiva (solo toni spenti)
-- Nitidezza Unsharp Mask su solo canale L (zero aloni colorati)
+- Nitidezza Unsharp Mask su solo canale Y (zero aloni colorati)
 - Output con profilo ICC sRGB embedded
 
 ---
@@ -141,7 +141,7 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-## 📞 Supporto v2.53.0
+## 📞 Supporto v2.54.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -151,4 +151,4 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-*FAQ v2.53.0 — 26 Ottobre 2026 — Aggiornata ad ogni release*
+*FAQ v2.54.0 — 26 Ottobre 2026 — Aggiornata ad ogni release*

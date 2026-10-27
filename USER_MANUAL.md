@@ -1,6 +1,8 @@
 # User Manual
 
-**Franchetti Raw Converter Pro v2.53.0**  
+**Franchetti Raw Converter Pro v2.54.0**  
+> **Guida in italiano, semplice e completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - tutte le funzioni e le impostazioni consigliate. Versione HTML: [GUIDA_COMPLETA.html](GUIDA_COMPLETA.html).
+
 *Complete guide for photographers — Enterprise Edition*
 
 ---
@@ -49,7 +51,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Franchetti Raw Converter Pro v2.53.0                    [×] [−] [□] │
+│  Franchetti Raw Converter Pro v2.54.0                    [×] [−] [□] │
 ├─────────────────────────────────────────────────────────────────┤
 │  Franchetti Raw Converter Pro                                   │
 │  Converti RAW → JPG ridotto + watermark copyright               │
@@ -375,4 +377,4 @@ When reporting issues, include:
 
 ---
 
-*Manual v2.53.0 — 26 Ottobre 2026*
+*Manual v2.54.0 — 27 Ottobre 2026*

@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.53.0**
+**Franchetti Raw Converter Pro v2.54.0**
 
 ---
 
@@ -208,13 +208,13 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.53.0.0 |
-| **ProductVersion** | 2.53.0.0 |
+| **FileVersion** | 2.54.0.0 |
+| **ProductVersion** | 2.54.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
 | **OriginalFilename** | FranchettiRawConverterPro.exe |
-| **FileDescription** | Professional RAW converter with multi-core batch, CIE Lab pipeline and watermark |
+| **FileDescription** | Professional RAW converter with multi-core batch, Y/Cb/Cr pipeline and watermark |
 | **LegalCopyright** | Copyright © 2024-2026 Franchetti |
 | **LegalTrademarks** | Franchetti™ |
 
@@ -233,7 +233,7 @@ cmd = [
 
 ---
 
-## Limiti noti (v2.53.0)
+## Limiti noti (v2.54.0)
 
 | Voce | Stato |
 |------|-------|
@@ -262,4 +262,4 @@ cmd = [
 
 ---
 
-*Technical specs v2.53.0 — 26 Ottobre 2026*
+*Technical specs v2.54.0 — 26 Ottobre 2026*
