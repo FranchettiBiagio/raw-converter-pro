@@ -427,7 +427,7 @@ Questi campi sono predisposti, ma l'invio viene saltato senza errori. Non perder
 La scheda **Log** mostra in tempo reale:
 
 - file avviati, completati, saltati o falliti;
-- algoritmo di demosaic usato (AMaZE, AHD, PPG o LINEAR);
+- algoritmo di demosaic usato (AHD per Bayer, AAHD 12 per Fujifilm X-Trans);
 - numero di processi attivati;
 - messaggi di tethering, cloud ed eventuali errori.
 
@@ -667,7 +667,7 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 | **Guided filter** | Filtro intelligente che separa base e dettaglio: spegne la grana fine e protegge i bordi. |
 | **Non-local means** | Secondo passaggio di denoise che confronta zone simili dell'immagine; viene applicato solo alle aree piatte. |
 | **Demosaic** | Ricostruzione del colore dai dati del sensore RAW. |
-| **AMaZE / AHD / PPG** | Algoritmi di demosaic. AMaZE è il più avanzato; il programma ripiega automaticamente se non disponibile. |
+| **AHD / AAHD** | Algoritmi di demosaic: AHD (qualità 3) per i sensori Bayer, AAHD (qualità 12) per Fujifilm X-Trans. |
 | **Lanczos** | Metodo di ridimensionamento di alta qualità. |
 | **Vignettatura** | Scurimento o schiarimento degli angoli. |
 | **Split toning** | Colorazione separata di ombre e luci. |

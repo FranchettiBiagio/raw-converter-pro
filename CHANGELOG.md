@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Ponte RAW rawpy/LibRaw**: WB e matrice colore della fotocamera attive per Sony, Canon, Nikon, Fujifilm, Panasonic, OM System e Leica.
+- **Demosaic per marca**: AHD (qualità 3) per i sensori Bayer, AAHD (qualità 12) per Fujifilm X-Trans.
+- **Uscita BGR**: la matrice decodificata è pronta per OpenCV; la pipeline fotografica interna la riporta a RGB per PIL/scikit-image.
+
+### Changed
+- Rimosso il fallback AMaZE/PPG/LINEAR: il ponte RAW usa AHD/AAHD con fallback automatico solo se la build LibRaw non supporta l'algoritmo richiesto.
+- Documentazione tecnica aggiornata (README, specifiche, FAQ e guida completa).
+
+---
+
 ## [2.55.0] - 2026-10-27
 
 ### Added

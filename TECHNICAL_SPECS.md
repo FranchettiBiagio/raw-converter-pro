@@ -25,20 +25,25 @@ Single-file executable (PyInstaller --onefile --windowed)
 ```python
 with rawpy.imread(str(raw_path)) as raw:
     rgb = raw.postprocess(
+        demosaic_algorithm=AAHD if is_fujifilm else AHD,  # 12 / 3
         use_camera_wb=True,      # Camera white balance
+        use_camera_matrix=True,  # Camera color profile (LibRaw default if not exposed)
         half_size=False,         # Full resolution
         no_auto_bright=False,    # Luminosità gestita dalla pipeline Y/Cb/Cr
+        output_color=rawpy.ColorSpace.sRGB,
         output_bps=8             # 8-bit per channel
     )
+    bgr = rgb[..., ::-1]         # BGR ready for OpenCV
 ```
-- **Input**: 12-14 bit RAW (Bayer CFA)
-- **Output**: 8-bit RGB numpy array (H×W×3)
-- **Demosaicing**: LibRaw AHD (default, high quality)
-- **Color space**: Camera-native → sRGB (implicit)
+- **Input**: 12-14 bit RAW (Bayer CFA or Fujifilm X-Trans)
+- **Output**: 8-bit BGR numpy array (H×W×3); the internal photographic pipeline converts it back to RGB
+- **Demosaicing**: AHD (quality 3) for Bayer, AAHD (quality 12) for Fujifilm X-Trans
+- **Color**: camera WB + camera matrix, output sRGB
+- **Brands**: Sony, Canon, Nikon, Fujifilm, Panasonic, OM System, Leica and other LibRaw-supported cameras
 
 ### Image Processing Pipeline (v2.55.0)
 ```
-LibRaw decode -> Lanczos resize -> tone/color -> hybrid denoise -> controlled sharpening -> watermark -> encode
+LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone/color -> hybrid denoise -> controlled sharpening -> watermark -> encode
 ```
 - **Resampling**: Lanczos-3 before the pipeline, so the denoise works at the final size
 - **Tone/color**: luminance-preserving exposure, sigmoid contrast, selective vibrance, HSL

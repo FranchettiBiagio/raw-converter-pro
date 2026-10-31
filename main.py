@@ -5,7 +5,7 @@
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
-             sensore (LibRaw con fallback AMaZE/AHD/PPG/LINEAR), ottimizzazione
+             sensore (rawpy/LibRaw con WB e matrice camera, AHD/AAHD), ottimizzazione
              in spazio Y/Cb/Cr, denoise ISO, correzioni colore complete, ridimensionamento,
              watermarking, tethering automatico multi-marca (Hot-Folder) e Sony Wi-Fi, Cloud
              (Telegram/Dropbox) ed elaborazione batch su tutti i core.
@@ -1354,41 +1354,109 @@ class ImageEngine:
         # qui non serve un altro unsharp che farebbe riemergere la grana.
         return Image.fromarray((base * 255.0 + 0.5).astype(np.uint8), "RGB")
 
-    _demosaic_ok = None
+    _camera_matrix_supportato = None
+
+    @staticmethod
+    def _rileva_fujifilm(percorso_raw):
+        """Riconosce i RAW Fujifilm anche quando rawpy non espone il Make.
+
+        L'estensione .raf e' il caso normale; per i DNG/TIFF Fujifilm
+        controlliamo l'intestazione EXIF, dove compare la stringa FUJIFILM.
+        """
+        if not percorso_raw:
+            return False
+        try:
+            estensione = os.path.splitext(percorso_raw)[1].lower()
+            if estensione == ".raf":
+                return True
+            # Fujifilm puo' produrre DNG/TIFF: cerchiamo il Make nei primi
+            # blocchi del file, senza leggere inutilmente gli altri RAW.
+            if estensione not in (".dng", ".tif", ".tiff"):
+                return False
+            with open(percorso_raw, "rb") as file_raw:
+                testa = file_raw.read(1024 * 1024)
+            return b"FUJIFILM" in testa.upper()
+        except OSError:
+            return False
+
+    @staticmethod
+    def _converti_rgb_in_bgr(rgb):
+        """Converte l'output RGB di rawpy in BGR, formato atteso da OpenCV."""
+        return np.ascontiguousarray(rgb[..., ::-1])
 
     @classmethod
-    def _decodifica_raw(cls, raw, p, nota=None):
-        """Decodifica il RAW usando un algoritmo supportato dalla libraw inclusa.
+    def _decodifica_raw(cls, raw, p, nota=None, percorso_raw=None):
+        """Ponte RAW -> matrice BGR tramite rawpy/LibRaw.
 
-        La build distribuita di rawpy/libraw non include sempre il pacchetto
-        GPL3: in quel caso AMAZE non e' disponibile e si ripiega su AHD/PPG.
+        LibRaw legge WB e profilo colore dalla fotocamera: in questo modo
+        Sony, Nikon, Canon, Fujifilm, Panasonic, OM System e Leica vengono
+        calibrati automaticamente senza tabelle manuali per marca.
+
+        Fujifilm usa AAHD (qualita' 12, adatto ai sensori X-Trans); gli altri
+        marchi usano AHD (qualita' 3). Se il flag use_camera_matrix non e'
+        esposto dalla versione di rawpy installata, si usa il profilo camera
+        predefinito di LibRaw. L'array restituito e' BGR, pronto per OpenCV.
         """
-        algoritmi = [
-            rawpy.DemosaicAlgorithm.AMAZE,
-            rawpy.DemosaicAlgorithm.AHD,
-            rawpy.DemosaicAlgorithm.PPG,
-            rawpy.DemosaicAlgorithm.LINEAR,
-        ]
-        if cls._demosaic_ok is not None:
-            algoritmi = [cls._demosaic_ok] + [a for a in algoritmi if a != cls._demosaic_ok]
+        fujifilm = cls._rileva_fujifilm(percorso_raw)
+        algoritmo_aahd = getattr(rawpy.DemosaicAlgorithm, "AAHD", None)
+        algoritmo_preferito = (
+            algoritmo_aahd
+            if fujifilm and algoritmo_aahd is not None
+            else rawpy.DemosaicAlgorithm.AHD
+        )
+
+        # Proviamo prima la combinazione richiesta; i fallback coprono
+        # build di LibRaw senza AAHD e versioni di rawpy che non accettano
+        # use_camera_matrix come parametro Python.
+        varianti = [(algoritmo_preferito, True)]
+        if fujifilm and algoritmo_preferito != rawpy.DemosaicAlgorithm.AHD:
+            varianti.append((rawpy.DemosaicAlgorithm.AHD, True))
+        varianti.extend([
+            (algoritmo_preferito, False),
+            (rawpy.DemosaicAlgorithm.AHD, False),
+            (rawpy.DemosaicAlgorithm.LINEAR, False),
+        ])
+        if cls._camera_matrix_supportato is False:
+            varianti = [(algoritmo, False) for algoritmo, _ in varianti]
+        varianti_uniche = []
+        for variante in varianti:
+            if variante not in varianti_uniche:
+                varianti_uniche.append(variante)
+
         ultimo_errore = None
-        for algoritmo in algoritmi:
+        for algoritmo, usa_matrice_camera in varianti_uniche:
+            parametri = {
+                "demosaic_algorithm": algoritmo,
+                # Default True: il WB camera e' la base della resa bilanciata.
+                "use_camera_wb": bool(p.get("use_camera_wb", True)),
+                "no_auto_bright": False,
+                "output_color": rawpy.ColorSpace.sRGB,
+                "output_bps": 8,
+            }
+            if usa_matrice_camera:
+                parametri["use_camera_matrix"] = True
             try:
-                rgb = raw.postprocess(
-                    demosaic_algorithm=algoritmo,
-                    use_camera_wb=bool(p.get("use_camera_wb", True)),
-                    no_auto_bright=False,
-                    output_color=rawpy.ColorSpace.sRGB,
-                    output_bps=8,
-                )
+                rgb = raw.postprocess(**parametri)
             except Exception as errore:
+                if "use_camera_matrix" in str(errore):
+                    cls._camera_matrix_supportato = False
                 ultimo_errore = errore
                 continue
-            if algoritmo != cls._demosaic_ok:
-                cls._demosaic_ok = algoritmo
-                if nota:
-                    nota(f"Demosaic: {str(algoritmo).split('.')[-1]}")
-            return rgb
+
+            if usa_matrice_camera:
+                cls._camera_matrix_supportato = True
+            if nota:
+                nome = str(algoritmo).split(".")[-1]
+                dettaglio = f"Demosaic: {nome} ({int(algoritmo.value)})"
+                if fujifilm and algoritmo_aahd is not None and algoritmo == algoritmo_aahd:
+                    dettaglio += " - sensore X-Trans"
+                elif fujifilm:
+                    dettaglio += " - Fujifilm fallback"
+                if not usa_matrice_camera:
+                    dettaglio += " - matrice camera LibRaw predefinita"
+                nota(dettaglio)
+            return cls._converti_rgb_in_bgr(rgb)
+
         if ultimo_errore is not None:
             raise ultimo_errore
         raise RuntimeError("decodifica RAW non riuscita")
@@ -1411,7 +1479,11 @@ class ImageEngine:
         iso = 0.0
         if percorso_raw.lower().endswith(RAW_ESTENSIONI):
             with rawpy.imread(percorso_raw) as raw:
-                rgb = cls._decodifica_raw(raw, p, nota)
+                bgr = cls._decodifica_raw(raw, p, nota, percorso_raw=percorso_raw)
+                # La pipeline fotografica lavora in RGB: il ponte RAW produce
+                # BGR per OpenCV, quindi riallineiamo i canali senza copiare
+                # i dati (la vista negativa viene poi convertita da NumPy/PIL).
+                rgb = bgr[..., ::-1]
                 try:
                     iso = float(raw.other.iso_speed or 0.0)
                 except Exception:

@@ -18,7 +18,7 @@
 ### 🧠 **Nuova Pipeline Y/Cb/Cr e denoise ISO (Avanzata)**
 | Fase | Descrizione | Controllo |
 |------|-------------|-----------|
-| **Sviluppo RAW** | LibRaw nativo, demosaic **AMaZE** con fallback automatico AHD/PPG/LINEAR, WB camera, sRGB 8-bit | `use_camera_wb` |
+| **Sviluppo RAW** | **rawpy/LibRaw**, WB e matrice camera automatiche, **AHD** per Bayer e **AAHD 12** per Fujifilm X-Trans, output BGR pronto per OpenCV | `use_camera_wb` |
 | **Contrasto Sigmoidale** | Curva logistica a "S" protegge luci/ombre senza clipping | `contrasto` 0.1–1.0 |
 | **Vivacità Selettiva** | Satura solo toni spenti, preserva incarnati | `vivacita` 0.0–1.0 |
 | **Y/Cb/Cr** | Luminanza (Y) e crominanza (Cb, Cr) separate, senza conversioni di colore costose | - |
@@ -84,7 +84,7 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 | **Universale** | DNG |
 | **Altri** | PEF, SRW, X3F, 3FR, FFF, RWL, DCR, K25, KDC, MOS, MRW |
 
-*Basato su **LibRaw 0.21+**: usa **AMaZE** quando incluso nella build, altrimenti ripiega automaticamente su **AHD**, **PPG** o **LINEAR** (il Log indica l'algoritmo usato).*
+*Basato su **rawpy/LibRaw 0.21+**: usa **AHD** (qualità 3) per i sensori Bayer e **AAHD** (qualità 12) per Fujifilm X-Trans; WB e matrice colore vengono letti dalla fotocamera. Il Log indica algoritmo e fallback usati.*
 
 ---
 
@@ -162,7 +162,7 @@ FranchettiRawConverterPro.exe
 │  └── Tab Log: timestamp, color-coding, auto-scroll          │
 ├─────────────────────────────────────────────────────────────┤
 │  ImageEngine                                                │
-│  ├── rawpy (LibRaw; AMaZE → AHD → PPG → LINEAR) — RAW→RGB  │
+│  ├── rawpy/LibRaw — AHD/AAHD 12, WB e matrice camera        │
 │  ├── scikit-image — Y/Cb/Cr, guided filter, non-local means │
 │  ├── Nitidezza controllata su canale Y (soglia rumore)      │
 │  ├── Pillow — Watermark alpha composite, JPEG/PNG/TIFF/WEBP │
@@ -188,7 +188,7 @@ FranchettiRawConverterPro.exe
 
 | Libreria | Versione | Scopo |
 |----------|----------|-------|
-| **rawpy** | 0.27+ | LibRaw Python bindings (AMaZE quando disponibile, fallback AHD/PPG/LINEAR) |
+| **rawpy** | 0.27+ | LibRaw Python bindings (AHD, AAHD 12 per X-Trans, WB e matrice camera) |
 | **LibRaw** | 0.21+ | RAW decoding C++ |
 | **scikit-image** | 0.24+ | Y/Cb/Cr, guided filter, non-local means, nitidezza controllata |
 | **customtkinter** | 5.2+ | Modern Dark GUI |
@@ -301,7 +301,7 @@ in the Software without restriction...
 
 ## 🙏 Ringraziamenti
 
-- **LibRaw Team** — Eccezionale libreria decodifica RAW (AMaZE)
+- **LibRaw Team** - Eccezionale libreria decodifica RAW
 - **rawpy Maintainers** — Binding Python per LibRaw
 - **scikit-image Team** — Elaborazione Y/Cb/Cr professionale
 - **CustomTkinter** — Modern Dark UI framework

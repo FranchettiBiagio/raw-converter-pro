@@ -26,7 +26,7 @@
 ## 🔧 Tecnici
 
 ### D: Quali formati RAW supporta esattamente?
-**R:** 25+ formati via **LibRaw 0.21+** con demosaic **AMaZE** quando disponibile nella build, altrimenti fallback automatico **AHD / PPG / LINEAR**:
+**R:** 25+ formati via **rawpy/LibRaw 0.21+** con **AHD** (qualità 3) per i sensori Bayer e **AAHD** (qualità 12) per Fujifilm X-Trans; WB e matrice colore vengono lette dalla fotocamera:
 - Sony: ARW, SRF, SR2
 - Canon: CR2, CR3, CRW
 - Nikon: NEF, NRW
