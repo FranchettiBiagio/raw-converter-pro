@@ -1,6 +1,6 @@
 # Domande Frequenti (FAQ)
 
-**Franchetti Raw Converter Pro v2.55.0**
+**Franchetti Raw Converter Pro v2.56.0**
 
 ---
 
@@ -35,6 +35,9 @@
 - Panasonic: RW2, RAW
 - Adobe/Universale: DNG
 - Pentax: PEF, Samsung: SRW, Sigma: X3F, Hasselblad: 3FR, Imacon: FFF, Leica: RWL, Kodak: DCR/K25/KDC, Leaf: MOS, Minolta: MRW
+
+### D: Come vengono calibrati i colori delle diverse fotocamere?
+**R:** rawpy/LibRaw legge **bilanciamento del bianco** e **matrice colore** dalla fotocamera e converte in sRGB. Con Fujifilm viene usato **AAHD 12**; con gli altri marchi **AHD 3**. Se la versione di rawpy non espone il flag `use_camera_matrix`, LibRaw applica comunque il profilo camera predefinito quando il WB camera è attivo.
 
 ### D: Preserva i metadati EXIF (GPS, impostazioni, orientamento)?
 **R:** **Sì, dalla v2.50.1.** Estrazione binaria EXIF completa con correzione orientamento (`Orientation=1`). Funziona anche sui RAW (ARW testato).
@@ -146,7 +149,7 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-## 📞 Supporto v2.55.0
+## 📞 Supporto v2.56.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -156,4 +159,4 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-*FAQ v2.55.0 — 26 Ottobre 2026 — Aggiornata ad ogni release*
+*FAQ v2.56.0 - 1 Novembre 2026 - Aggiornata ad ogni release*

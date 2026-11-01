@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.55.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.56.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
@@ -44,7 +44,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.55.0"
+APP_VERSION = "2.56.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 

@@ -1,6 +1,6 @@
 # Guida completa a Franchetti Raw Converter Pro
 
-**Versione 2.55.0 — Windows 10/11 — Italiano**
+**Versione 2.56.0 — Windows 10/11 — Italiano**
 
 Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.
 
@@ -98,7 +98,7 @@ Puoi anche scrivere un valore personalizzato nel campo. **0** significa **Origin
 
 > Il programma **non ingrandisce** mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.
 
-**Profilo predefinito v2.55.0:** **3000 px**, **JPEG qualità 90**, **RIMUOVI GRANA (AUTO ISO) attivo**, riduzione rumore **88/92** e nitidezza **0,9 / 0,9**. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.
+**Profilo predefinito v2.56.0:** **3000 px**, **JPEG qualità 90**, **RIMUOVI GRANA (AUTO ISO) attivo**, riduzione rumore **88/92** e nitidezza **0,9 / 0,9**. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.
 
 #### Qualità
 
@@ -199,7 +199,7 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 | **Paesaggio** | 3000 px, JPEG 92, contrasto 0,35, vivacità 0,35, chiarezza 0,15, dehaze 0,08, nitidezza 1,0 raggio 1,0, verdi +8, blu +6, denoise 88/92 |
 | **Bianco e Nero** | 3000 px, JPEG 92, saturazione 0, contrasto 0,38, chiarezza 0,15, nitidezza 0,9 raggio 0,9, grana 0, denoise 88/92 |
 
-> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.55.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
+> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.56.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
 
 **Salva config** e **Carica config** salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.
 
@@ -732,5 +732,6 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-**Franchetti Raw Converter Pro v2.55.0** — Guida completa.
+**Franchetti Raw Converter Pro v2.56.0** — Guida completa.  
+**1 Novembre 2026**
 Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.

@@ -1,6 +1,6 @@
 # Guida Screenshot per uptodown.dev / Store
 
-**Franchetti Raw Converter Pro v2.55.0**
+**Franchetti Raw Converter Pro v2.56.0**
 
 ---
 
@@ -164,4 +164,4 @@ screenshots/
 
 ---
 
-*Guida Screenshot v2.55.0 — Gennaio 2025*
+*Guida Screenshot v2.56.0 — 1 Novembre 2026*

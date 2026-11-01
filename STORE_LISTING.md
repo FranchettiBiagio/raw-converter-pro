@@ -1,6 +1,6 @@
 # Scheda Negozio uptodown.dev / FileCR / Itch.io / SourceForge
 
-**Franchetti Raw Converter Pro v2.55.0**  
+**Franchetti Raw Converter Pro v2.56.0**  
 *Convertitore RAW professionale Enterprise per Windows — Pipeline Y/Cb/Cr, Tethering multi-marca, Cloud Dispatch*
 
 ---
@@ -17,7 +17,7 @@ Suite Enterprise per sviluppo RAW (25+ formati) con pipeline Y/Cb/Cr (contrasto 
 
 ### 🎯 **Per fotografi professionisti e studi che vogliono controllo totale e automazione**
 
-Franchetti Raw Converter Pro v2.55.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~78 MB), open source (MIT), zero telemetria.
+Franchetti Raw Converter Pro v2.56.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~78 MB), open source (MIT), zero telemetria.
 
 ---
 
@@ -34,15 +34,15 @@ Franchetti Raw Converter Pro v2.55.0 è una **suite Enterprise completa** che tr
 | **Universale** | DNG |
 | **Altri** | PEF, SRW, X3F, 3FR, FFF, RWL, DCR, K25, KDC, MOS, MRW |
 
-*Basato su **LibRaw 0.21+** con algoritmo **AMaZE** per demosaicing di massima qualità.*
+*Basato su **rawpy/LibRaw 0.21+** con **AHD** (qualità 3) per i sensori Bayer e **AAHD 12** per Fujifilm X-Trans.*
 
 ---
 
-### 🧠 **Nuova Pipeline Y/Cb/Cr (v2.55.0)**
+### 🧠 **Nuova Pipeline Y/Cb/Cr (v2.56.0)**
 
 | Fase | Descrizione | Parametro |
 |------|-------------|-----------|
-| **1. Sviluppo RAW** | LibRaw nativo, demosaic AMaZE, WB camera, sRGB 8-bit | `use_camera_wb` |
+| **1. Sviluppo RAW** | rawpy/LibRaw nativo, AHD/AAHD, WB e matrice camera, sRGB 8-bit | `use_camera_wb` |
 | **2. Normalizzazione** | Float32 [0,1] per calcolo matematico puro | — |
 | **3. Contrasto Sigmoidale** | Curva logistica a "S" protegge luci/ombre | `contrasto` 0.1–1.0 |
 | **4. Vivacità Selettiva** | Satura solo toni spenti, preserva incarnati | `vivacita` 0.0–1.0 |
@@ -56,7 +56,7 @@ Franchetti Raw Converter Pro v2.55.0 è una **suite Enterprise completa** che tr
 
 ---
 
-### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.55.0)**
+### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.56.0)**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -124,7 +124,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 
 ### 🔒 **Privacy & Sicurezza (by design)**
 
-| Cosa | Franchetti Raw Converter Pro v2.55.0 |
+| Cosa | Franchetti Raw Converter Pro v2.56.0 |
 |------|--------------------------------------|
 | **Rete** | Solo se attivi Cloud Dispatch (opzionale) |
 | **Telemetria** | ❌ Nessuna |
@@ -134,7 +134,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 | **Dati personali** | ❌ Mai raccolti |
 | **File originali** | ✅ Solo lettura, mai modificati |
 
-### Requisiti di Sistema v2.55.0
+### Requisiti di Sistema v2.56.0
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -164,7 +164,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 - [Specifiche Tecniche](TECHNICAL_SPECS.md) — Architettura, benchmark, formati
 - [Guida Installazione](INSTALLATION_GUIDE.md) — Deployment enterprise (GPO, Intune)
 - [FAQ](FAQ.md) — Risposte alle domande frequenti
-- [Changelog](CHANGELOG.md) — Storico versioni (v2.55.0)
+- [Changelog](CHANGELOG.md) — Storico versioni (v2.56.0)
 - [Privacy Policy](PRIVACY.md) — Zero data collection
 - [Security Policy](SECURITY.md) — Responsible disclosure
 
@@ -202,7 +202,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 - **Sito web / GitHub Pages**: https://franchettibiagio.github.io/raw-converter-pro/
 - **GitHub Repository**: https://github.com/FranchettiBiagio/raw-converter-pro
-- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.55.0
+- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.56.0
 - **Direct Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe
 - **FileCR**: https://filecr.com/windows/franchetti-raw-converter-pro/
 - **Itch.io**: https://franchetti.itch.io/franchetti-raw-converter-pro
@@ -229,7 +229,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 ## 📋 **Checklist Pubblicazione (tutti gli store)**
 
-- [x] Titolo ottimizzato SEO (v2.55.0 + keywords)
+- [x] Titolo ottimizzato SEO (v2.56.0 + keywords)
 - [x] Descrizione breve < 300 caratteri
 - [x] Descrizione completa Markdown con feature highlights
 - [x] Tag/keywords pertinenti (25+ termini)
@@ -243,8 +243,8 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 - [x] SHA-256 verificato e documentato
 - [x] Nessun falso positivo antivirus (VirusTotal 0/70+)
 - [x] UPX compression attiva (~78 MB)
-- [x] Version metadata embedded (v2.55.0.0)
+- [x] Version metadata embedded (v2.56.0.0)
 
 ---
 
-*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — Gennaio 2025 (v2.55.0)*
+*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — 1 Novembre 2026 (v2.56.0)*

@@ -7,16 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.56.0] - 2026-11-01
 
 ### Added
 - **Ponte RAW rawpy/LibRaw**: WB e matrice colore della fotocamera attive per Sony, Canon, Nikon, Fujifilm, Panasonic, OM System e Leica.
 - **Demosaic per marca**: AHD (qualità 3) per i sensori Bayer, AAHD (qualità 12) per Fujifilm X-Trans.
+- **Rilevamento Fujifilm** tramite estensione `.raf` e intestazione `FUJIFILM` per i DNG/TIFF.
 - **Uscita BGR**: la matrice decodificata è pronta per OpenCV; la pipeline fotografica interna la riporta a RGB per PIL/scikit-image.
+- **Test multi-marca**: RAW reali Sony ARW, Canon CR3, Nikon NEF e Fujifilm RAF, oltre al batch confezionato in EXE.
 
 ### Changed
 - Rimosso il fallback AMaZE/PPG/LINEAR: il ponte RAW usa AHD/AAHD con fallback automatico solo se la build LibRaw non supporta l'algoritmo richiesto.
-- Documentazione tecnica aggiornata (README, specifiche, FAQ e guida completa).
+- Il flag `use_camera_matrix` viene tentato esplicitamente; rawpy 0.27.1 non lo espone, quindi LibRaw usa il profilo camera predefinito con WB camera attivo.
+- Documentazione, installer e metadati aggiornati alla **2.56.0**.
 
 ---
 

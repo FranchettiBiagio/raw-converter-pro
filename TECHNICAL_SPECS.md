@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.55.0**
+**Franchetti Raw Converter Pro v2.56.0**
 
 ---
 
@@ -41,7 +41,7 @@ with rawpy.imread(str(raw_path)) as raw:
 - **Color**: camera WB + camera matrix, output sRGB
 - **Brands**: Sony, Canon, Nikon, Fujifilm, Panasonic, OM System, Leica and other LibRaw-supported cameras
 
-### Image Processing Pipeline (v2.55.0)
+### Image Processing Pipeline (v2.56.0)
 ```
 LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone/color -> hybrid denoise -> controlled sharpening -> watermark -> encode
 ```
@@ -101,13 +101,16 @@ Font: Arial/DejaVuSans fallback → default bitmap
 | Watermark | O(text_pixels) | Negligible |
 | JPEG encode | O(W×H) | libjpeg-turbo (SIMD) |
 
-### Benchmarks (v2.55.0, measured)
+### Benchmarks (v2.56.0, measured)
 | Source | Target | Result |
 |--------|--------|--------|
 | 4× RAW 24 MP | 3000px, denoise auto | **12,8 s** batch, 4/4 OK |
 | 1× RAW 24 MP | 3000px, denoise auto | **8–9 s** |
 | 1× RAW 24 MP | Original, TIFF, denoise auto | ~40-45 s |
 | 1× RAW 24 MP | Original, JPEG 95, denoise auto | ~40-45 s |
+
+| 1x Fujifilm RAF 26 MP | Original, JPEG, denoise auto | **38.45 s**, 6264x4176, 5.8 MB |
+| Batch Sony + Fujifilm | Original, JPEG, denoise auto | **50.4 s**, 2/2 OK, 2 processi/20 core |
 
 ### Memory Profile
 | Phase | Peak RSS | Notes |
@@ -214,8 +217,8 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.55.0.0 |
-| **ProductVersion** | 2.55.0.0 |
+| **FileVersion** | 2.56.0.0 |
+| **ProductVersion** | 2.56.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
@@ -239,7 +242,7 @@ cmd = [
 
 ---
 
-## Limiti noti (v2.55.0)
+## Limiti noti (v2.56.0)
 
 | Voce | Stato |
 |------|-------|
@@ -268,4 +271,4 @@ cmd = [
 
 ---
 
-*Technical specs v2.55.0 — 26 Ottobre 2026*
+*Technical specs v2.56.0 — 1 Novembre 2026*
