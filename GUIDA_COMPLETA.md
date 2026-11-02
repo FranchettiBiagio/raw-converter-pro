@@ -1,6 +1,6 @@
 # Guida completa a Franchetti Raw Converter Pro
 
-**Versione 2.57.0 — Windows 10/11 — Italiano**
+**Versione 2.58.0 — Windows 10/11 — Italiano**
 
 Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.
 
@@ -43,8 +43,8 @@ La finestra ha quattro schede:
 
 | Scheda | A cosa serve |
 |---|---|
-| **Batch** | Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. Contiene l'anteprima **PRIMA / DOPO** e le correzioni rapide. È la scheda principale. |
-| **Wi-Fi FTP** | Accende il server FTP integrato: la fotocamera invia gli scatti e il programma prepara le anteprime cliente a 2000 px. |
+| **Batch** | Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. Contiene l'anteprima **PRIMA / DOPO**, le correzioni rapide e il pannello **PRESTAZIONI** con benchmark e stima. È la scheda principale. |
+| **Wi-Fi FTP** | Accende il server FTP integrato: la fotocamera invia gli scatti e il programma prepara anteprime cliente a 2000 px, metadati copyright e **galleria HTML** per sessione. |
 | **Tethering & Cloud** | Monitora una cartella per Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre marche; per Sony è disponibile anche il controllo Wi-Fi diretto. Invia i risultati a Telegram o Dropbox. |
 | **Log** | Mostra cosa sta facendo il programma e permette di salvare il registro. |
 
@@ -101,7 +101,7 @@ Puoi anche scrivere un valore personalizzato nel campo. **0** significa **Origin
 
 > Il programma **non ingrandisce** mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.
 
-**Profilo predefinito v2.57.0:** **3000 px**, **JPEG qualità 90**, **RIMUOVI GRANA (AUTO ISO) attivo**, riduzione rumore **88/92** e nitidezza **0,9 / 0,9**. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.
+**Profilo predefinito v2.58.0:** **3000 px**, **JPEG qualità 90**, **RIMUOVI GRANA (AUTO ISO) attivo**, riduzione rumore **88/92** e nitidezza **0,9 / 0,9**. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.
 
 #### Qualità
 
@@ -202,7 +202,7 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 | **Paesaggio** | 3000 px, JPEG 92, contrasto 0,35, vivacità 0,35, chiarezza 0,15, dehaze 0,08, nitidezza 1,0 raggio 1,0, verdi +8, blu +6, denoise 88/92 |
 | **Bianco e Nero** | 3000 px, JPEG 92, saturazione 0, contrasto 0,38, chiarezza 0,15, nitidezza 0,9 raggio 0,9, grana 0, denoise 88/92 |
 
-> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.57.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
+> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.58.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
 
 **Salva config** e **Carica config** salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.
 
@@ -215,7 +215,7 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 - **ANALIZZA FILE:** legge tutti i file e prepara un piano di correzione per ogni foto, senza modificare gli originali.
 - **Usa correzioni per file:** applica i suggerimenti dell'analisi al posto delle sole impostazioni globali. Se è disattivata, il batch si comporta come nelle versioni precedenti.
 - **RIMUOVI GRANA (AUTO ISO):** attiva o disattiva il preset intelligente di riduzione rumore. È **attivo di default** e si trova subito sotto **PIÙ LUMINOSA**. Quando è attivo diventa verde e mostra **GRANA RIMOSSA (AUTO ISO)**.
-- **Barra di avanzamento:** mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati.
+- **Barra di avanzamento:** mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati. Durante il lavoro mostra anche **file/min** ed **ETA**, cioè il tempo rimanente stimato.
 - **Apri cartella output:** apre la destinazione.
 
 Se un file è corrotto o non supportato, il programma lo segnala e **continua con gli altri**. Un errore non blocca l'intero batch.
@@ -234,6 +234,39 @@ Se un file è corrotto o non supportato, il programma lo segnala e **continua co
 L'analisi usa una decodifica RAW a mezza risoluzione e legge il clipping direttamente dal sensore quando disponibile. Le correzioni sono conservative: meglio un intervento piccolo e naturale che un'immagine artificiale.
 
 > **Limite importante:** se il RAW o il JPEG è completamente bruciato, il dettaglio non esiste più. La protezione luci comprime le alte luci ancora presenti, ma non può ricostruire pixel già saturi.
+
+### 3.9 PRESTAZIONI: usare i core nel modo giusto
+
+Il pulsante **PRESTAZIONI**, sotto **USA TUTTI I CORE**, apre una finestra che legge dal computer:
+
+- **core fisici** e **core logici**;
+- **RAM libera**;
+- profilo scelto e numero di processi.
+
+#### I tre profili
+
+| Profilo | Cosa cambia | Quando sceglierlo |
+|---|---|---|
+| **Veloce** | usa tutti i core logici; denoise e nitidezza più leggeri | anteprime, social, consegne rapide |
+| **Bilanciato** | usa i core fisici; denoise e nitidezza predefiniti | uso quotidiano |
+| **Massima qualità** | usa i core fisici; denoise e nitidezza più curati | stampe, archivio, lavori finiti |
+
+I profili **non sono cosmetici**: cambiano davvero il numero di processi e l'intensità di denoise e nitidezza.
+
+#### Numero di processi
+
+Di default è **automatico**: il programma calcola quanti processi possono lavorare bene con la RAM disponibile. Lo slider permette di forzare un numero diverso.
+
+Il batch non avvia più un pool multi-processo per pochi file leggeri: se il lavoro stimato è piccolo, i file vengono elaborati **in sequenza**, che è più veloce. Se scegli tu il numero di processi, la tua scelta ha la precedenza.
+
+#### Benchmark e stima
+
+1. Apri **PRESTAZIONI**.
+2. Premi **BENCHMARK SUI MIEI FILE**.
+3. Il programma elabora **1–2 file reali** in una cartella temporanea: gli originali vengono solo letti.
+4. Ottieni il tempo medio per file, i **file/min** e la **stima** per il batch selezionato.
+
+La stima è indicativa: file più pesanti, denoise elevato o risoluzione originale richiedono più tempo. Durante il batch la barra aggiorna **file/min** ed **ETA** sul lavoro già completato.
 
 ---
 
@@ -407,24 +440,58 @@ Il pulsante **COPIA DATI** copia questi valori negli appunti.
 
 ### 5.2 Cosa succede quando arriva uno scatto
 
-1. La fotocamera carica il file nella cartella **Originali**.
+1. La fotocamera carica il file nella cartella **Originali** della sessione corrente, ad esempio `Originali\2026-11-02_211604`.
 2. Appena il trasferimento è completo, il programma sviluppa il RAW con **WB e matrice colore della fotocamera**.
 3. **Fujifilm** usa la demosaicizzazione **AAHD (qualità 12)**, gli altri marchi **AHD (3)**.
 4. Il lato lungo viene ridotto a **2000 px** con Lanczos.
-5. In basso a sinistra compare **File: nome originale**; in basso a destra il **copyright/watermark**, con testo bianco su bordo nero per restare leggibile su sfondi chiari e scuri.
-6. Il JPEG qualità **85** viene salvato in **Anteprime_Cliente**. L'originale resta intatto.
+5. In basso a sinistra compare **File: nome originale**; in basso a destra il **copyright/watermark**, con testo bianco su bordo nero per restare leggibile su sfondi chiari e scuri. I testi lunghi vengono troncati con puntini di sospensione.
+6. Il JPEG qualità **85** viene salvato in **Anteprime_Cliente** della stessa sessione. Se attivo, il copyright viene scritto anche nei metadati **EXIF/IPTC**. L'originale resta intatto.
+7. La **galleria cliente** della sessione viene aggiornata con la nuova anteprima.
 
-I pulsanti **CARTELLA ORIGINALI** e **CARTELLA ANTEPRIME** aprono le due cartelle.
+I pulsanti **CARTELLA ORIGINALI**, **CARTELLA ANTEPRIME** e **APRI GALLERIA** aprono le cartelle della sessione corrente.
 
-### 5.3 Copyright
+> Ogni accensione del server crea una **sessione datata** (`AAAA-MM-GG_HHMMSS`). In questo modo gli scatti di servizi diversi non si mescolano e puoi consegnare al cliente solo la galleria che gli appartiene.
+
+### 5.3 Copyright nei metadati EXIF/IPTC
 
 L'interruttore **Aggiungi copyright/watermark** è attivo di default. Il testo si imposta in **AVANZATE → WATERMARK → Testo watermark**. Se il campo è vuoto viene usato `© Franchetti <anno>`. Il nome del file originale viene scritto sempre.
 
-### 5.4 Spegnimento
+L'interruttore **Scrivi copyright nei metadati EXIF/IPTC** aggiunge il copyright dentro il file, non solo sopra l'immagine:
+
+| Blocco | Campi |
+|---|---|
+| **EXIF** | `Artist`, `Copyright`, `ImageDescription` |
+| **IPTC** | `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name` |
+
+L'autore si imposta in **AVANZATE**. Vale sia per il batch sia per le anteprime FTP. L'IPTC viene scritto direttamente nel blocco APP13/Photoshop 3.0, senza installare altri programmi.
+
+### 5.4 Galleria cliente
+
+Per ogni sessione il programma prepara una galleria pronta da consegnare:
+
+`Immagini\FranchettiRawConverterPro\Tethering\Galleria_Cliente\<sessione>\index.html`
+
+La galleria:
+
+- mostra le miniature delle anteprime;
+- ha una **casella di selezione** per ogni foto;
+- permette **Seleziona tutte**, **Deseleziona**, **Copia selezione** e **Scarica elenco .txt**;
+- mostra quante foto sono state selezionate;
+- funziona **senza server e senza internet**: puoi copiarla su una chiavetta, condividerla in rete o allegarla a una email.
+
+Il cliente apre `index.html`, guarda le foto, spunta quelle che preferisce e ti invia l'elenco dei nomi.
+
+> La galleria si rigenera a ogni nuova anteprima. Se il cliente ha già aperto la pagina, ricaricala per vedere gli ultimi scatti.
+
+### 5.5 Invio automatico ai cloud
+
+Nel tab **Wi-Fi FTP** trovi l'interruttore per inviare automaticamente le anteprime ai canali cloud già attivi (**Telegram** e **Dropbox**). È **spento per default**: nessun file esce dal computer senza che tu lo abbia deciso. Attivalo solo se vuoi una copia di sicurezza o una notifica immediata.
+
+### 5.6 Spegnimento
 
 Sposta l'interruttore su **OFF** (o premi **SPEGNI WI-FI FTP**). Il server viene chiuso in modo sicuro e la porta **2121** torna libera.
 
-### 5.5 Quali fotocamere funzionano davvero
+### 5.7 Quali fotocamere funzionano davvero
 
 - **Funzionano direttamente** i modelli con un client **FTP integrato** nel menu di rete: molti Nikon, Canon, Fujifilm e alcuni Sony.
 - **Non funzionano da soli** i modelli che non hanno FTP nella fotocamera. In quel caso usa l'app del produttore (EOS Utility, NX Tether, X Acquire, Imaging Edge, Lumix Tether…), la scheda di memoria o la cartella monitorata nella scheda **Tethering & Cloud**.
@@ -821,6 +888,6 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-**Franchetti Raw Converter Pro v2.57.0** — Guida completa.  
+**Franchetti Raw Converter Pro v2.58.0** — Guida completa.  
 **2 Novembre 2026**
 Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.

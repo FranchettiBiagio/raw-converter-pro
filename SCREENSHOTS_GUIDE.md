@@ -1,6 +1,6 @@
 # Guida Screenshot per uptodown.dev / Store
 
-**Franchetti Raw Converter Pro v2.57.0**
+**Franchetti Raw Converter Pro v2.58.0**
 
 ---
 
@@ -92,6 +92,9 @@
 | 7 | `07_dark_mode.png` | App con tema scuro Windows (se supportato) |
 | 8 | `08_error_handling.png` | Log con errore rosso + continuazione batch |
 | 9 | `10_comparison.png` | Affiancato: RAW originale (anteprima) vs JPEG output |
+| 10 | `11_prestazioni.png` | Pannello **PRESTAZIONI**: profili, core, RAM, benchmark e stima |
+| 11 | `12_galleria_cliente.png` | Galleria HTML con miniature e checkbox di selezione |
+| 12 | `13_metadati.png` | Dettaglio EXIF/IPTC del JPEG con copyright e autore |
 
 ---
 
@@ -164,4 +167,4 @@ screenshots/
 
 ---
 
-*Guida Screenshot v2.57.0 — 2 Novembre 2026*
+*Guida Screenshot v2.58.0 — 2 Novembre 2026*

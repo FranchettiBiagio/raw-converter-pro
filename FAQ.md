@@ -1,6 +1,6 @@
 # Domande Frequenti (FAQ)
 
-**Franchetti Raw Converter Pro v2.57.0**
+**Franchetti Raw Converter Pro v2.58.0**
 
 ---
 
@@ -40,7 +40,7 @@
 **R:** rawpy/LibRaw legge **bilanciamento del bianco** e **matrice colore** dalla fotocamera e converte in sRGB. Con Fujifilm viene usato **AAHD 12**; con gli altri marchi **AHD 3**. Se la versione di rawpy non espone il flag `use_camera_matrix`, LibRaw applica comunque il profilo camera predefinito quando il WB camera è attivo.
 
 ### D: Preserva i metadati EXIF (GPS, impostazioni, orientamento)?
-**R:** **Sì, dalla v2.50.1.** Estrazione binaria EXIF completa con correzione orientamento (`Orientation=1`). Funziona anche sui RAW (ARW testato).
+**R:** **Sì, dalla v2.50.1.** Estrazione binaria EXIF completa con correzione orientamento (`Orientation=1`). Funziona anche sui RAW (ARW testato). Dalla **v2.58.0** puoi scrivere anche il copyright nei metadati: EXIF `Artist`, `Copyright`, `ImageDescription` e IPTC `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`.
 
 ### D: Posso scegliere la posizione del watermark?
 **R:** **Sì, dalla v2.51.** Cinque posizioni: basso/alto a destra o sinistra, centro. Margine proporzionale e ombra per leggibilità.
@@ -52,7 +52,13 @@
 **R:** **No: l'output è sempre sRGB con profilo ICC incorporato.** Le opzioni Adobe RGB/ProPhoto non erano realmente implementate e sono state rimosse per evitare risultati errati.
 
 ### D: Quanto è veloce?
-**R:** Dipende dalla CPU. Con il profilo predefinito **3000 px + denoise** 4 RAW Sony A7S da 24 MP richiedono circa **12,8 s** in batch e **8–9 s** per una singola foto. I preset a risoluzione originale (Stampa Fine Art / Archivio) richiedono circa **40-45 s per foto**, perché il denoise non-locale lavora anche a 24 MP. Per il web leggerissimo usa 2048 px o disattiva il denoise.
+**R:** Dipende dalla CPU e dal profilo scelto. Con **Bilanciato** e il profilo predefinito **3000 px + denoise** 4 RAW Sony A7S da 24 MP richiedono circa **12,8 s** in batch e **8–9 s** per una singola foto. **Veloce** usa tutti i core logici e un denoise più leggero; **Massima qualità** cura di più denoise e nitidezza. I preset a risoluzione originale (Stampa Fine Art / Archivio) richiedono circa **40-45 s per foto**, perché il denoise non-locale lavora anche a 24 MP. Per il web leggerissimo usa 2048 px o disattiva il denoise.
+
+### D: Come scelgo quanti core usare?
+**R:** Apri **PRESTAZIONI** sotto **USA TUTTI I CORE**. Il programma legge core fisici, core logici e RAM libera, poi propone un numero di processi automatico. Puoi cambiare profilo (**Veloce**, **Bilanciato**, **Massima qualità**) o forzare il numero con lo slider. Il pool multi-processo parte solo quando il batch è abbastanza pesante: pochi JPEG leggeri restano sequenziali, che è più veloce.
+
+### D: A cosa serve il benchmark?
+**R:** **BENCHMARK SUI MIEI FILE** elabora 1–2 file reali in una cartella temporanea e misura il tempo vero, senza toccare gli originali. Da lì ottieni la stima del batch e, durante la conversione, **file/min** ed **ETA**.
 
 ### D: Quanta RAM usa?
 **R:** Picco ~1–1,5 GB per processo (RAW 24 MP) e qualcosa in più con il denoise non-locale. Il numero di processi viene ridotto automaticamente se la RAM libera non basta.
@@ -108,7 +114,13 @@
 Per tutte le marche la pipeline applicata è la stessa.
 
 ### D: Quali servizi cloud supporta?
-**R:** **Telegram** (Bot API `sendPhoto`) e **Dropbox** (`files/upload`) sono operativi. Google Drive, Meta e SwissTransfer sono predisposti ma non attivi in questa versione: vengono saltati senza errori.
+**R:** **Telegram** (Bot API `sendPhoto`) e **Dropbox** (`files/upload`) sono operativi. Google Drive, Meta e SwissTransfer sono predisposti ma non attivi in questa versione: vengono saltati senza errori. Dalla **v2.58.0** puoi inviare automaticamente le anteprime FTP ai canali attivi con un interruttore nel tab **Wi-Fi FTP**, spento per default.
+
+### D: Come funziona la galleria cliente?
+**R:** Ogni sessione FTP crea `Galleria_Cliente\<sessione>\index.html`: una pagina autonoma con miniature, caselle di selezione, **Copia selezione** e **Scarica elenco .txt**. Funziona da cartella condivisa, chiavetta o email, senza server e senza internet. La galleria si rigenera a ogni anteprima.
+
+### D: Dove finiscono gli scatti ricevuti via FTP?
+**R:** In una cartella per sessione (`AAAA-MM-GG_HHMMSS`) sotto `Originali`; le anteprime vanno in `Anteprime_Cliente\<sessione>` e la galleria in `Galleria_Cliente\<sessione>`. Sessioni diverse non si mescolano.
 
 ---
 
@@ -149,7 +161,7 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-## 📞 Supporto v2.57.0
+## 📞 Supporto v2.58.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -159,4 +171,4 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-*FAQ v2.57.0 - 2 Novembre 2026 - Aggiornata ad ogni release*
+*FAQ v2.58.0 - 2 Novembre 2026 - Aggiornata ad ogni release*

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.57.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.58.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
@@ -19,11 +19,13 @@ import json
 import math
 import time
 import queue
+import shutil
 import socket
 import logging
 import tempfile
 import threading
 import traceback
+import functools
 import multiprocessing
 from datetime import datetime
 from concurrent.futures import (
@@ -67,7 +69,7 @@ except Exception:  # pragma: no cover
     DummyAuthorizer = FTPHandler = FTPServer = None
 
 
-APP_VERSION = "2.57.0"
+APP_VERSION = "2.58.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -181,6 +183,12 @@ def parametri_default():
         "auto_luminosita": False,
         # --- Prestazioni ---
         "usa_multicore": True,
+        # Profilo adattivo scelto nel pannello PRESTAZIONI. Non e' un
+        # interruttore finto: cambia davvero numero di processi e intensita'
+        # del denoise, lasciando intatti gli originali.
+        "profilo_prestazioni": "Bilanciato",
+        "processi_auto": True,
+        "processi_manuali": 0,
         "mantieni_nomi": True,
         "prefisso": "",
         "suffisso": "",
@@ -194,8 +202,16 @@ def parametri_default():
         "watermark_opacita": 0.85,
         "logo_path": "",
         "logo_opacita": 0.55,
+        # --- Copyright e metadati ---
+        # Il testo visibile resta watermark_text; qui si decide se lo stesso
+        # copyright viene scritto anche in EXIF/IPTC (Artist, Copyright,
+        # ImageDescription). Vale sia per il batch sia per le anteprime FTP.
+        "copyright_autore": "Franchetti",
+        "copyright_metadati": True,
         # --- Tethering / Cloud ---
         "ftp_copyright": True,
+        "ftp_galleria": True,
+        "ftp_cloud_auto": False,
         "wifi_dir": "",
         "output_dir": "",
         "tg_token": "",
@@ -243,6 +259,7 @@ LIMITI_NUMERICI = {
     "font_size": (8.0, 600.0),
     "watermark_opacita": (0.0, 1.0),
     "logo_opacita": (0.0, 1.0),
+    "processi_manuali": (0.0, 64.0),
 }
 
 
@@ -273,8 +290,13 @@ def normalizza_parametri(parametri):
             valore = float(base[chiave])
         p[chiave] = max(minimo, min(massimo, valore))
 
-    for chiave in ("max_dim", "qualita_jpeg", "font_size"):
+    for chiave in ("max_dim", "qualita_jpeg", "font_size", "processi_manuali"):
         p[chiave] = int(round(p[chiave]))
+
+    profilo = str(p.get("profilo_prestazioni", "Bilanciato") or "Bilanciato").strip()
+    if profilo not in PROFILI_PRESTAZIONI:
+        profilo = "Bilanciato"
+    p["profilo_prestazioni"] = profilo
 
     formato = str(p.get("formato", "JPEG") or "JPEG").strip().upper()
     if formato == "JPG":
@@ -295,12 +317,15 @@ def normalizza_parametri(parametri):
         "usa_multicore", "auto_luminosita", "rimuovi_grana_auto", "preserva_exif", "mantieni_nomi",
         "ricorsivo", "watermark_attivo", "use_camera_wb", "proteggi_luci", "cloud_telegram",
         "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss",
+        "processi_auto", "copyright_metadati", "ftp_galleria", "ftp_cloud_auto",
     ):
         p[chiave] = bool(p.get(chiave))
 
     p["prefisso"] = pulisci_nome_file(p.get("prefisso", ""))
     p["suffisso"] = pulisci_nome_file(p.get("suffisso", ""))
     p["watermark_text"] = str(p.get("watermark_text", "") or "")
+    p["copyright_autore"] = str(p.get("copyright_autore", "") or "").strip() or "Franchetti"
+    p["ftp_copyright"] = bool(p.get("ftp_copyright", True))
     return p
 
 
@@ -334,13 +359,274 @@ def memoria_disponibile_mb():
     return 4096
 
 
-def numero_processi_ottimale(numero_file, per_processo_mb=1200):
-    """Quanti processi usare: tutti i core, limitati dalla RAM disponibile."""
-    cpu = os.cpu_count() or 1
-    # Picco stimato per processo: 1,2 GB a dimensione web; molto di piu' su
-    # originali 24-60 MP, soprattutto con la riduzione grana attiva.
-    per_ram = max(1, int((memoria_disponibile_mb() * 0.85) / max(256, per_processo_mb)))
+@functools.lru_cache(maxsize=1)
+def nuclei_fisici():
+    """Nuclei fisici reali (Windows), senza aggiungere psutil come dipendenza.
+
+    I core logici (hyperthreading) vanno bene per il profilo Veloce, ma per
+    elaborare RAW il collo di bottiglia e' la memoria: sui core fisici si
+    ottiene quasi lo stesso throughput con meno contesa e meno RAM.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class _DatiProcessore(ctypes.Union):
+            _fields_ = [
+                ("ProcessorCore", ctypes.c_ubyte),
+                ("NumaNode", wintypes.DWORD),
+                ("Cache", ctypes.c_byte * 16),
+            ]
+
+        class _InfoProcessore(ctypes.Structure):
+            _fields_ = [
+                ("ProcessorMask", ctypes.c_size_t),
+                ("Relationship", wintypes.DWORD),
+                ("Dati", _DatiProcessore),
+            ]
+
+        kernel32 = ctypes.windll.kernel32
+        lunghezza = wintypes.DWORD(0)
+        kernel32.GetLogicalProcessorInformation(None, ctypes.byref(lunghezza))
+        if lunghezza.value > 0:
+            buffer = (ctypes.c_byte * lunghezza.value)()
+            if kernel32.GetLogicalProcessorInformation(
+                buffer, ctypes.byref(lunghezza)
+            ):
+                dimensione = ctypes.sizeof(_InfoProcessore)
+                conteggio = 0
+                for indice in range(lunghezza.value // dimensione):
+                    info = _InfoProcessore.from_buffer(buffer, indice * dimensione)
+                    # RelationProcessorCore = 0
+                    if int(info.Relationship) == 0:
+                        conteggio += 1
+                if conteggio > 0:
+                    return conteggio
+    except Exception:
+        pass
+    logici = os.cpu_count() or 1
+    return max(1, logici // 2) if logici > 1 else 1
+
+
+def nuclei_logici():
+    return max(1, os.cpu_count() or 1)
+
+
+# I profili non sono cosmetici: cambiano il numero di processi e l'intensita'
+# del denoise. Il dettaglio fine resta regolabile in AVANZATE e Smart Batch
+# puo' comunque correggere ogni singolo file.
+PROFILI_PRESTAZIONI = {
+    "Veloce": {
+        "descrizione": (
+            "Tutti i core logici e denoise leggero: il batch finisce prima, "
+            "con file leggermente meno rifiniti."
+        ),
+        "core": "logici",
+        "parametri": {
+            "nr_luminanza": 70.0,
+            "nr_colore": 80.0,
+            "nitidezza_quantita": 0.70,
+        },
+    },
+    "Bilanciato": {
+        "descrizione": (
+            "Core fisici, denoise e nitidezza predefiniti: il miglior "
+            "compromesso tra tempo e qualita'."
+        ),
+        "core": "fisici",
+        "parametri": {
+            "nr_luminanza": 88.0,
+            "nr_colore": 92.0,
+            "nitidezza_quantita": 0.90,
+        },
+    },
+    "Massima qualità": {
+        "descrizione": (
+            "Core fisici, denoise e nitidezza piu' curati: piu' lento, "
+            "pensato per stampe e consegne finali."
+        ),
+        "core": "fisici",
+        "parametri": {
+            "nr_luminanza": 95.0,
+            "nr_colore": 96.0,
+            "nitidezza_quantita": 1.10,
+        },
+    },
+}
+
+
+def per_processo_mb(parametri):
+    """Picco RAM stimato per worker (MB), in base a output e denoise."""
+    denoise = (
+        float(parametri.get("nr_luminanza", 0.0) or 0.0) > 0.0
+        or float(parametri.get("nr_colore", 0.0) or 0.0) > 0.0
+    )
+    max_dim = int(parametri.get("max_dim", 0) or 0)
+    if max_dim <= 0:
+        # Originale a piena risoluzione: 24-60 MP con denoise sono il caso
+        # peggiore per la memoria.
+        return 2400 if denoise else 1800
+    return 1200
+
+
+def numero_processi_ottimale(
+    numero_file, per_processo_mb_valore=1200, profilo="Bilanciato", override=0
+):
+    """Quanti processi usare: profilo, core disponibili e RAM libera.
+
+    override > 0 forza un numero scelto dall'utente (sempre entro i limiti).
+    """
+    if override and int(override) > 0:
+        return max(1, min(int(override), 64, max(1, int(numero_file))))
+
+    profilo = profilo if profilo in PROFILI_PRESTAZIONI else "Bilanciato"
+    cpu = (
+        nuclei_fisici()
+        if PROFILI_PRESTAZIONI[profilo]["core"] == "fisici"
+        else nuclei_logici()
+    )
+    # 85% della RAM libera: lascia respiro al sistema e alla GUI.
+    per_ram = max(
+        1,
+        int((memoria_disponibile_mb() * 0.85) / max(256, per_processo_mb_valore)),
+    )
     return max(1, min(int(cpu), per_ram, max(1, int(numero_file))))
+
+
+def stima_peso_file(percorso, parametri):
+    """Peso relativo di un file, usato per decidere se vale la pena il pool."""
+    try:
+        mb = max(0.1, os.path.getsize(percorso) / (1024.0 * 1024.0))
+    except OSError:
+        mb = 12.0
+    max_dim = int(parametri.get("max_dim", 0) or 0)
+    if max_dim <= 0:
+        peso_dim = 30.0
+    else:
+        peso_dim = (max_dim / 3000.0) ** 2 * 8.0
+    return mb + peso_dim
+
+
+def conviene_elaborazione_parallela(percorsi, parametri, processi):
+    """Evita di pagare l'avvio del pool per pochi file piccoli.
+
+    Con 2 JPEG da 2 MB il pool costerebbe piu' del lavoro risparmiato.
+    Con 2 RAW da 40 MB, o con un batch pesante e abbastanza numerico,
+    conviene.
+    """
+    if not parametri.get("usa_multicore", True):
+        return False
+    if processi <= 1 or len(percorsi) < 2:
+        return False
+    # Se l'utente sceglie a mano il numero di processi, la scelta vince
+    # sull'euristica pensata per i batch piccoli.
+    if not parametri.get("processi_auto", True):
+        try:
+            if int(parametri.get("processi_manuali", 0) or 0) > 1:
+                return True
+        except (TypeError, ValueError):
+            pass
+    peso = sum(stima_peso_file(percorso, parametri) for percorso in percorsi)
+    # Il peso da solo non basta: 5 JPEG minuscoli non giustificano 5 worker.
+    return peso >= 25.0 or (len(percorsi) >= 8 and peso >= 12.0)
+
+
+def processi_per_batch(percorsi, parametri):
+    """Numero di processi effettivo per un elenco di file."""
+    if len(percorsi) < 2:
+        return 1
+    profilo = parametri.get("profilo_prestazioni", "Bilanciato")
+    override = 0
+    if not parametri.get("processi_auto", True):
+        try:
+            override = int(parametri.get("processi_manuali", 0) or 0)
+        except (TypeError, ValueError):
+            override = 0
+    processi = numero_processi_ottimale(
+        len(percorsi), per_processo_mb(parametri), profilo, override
+    )
+    if not conviene_elaborazione_parallela(percorsi, parametri, processi):
+        return 1
+    return processi
+
+
+def stima_tempo_batch(secondi_medio, numero_file, processi):
+    """Stima prudente del tempo totale, con efficienza del parallelismo."""
+    secondi_medio = max(0.05, float(secondi_medio))
+    numero_file = max(1, int(numero_file))
+    processi = max(1, int(processi))
+    fisici = nuclei_fisici()
+    if processi <= fisici:
+        efficienza = 0.90
+    else:
+        efficienza = max(0.62, 0.90 * fisici / float(processi))
+    avvio = 0.8 if processi > 1 else 0.0
+    return (secondi_medio * numero_file) / (processi * efficienza) + avvio
+
+
+def formatta_durata(secondi):
+    """0:00 / 12:34 / 1:02:03, leggibile nella barra di stato."""
+    try:
+        secondi = max(0, int(round(float(secondi))))
+    except (TypeError, ValueError):
+        secondi = 0
+    ore, resto = divmod(secondi, 3600)
+    minuti, sec = divmod(resto, 60)
+    if ore:
+        return f"{ore}:{minuti:02d}:{sec:02d}"
+    return f"{minuti}:{sec:02d}"
+
+
+def benchmark_conversione(files, parametri, massimo_file=2, log=None):
+    """Prova reale su 1-2 file, in una cartella temporanea.
+
+    Gli originali vengono solo letti. Serve a sostituire le stime inventate
+    con un tempo misurato sul PC e sui file dell'utente.
+    """
+    if not files:
+        raise ValueError("Nessun file disponibile per il benchmark.")
+
+    raw = [f for f in files if f.lower().endswith(RAW_ESTENSIONI)]
+    scelti = (raw or list(files))[: max(1, int(massimo_file))]
+    p = normalizza_parametri(parametri)
+    for canale in (
+        "cloud_telegram", "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss",
+    ):
+        p[canale] = False
+
+    cartella = tempfile.mkdtemp(prefix="frc_benchmark_")
+    tempi = []
+    nomi = []
+    try:
+        for indice, percorso in enumerate(scelti):
+            uscita = os.path.join(cartella, f"bench_{indice}.jpg")
+            inizio = time.perf_counter()
+            ImageEngine.sviluppa_e_ottimizza(percorso, uscita, p)
+            durata = max(0.001, time.perf_counter() - inizio)
+            tempi.append(durata)
+            nomi.append(os.path.basename(percorso))
+            if log:
+                try:
+                    log(
+                        f"Benchmark: {nomi[-1]} elaborato in {durata:.1f}s "
+                        f"({p.get('max_dim') or 'originale'} px)"
+                    )
+                except Exception:
+                    pass
+            try:
+                os.remove(uscita)
+            except OSError:
+                pass
+    finally:
+        shutil.rmtree(cartella, ignore_errors=True)
+
+    media = sum(tempi) / len(tempi)
+    return {
+        "file": len(tempi),
+        "nomi": nomi,
+        "secondi": tempi,
+        "secondi_medio": media,
+    }
 
 
 _THREAD_ENV_VARS = (
@@ -957,21 +1243,23 @@ def esegui_batch(
             nota(f"Smart Batch: correzioni per-file applicate a {quanti} file.")
 
     if compiti and (cancel_event is None or not cancel_event.is_set()):
-        processi = 1
-        if params.get("usa_multicore", True) and len(compiti) > 1:
-            denoise = (
-                float(params.get("nr_luminanza", 0.0)) > 0.0
-                or float(params.get("nr_colore", 0.0)) > 0.0
-            )
-            max_dim = int(params.get("max_dim", 0) or 0)
-            per_processo = 1200
-            if max_dim == 0:
-                per_processo = 2400 if denoise else 1800
-            processi = numero_processi_ottimale(len(compiti), per_processo)
+        percorsi = [compito[1] for compito in compiti]
+        processi = processi_per_batch(percorsi, params)
+        profilo = str(params.get("profilo_prestazioni", "Bilanciato"))
         if processi > 1:
-            nota(f"Elaborazione parallela: {processi} processi su {os.cpu_count() or 1} core CPU.")
+            nota(
+                f"Elaborazione parallela: {processi} processi "
+                f"(profilo {profilo}, {nuclei_fisici()} core fisici / "
+                f"{nuclei_logici()} logici)."
+            )
         else:
-            nota("Elaborazione sequenziale.")
+            if params.get("usa_multicore", True) and len(compiti) > 1:
+                nota(
+                    "Elaborazione sequenziale: batch piccolo, il pool "
+                    "multi-processo costerebbe piu' del lavoro risparmiato."
+                )
+            else:
+                nota("Elaborazione sequenziale.")
 
         if processi <= 1:
             for indice, percorso, output, nome in compiti:
@@ -1083,6 +1371,134 @@ def esegui_batch(
         "totale": totale,
         "annullato": annullato,
     }
+
+
+# ================================================================================
+# 1d. COPYRIGHT NEI METADATI: EXIF + IPTC (senza dipendenze aggiuntive)
+# ================================================================================
+def _iptc_dataset(record, dataset, valore):
+    """Un dataset IPTC IIM: 0x1C, record, dataset, lunghezza, testo UTF-8."""
+    dati = valore if isinstance(valore, bytes) else str(valore).encode("utf-8")
+    return b"\x1c" + bytes((int(record), int(dataset))) + len(dati).to_bytes(2, "big") + dati
+
+
+def _app13_iptc(campi):
+    """Costruisce un segmento APP13/Photoshop 3.0 con i dataset IPTC.
+
+    Scriverlo a mano evita di aggiungere iptcinfo3 al pacchetto e mantiene
+    il copyright leggibile da Photoshop, Lightroom, Bridge ed ExifTool.
+    """
+    dataset = [_iptc_dataset(1, 90, b"\x1b%G")]  # CodedCharacterSet = UTF-8
+    for record, numero, testo in campi:
+        if testo:
+            dataset.append(_iptc_dataset(record, numero, testo))
+    dati = b"".join(dataset)
+    # Photoshop Image Resource Block (8BIM), resource 0x0404 = IPTC-NAA.
+    risorsa = (
+        b"8BIM"
+        + (0x0404).to_bytes(2, "big")
+        + b"\x00\x00"  # nome Pascal vuoto, allineato a 2 byte
+        + len(dati).to_bytes(4, "big")
+        + dati
+    )
+    if len(dati) % 2:
+        risorsa += b"\x00"
+    payload = b"Photoshop 3.0\x00" + risorsa
+    return b"\xff\xed" + (len(payload) + 2).to_bytes(2, "big") + payload
+
+
+def inserisci_iptc(percorso, campi):
+    """Inserisce/sostituisce il blocco IPTC in un JPEG, senza perdere l'EXIF."""
+    try:
+        with open(percorso, "rb") as file_immagine:
+            dati = file_immagine.read()
+        if not dati.startswith(b"\xff\xd8"):
+            return False
+
+        nuovo = _app13_iptc(campi)
+        uscita = bytearray(b"\xff\xd8")
+        indice = 2
+        inserito = False
+        while indice + 4 <= len(dati):
+            if dati[indice] != 0xFF:
+                break
+            marker = dati[indice + 1]
+            if marker == 0xDA:  # Start Of Scan: da qui iniziano i dati compressi
+                if not inserito:
+                    uscita += nuovo
+                    inserito = True
+                uscita += dati[indice:]
+                break
+            if marker in (0xD8, 0xD9) or 0xD0 <= marker <= 0xD7:
+                uscita += dati[indice : indice + 2]
+                indice += 2
+                continue
+            lunghezza = int.from_bytes(dati[indice + 2 : indice + 4], "big")
+            if lunghezza < 2:
+                break
+            segmento = dati[indice : indice + 2 + lunghezza]
+            if marker == 0xED and segmento[4:18] == b"Photoshop 3.0\x00":
+                indice += 2 + lunghezza  # rimuove il vecchio IPTC
+                continue
+            # APP13 sta dopo JFIF/EXIF/XMP: cosi' i lettori lo trovano subito.
+            if not inserito and marker not in (0xE0, 0xE1, 0xE2):
+                uscita += nuovo
+                inserito = True
+            uscita += segmento
+            indice += 2 + lunghezza
+        if not inserito:
+            uscita += nuovo
+
+        with open(percorso, "wb") as file_immagine:
+            file_immagine.write(uscita)
+        return True
+    except Exception as errore:
+        logging.debug("IPTC non inserito in %s: %s", percorso, errore)
+        return False
+
+
+def scrivi_metadati_copyright(percorso, testo, autore="", descrizione=""):
+    """Scrive Artist, Copyright e ImageDescription in EXIF e IPTC.
+
+    Restituisce True se almeno l'EXIF e' stato aggiornato. Il file deve essere
+    un JPEG: per gli altri formati la funzione non fa nulla.
+    """
+    percorso = str(percorso or "")
+    if not percorso.lower().endswith((".jpg", ".jpeg")):
+        return False
+    testo = str(testo or "").strip()
+    if not testo:
+        return False
+    autore = str(autore or "").strip() or "Franchetti"
+    descrizione = str(descrizione or "").strip() or (
+        f"Elaborata con Franchetti Raw Converter Pro - {testo}"
+    )
+
+    esito_exif = False
+    try:
+        try:
+            exif = piexif.load(percorso)
+        except Exception:
+            exif = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
+        exif.setdefault("0th", {})
+        exif["0th"][piexif.ImageIFD.Artist] = autore.encode("utf-8")
+        exif["0th"][piexif.ImageIFD.Copyright] = testo.encode("utf-8")
+        exif["0th"][piexif.ImageIFD.ImageDescription] = descrizione.encode("utf-8")
+        piexif.insert(piexif.dump(exif), percorso)
+        esito_exif = True
+    except Exception as errore:
+        logging.debug("EXIF copyright non scritto in %s: %s", percorso, errore)
+
+    inserisci_iptc(
+        percorso,
+        [
+            (2, 5, os.path.basename(percorso)),  # Object Name
+            (2, 80, autore),  # By-line
+            (2, 116, testo),  # Copyright Notice
+            (2, 120, descrizione),  # Caption-Abstract
+        ],
+    )
+    return esito_exif
 
 
 # ================================================================================
@@ -1542,6 +1958,37 @@ class ImageEngine:
         except Exception:
             return ImageFont.load_default()
 
+    @staticmethod
+    def _tronca_testo(draw, testo, font, larghezza_max):
+        """Accorcia un testo con ellissi senza uscire dall'immagine."""
+        testo = str(testo or "")
+        if not testo or larghezza_max <= 0:
+            return testo
+        try:
+            if draw.textlength(testo, font=font) <= larghezza_max:
+                return testo
+        except Exception:
+            pass
+
+        def larghezza(candidato):
+            try:
+                return draw.textlength(candidato, font=font)
+            except Exception:
+                return len(candidato) * max(6, int(getattr(font, "size", 12)))
+
+        ellissi = "\u2026"
+        migliore = ""
+        sinistra, destra = 0, len(testo)
+        while sinistra <= destra:
+            medio = (sinistra + destra) // 2
+            candidato = testo[:medio].rstrip() + ellissi
+            if larghezza(candidato) <= larghezza_max:
+                migliore = candidato
+                sinistra = medio + 1
+            else:
+                destra = medio - 1
+        return migliore or ellissi
+
     @classmethod
     def applica_watermark_testo(cls, pil_img, testo, font_size, posizione, opacita):
         if not testo:
@@ -1550,6 +1997,10 @@ class ImageEngine:
         overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
         font = cls._carica_font(font_size)
+        margine = max(12, int(base.size[0] * 0.015))
+        testo = cls._tronca_testo(
+            draw, testo, font, max(20, base.size[0] - 2 * margine)
+        )
 
         try:
             box = draw.textbbox((0, 0), testo, font=font)
@@ -1557,7 +2008,6 @@ class ImageEngine:
         except Exception:
             tw, th = len(testo) * font_size * 0.6, font_size
 
-        margine = max(12, int(base.size[0] * 0.015))
         if posizione == "Basso a sinistra":
             x, y = margine, base.size[1] - th - margine
         elif posizione == "Alto a destra":
@@ -1952,9 +2402,19 @@ class ImageEngine:
                 float(p.get("watermark_opacita", 0.85)),
             )
 
-        # 5. Salvataggio + EXIF
+        # 5. Salvataggio + EXIF + copyright nei metadati
         cls._salva(pil_img, percorso_output, p)
         cls.preserva_exif(percorso_raw, percorso_output, bool(p.get("preserva_exif", True)))
+        if bool(p.get("copyright_metadati", True)):
+            testo_copyright = str(p.get("watermark_text", "") or "").strip() or (
+                f"\u00a9 Franchetti {datetime.now().year}"
+            )
+            scrivi_metadati_copyright(
+                percorso_output,
+                testo_copyright,
+                p.get("copyright_autore", "Franchetti"),
+                f"{testo_copyright} - {os.path.basename(percorso_raw)}",
+            )
         nota(f"Salvato: {os.path.basename(percorso_output)}")
         return percorso_output
 
@@ -2144,6 +2604,185 @@ def ip_locale_per_ftp():
         return "127.0.0.1"
 
 
+def genera_galleria_cliente(
+    cartella_anteprime,
+    percorso_html=None,
+    titolo="Selezione cliente",
+    sottotitolo="",
+):
+    """Crea una galleria HTML autonoma con caselle di selezione.
+
+    Il cliente apre un solo file (index.html), guarda le anteprime e copia
+    l'elenco dei nomi selezionati. Nessun server, nessuna dipendenza esterna:
+    funziona anche da chiavetta USB o da una cartella condivisa.
+    """
+    import html as html_lib
+    from urllib.parse import quote
+
+    cartella_anteprime = os.path.abspath(str(cartella_anteprime))
+    if percorso_html is None:
+        percorso_html = os.path.join(
+            os.path.dirname(cartella_anteprime), "Galleria_Cliente", "index.html"
+        )
+    percorso_html = os.path.abspath(str(percorso_html))
+    os.makedirs(os.path.dirname(percorso_html), exist_ok=True)
+
+    try:
+        nomi = sorted(
+            nome
+            for nome in os.listdir(cartella_anteprime)
+            if nome.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
+        )
+    except OSError:
+        nomi = []
+
+    cartella_html = os.path.dirname(percorso_html)
+    try:
+        relativa = os.path.relpath(cartella_anteprime, cartella_html).replace(os.sep, "/")
+    except ValueError:
+        relativa = "."
+    if relativa == ".":
+        relativa = ""
+
+    schede = []
+    for nome in nomi:
+        nome_html = html_lib.escape(nome)
+        src = quote((relativa + "/" + nome) if relativa else nome)
+        schede.append(
+            '<label class="foto">'
+            f'<input type="checkbox" data-nome="{nome_html}">'
+            f'<img src="{src}" loading="lazy" alt="{nome_html}">'
+            f'<span class="nome">{nome_html}</span>'
+            "</label>"
+        )
+    if not schede:
+        schede.append(
+            '<p class="vuoto">Le anteprime compariranno qui appena la '
+            "fotocamera invia i primi scatti.</p>"
+        )
+
+    titolo_html = html_lib.escape(str(titolo or "Selezione cliente"))
+    sottotitolo_html = html_lib.escape(str(sottotitolo or ""))
+    modello = """<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITOLO__</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Segoe UI, Arial, sans-serif; background: #14181c; color: #e8edf2; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(20,24,28,.96);
+           border-bottom: 1px solid #2b333b; padding: 16px 22px 12px; backdrop-filter: blur(6px); }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sotto { color: #9aa0a6; font-size: 13px; margin-bottom: 10px; }
+  .barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button { background: #2f6f9f; color: #fff; border: 0; border-radius: 7px;
+           padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #3b83b8; }
+  button.secondario { background: #3a3f45; }
+  button.secondario:hover { background: #4a5158; }
+  #contatore { margin-left: auto; font-size: 13px; color: #8ab4f8; font-weight: 600; }
+  #esito { min-height: 18px; color: #66bb6a; font-size: 12px; margin-top: 6px; }
+  main { padding: 18px 22px 40px; }
+  .griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .foto { position: relative; display: block; background: #1b2026; border: 2px solid #2b333b;
+          border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .foto:hover { border-color: #3b83b8; transform: translateY(-1px); }
+  .foto:has(input:checked) { border-color: #1f9d55; box-shadow: 0 0 0 2px rgba(31,157,85,.25); }
+  .foto input { position: absolute; top: 12px; left: 12px; width: 26px; height: 26px;
+                accent-color: #1f9d55; cursor: pointer; }
+  .foto img { width: 100%; height: 190px; object-fit: contain; background: #0e1114; border-radius: 6px; }
+  .nome { display: block; margin-top: 7px; font-size: 12px; color: #cbd3db;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vuoto { color: #9aa0a6; font-size: 14px; }
+  @media (max-width: 520px) { main { padding: 12px; } .foto img { height: 150px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>__TITOLO__</h1>
+  <div class="sotto">__SOTTOTITOLO__</div>
+  <div class="barra">
+    <button onclick="tutte(true)">Seleziona tutte</button>
+    <button class="secondario" onclick="tutte(false)">Deseleziona</button>
+    <button onclick="copiaSelezione()">Copia selezione</button>
+    <button class="secondario" onclick="scaricaElenco()">Scarica elenco .txt</button>
+    <span id="contatore">0 selezionate</span>
+  </div>
+  <div id="esito"></div>
+</header>
+<main>
+  <div class="griglia">
+    __SCHEDE__
+  </div>
+</main>
+<script>
+const caselle = Array.from(document.querySelectorAll('.foto input[type=checkbox]'));
+const contatore = document.getElementById('contatore');
+const esito = document.getElementById('esito');
+function aggiorna() {
+  const n = caselle.filter(function (c) { return c.checked; }).length;
+  contatore.textContent = n + ' selezionate';
+}
+function tutte(valore) {
+  caselle.forEach(function (c) { c.checked = valore; });
+  aggiorna();
+}
+function nomiSelezionati() {
+  return caselle.filter(function (c) { return c.checked; }).map(function (c) { return c.dataset.nome; });
+}
+function copiaVecchio(testo, fatto) {
+  const area = document.createElement('textarea');
+  area.value = testo;
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  try { document.execCommand('copy'); fatto(); }
+  catch (e) { alert('Copia non riuscita. Elenco:\\n\\n' + testo); }
+  document.body.removeChild(area);
+}
+function copiaSelezione() {
+  const nomi = nomiSelezionati();
+  if (!nomi.length) { alert('Nessuna foto selezionata.'); return; }
+  const testo = nomi.join('\\n');
+  function fatto() { esito.textContent = nomi.length + ' nomi copiati negli appunti.'; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(testo).then(fatto).catch(function () { copiaVecchio(testo, fatto); });
+  } else {
+    copiaVecchio(testo, fatto);
+  }
+}
+function scaricaElenco() {
+  const nomi = nomiSelezionati();
+  if (!nomi.length) { alert('Nessuna foto selezionata.'); return; }
+  const blob = new Blob([nomi.join('\\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'selezione_foto.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+caselle.forEach(function (c) { c.addEventListener('change', aggiorna); });
+aggiorna();
+</script>
+</body>
+</html>
+"""
+    documento = (
+        modello.replace("__TITOLO__", titolo_html)
+        .replace("__SOTTOTITOLO__", sottotitolo_html)
+        .replace("__SCHEDE__", "\n    ".join(schede))
+    )
+    temporaneo = percorso_html + ".tmp"
+    with open(temporaneo, "w", encoding="utf-8") as file_galleria:
+        file_galleria.write(documento)
+    os.replace(temporaneo, percorso_html)
+    return percorso_html
+
+
 class RicevitoreFTP:
     """Server FTP minimale che riceve gli scatti e crea le anteprime cliente.
 
@@ -2168,10 +2807,20 @@ class RicevitoreFTP:
         parametri_getter=None,
     ):
         base = cartella_tethering_predefinita()
-        self.cartella_originali = cartella_originali or os.path.join(base, "Originali")
-        self.cartella_anteprime = cartella_anteprime or os.path.join(
-            base, "Anteprime_Cliente"
+        # Ogni accensione crea una sessione: la fotocamera vede sempre la sua
+        # "home" FTP, mentre sul PC originali, anteprime e galleria restano
+        # ordinati per data senza mescolare clienti diversi.
+        self.sessione = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        self.cartella_originali = cartella_originali or os.path.join(
+            base, "Originali", self.sessione
         )
+        self.cartella_anteprime = cartella_anteprime or os.path.join(
+            base, "Anteprime_Cliente", self.sessione
+        )
+        self.cartella_galleria = os.path.join(
+            base, "Galleria_Cliente", self.sessione
+        )
+        self.percorso_galleria = os.path.join(self.cartella_galleria, "index.html")
         self._log = log
         self._notifica_esterna = notifica
         self._parametri_getter = parametri_getter
@@ -2193,17 +2842,25 @@ class RicevitoreFTP:
             "password": self.PASSWORD,
             "originali": self.cartella_originali,
             "anteprime": self.cartella_anteprime,
+            "galleria": self.cartella_galleria,
+            "galleria_html": self.percorso_galleria,
+            "sessione": self.sessione,
             "attivo": self._attivo,
         }
 
     def _notifica(self, messaggio):
-        logging.info(messaggio)
+        # Se la GUI riceve il messaggio, e' lei a scriverlo nel tab Log e a
+        # inoltrarlo al logger: un logging.info anche qui produrrebbe doppioni.
+        inviato = False
         if self._log:
             try:
                 self._log(messaggio)
+                inviato = True
             except Exception:
-                pass
-        if self._notifica_esterna:
+                inviato = False
+        if not inviato:
+            logging.info(messaggio)
+        if self._notifica_esterna and self._notifica_esterna is not self._log:
             try:
                 self._notifica_esterna(messaggio)
             except Exception:
@@ -2221,6 +2878,13 @@ class RicevitoreFTP:
                 )
             os.makedirs(self.cartella_originali, exist_ok=True)
             os.makedirs(self.cartella_anteprime, exist_ok=True)
+            os.makedirs(self.cartella_galleria, exist_ok=True)
+            # pyftpdlib logga ogni connessione e ogni comando: i nostri
+            # messaggi sono gia' chiari e i doppioni riempiono il tab Log.
+            try:
+                logging.getLogger("pyftpdlib").setLevel(logging.WARNING)
+            except Exception:
+                pass
 
             autorizzatore = DummyAuthorizer()
             autorizzatore.add_user(
@@ -2340,12 +3004,30 @@ class RicevitoreFTP:
         except Exception:
             return {}
 
-    def _testo_copyright(self):
-        parametri = self._parametri_correnti()
+    def _testo_copyright(self, parametri=None):
+        parametri = (
+            parametri if isinstance(parametri, dict) else self._parametri_correnti()
+        )
         if not bool(parametri.get("ftp_copyright", True)):
             return ""
         testo = str(parametri.get("watermark_text", "") or "").strip()
         return testo or f"\u00a9 Franchetti {datetime.now().year}"
+
+    def _aggiorna_galleria(self, parametri=None):
+        if not bool((parametri or {}).get("ftp_galleria", True)):
+            return
+        try:
+            genera_galleria_cliente(
+                self.cartella_anteprime,
+                self.percorso_galleria,
+                titolo="Selezione cliente",
+                sottotitolo=(
+                    "Spunta le foto che vuoi e premi «Copia selezione». "
+                    f"Sessione {self.sessione}."
+                ),
+            )
+        except Exception as errore:
+            logging.debug("Galleria cliente non aggiornata: %s", errore)
 
     def _carica_rgb(self, percorso):
         estensione = os.path.splitext(percorso)[1].lower()
@@ -2438,8 +3120,15 @@ class RicevitoreFTP:
                 (x, y), testo, font=font, fill=(255, 255, 255), anchor=ancoraggio
             )
 
-        scrivi(f"File: {nome_file}", (margine, altezza - margine), "ls")
+        larghezza_max = max(40, int(larghezza * 0.46))
+        nome_file = ImageEngine._tronca_testo(
+            disegno, f"File: {nome_file}", font, larghezza_max
+        )
+        scrivi(nome_file, (margine, altezza - margine), "ls")
         if copyright_testo:
+            copyright_testo = ImageEngine._tronca_testo(
+                disegno, copyright_testo, font, larghezza_max
+            )
             scrivi(
                 copyright_testo, (larghezza - margine, altezza - margine), "rs"
             )
@@ -2463,29 +3152,40 @@ class RicevitoreFTP:
             percorso, "JPEG", quality=self.QUALITA_JPEG, optimize=False
         )
 
+    def _invia_cloud_anteprima(self, percorso, parametri):
+        canali = (
+            "cloud_telegram", "cloud_gdrive", "cloud_meta",
+            "cloud_dropbox", "cloud_swiss",
+        )
+        if not any(bool(parametri.get(canale)) for canale in canali):
+            return
+        try:
+            esiti = CloudDispatcher.dispatch(percorso, parametri, callback=self._notifica)
+            for nome_canale, esito in esiti:
+                self._notifica(
+                    f"Cloud {nome_canale}: {'inviato' if esito else 'saltato'}"
+                )
+        except Exception as errore:
+            self._notifica(f"Cloud: errore di invio ({errore})")
+
     def _elabora(self, percorso):
         inizio = time.time()
         nome_originale = os.path.basename(percorso)
+        parametri = self._parametri_correnti()
         rgb = self._carica_rgb(percorso)
 
-        if cv2 is not None:
-            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-            bgr = self._ridimensiona_bgr(bgr)
-            bgr = self._sovrapponi_cv(
-                bgr, nome_originale, self._testo_copyright()
-            )
-            immagine = bgr
-            altezza, larghezza = bgr.shape[:2]
-        else:
-            immagine = Image.fromarray(rgb, "RGB")
-            immagine.thumbnail(
-                (self.LATO_MASSIMO, self.LATO_MASSIMO),
-                Image.Resampling.LANCZOS,
-            )
-            immagine = self._sovrapponi_pil(
-                immagine, nome_originale, self._testo_copyright()
-            )
-            larghezza, altezza = immagine.size
+        # Overlay sempre con Pillow: cv2.putText non conosce ©, accenti o
+        # caratteri Unicode e li trasformerebbe in punti interrogativi.
+        immagine = Image.fromarray(rgb, "RGB")
+        immagine.thumbnail(
+            (self.LATO_MASSIMO, self.LATO_MASSIMO),
+            Image.Resampling.LANCZOS,
+        )
+        copyright_testo = self._testo_copyright(parametri)
+        immagine = self._sovrapponi_pil(
+            immagine, nome_originale, copyright_testo
+        )
+        larghezza, altezza = immagine.size
 
         radice, _ = os.path.splitext(nome_originale)
         nome_anteprima = f"{radice}_anteprima.jpg"
@@ -2493,6 +3193,26 @@ class RicevitoreFTP:
             os.path.join(self.cartella_anteprime, nome_anteprima)
         )
         self._salva_jpeg(immagine, uscita)
+
+        if bool(parametri.get("copyright_metadati", True)):
+            testo_metadati = copyright_testo or (
+                f"\u00a9 Franchetti {datetime.now().year}"
+            )
+            scrivi_metadati_copyright(
+                uscita,
+                testo_metadati,
+                parametri.get("copyright_autore", "Franchetti"),
+                f"{testo_metadati} - {nome_originale}",
+            )
+
+        self._aggiorna_galleria(parametri)
+        if bool(parametri.get("ftp_cloud_auto", False)):
+            threading.Thread(
+                target=self._invia_cloud_anteprima,
+                args=(uscita, dict(parametri)),
+                daemon=True,
+            ).start()
+
         durata = time.time() - inizio
         self._notifica(
             f"Anteprima pronta: {os.path.basename(uscita)} "
@@ -2930,7 +3650,6 @@ class FranchettiApp(ctk.CTk):
         self._anteprima_in_corso = False
         self._anteprima_richiesta = False
         self._anteprima_lato = 900
-        self._anteprima_ctk = []
         self._dim_anteprima = (180, 112)
         self._dim_av_anteprima = (300, 170)
         self._dim_grande_anteprima = (520, 330)
@@ -2945,6 +3664,14 @@ class FranchettiApp(ctk.CTk):
         self._ftp_server = None
         self._ftp_attivo = False
         self._ftp_in_avvio = False
+
+        # Prestazioni adattive: benchmark reale e stima del tempo.
+        self._benchmark_secondi_medio = None
+        self._benchmark_in_corso = False
+        self._finestra_prestazioni = None
+        self._perf_stato_label = None
+        self._batch_inizio = None
+        self._batch_totale = 0
 
         self._crea_interfaccia()
         self._aggiorna_stato_grana()
@@ -3077,6 +3804,10 @@ class FranchettiApp(ctk.CTk):
                     self._ftp_evento(messaggio[1])
                 elif tipo == "ftp_stato":
                     self._ftp_stato_ui(*messaggio[1:])
+                elif tipo == "bench_done":
+                    self._fine_benchmark(messaggio[1])
+                elif tipo == "bench_error":
+                    self._errore_benchmark(messaggio[1])
                 elif tipo == "done":
                     self._fine_batch(*messaggio[1:])
         except queue.Empty:
@@ -3240,11 +3971,29 @@ class FranchettiApp(ctk.CTk):
         # Elaborazione su tutti i core del processore
         self.chk_multicore = ctk.CTkCheckBox(
             dim,
-            text=f"USA TUTTI I CORE ({os.cpu_count() or 1} processi)",
+            text=(
+                f"USA TUTTI I CORE ({nuclei_fisici()} fisici / "
+                f"{nuclei_logici()} logici)"
+            ),
             font=ctk.CTkFont(size=12, weight="bold"),
         )
         self.chk_multicore.select()
         self.chk_multicore.grid(row=7, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
+
+        # Pannello prestazioni: profilo, processi e benchmark reale.
+        self.btn_prestazioni = ctk.CTkButton(
+            dim,
+            text="PRESTAZIONI: Bilanciato - automatico",
+            height=30,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            command=self._apri_prestazioni,
+        )
+        self.btn_prestazioni.grid(
+            row=8, column=0, columnspan=2, padx=(3, 2), pady=(3, 2), sticky="ew"
+        )
+        self._aggiorna_etichetta_prestazioni()
 
         # ================= ANTEPRIMA PRIMA / DOPO =================
         dx = ctk.CTkFrame(contenuto, fg_color="transparent")
@@ -3657,6 +4406,19 @@ class FranchettiApp(ctk.CTk):
             row=1, column=2, columnspan=2, padx=(0, 0), pady=3, sticky="w"
         )
 
+        ctk.CTkLabel(wm, text="Autore (EXIF):").grid(
+            row=2, column=0, padx=(0, 2), pady=3, sticky="w"
+        )
+        self.entry_copyright_autore = ctk.CTkEntry(
+            wm, placeholder_text="Franchetti"
+        )
+        self.entry_copyright_autore.insert(
+            0, self.parametri.get("copyright_autore", "Franchetti")
+        )
+        self.entry_copyright_autore.grid(
+            row=2, column=1, columnspan=3, padx=(0, 0), pady=3, sticky="ew"
+        )
+
         ctk.CTkLabel(card3, text="PRESET E CONFIGURAZIONE",
                      font=ctk.CTkFont(size=12, weight="bold")).grid(
             row=r, column=0, columnspan=2, padx=10, pady=(8, 2), sticky="w"
@@ -3871,11 +4633,20 @@ class FranchettiApp(ctk.CTk):
                 pass
             return
         try:
-            miniatura = ImageOps.fit(
-                immagine.convert("RGB"),
-                dimensione,
-                Image.Resampling.LANCZOS,
-                centering=(0.5, 0.5),
+            # "contain" mostra tutta la foto: con "fit" i ritratti verticali
+            # perdevano testa e piedi. Il fondo scuro riempie i bordi senza
+            # deformare l'immagine.
+            originale = immagine.convert("RGB")
+            contenuta = ImageOps.contain(
+                originale, dimensione, Image.Resampling.LANCZOS
+            )
+            miniatura = Image.new("RGB", dimensione, (27, 31, 36))
+            miniatura.paste(
+                contenuta,
+                (
+                    max(0, (dimensione[0] - contenuta.size[0]) // 2),
+                    max(0, (dimensione[1] - contenuta.size[1]) // 2),
+                ),
             )
             ctk_immagine = ctk.CTkImage(
                 light_image=miniatura, dark_image=miniatura, size=dimensione
@@ -4403,7 +5174,9 @@ class FranchettiApp(ctk.CTk):
         base = cartella_tethering_predefinita()
         self._ftp_cartella_originali = os.path.join(base, "Originali")
         self._ftp_cartella_anteprime = os.path.join(base, "Anteprime_Cliente")
+        self._ftp_cartella_galleria = os.path.join(base, "Galleria_Cliente")
         self._ftp_info_corrente = {}
+        self._ftp_galleria_html = ""
 
         scroll = ctk.CTkScrollableFrame(
             tab, label_text="Scatta, invia via Wi-Fi, ricevi l'anteprima pronta"
@@ -4483,8 +5256,8 @@ class FranchettiApp(ctk.CTk):
 
         azioni_dati = ctk.CTkFrame(card_dati, fg_color="transparent")
         azioni_dati.grid(row=4, column=0, padx=10, pady=(6, 12), sticky="ew")
-        azioni_dati.grid_columnconfigure(0, weight=1)
-        azioni_dati.grid_columnconfigure(1, weight=1)
+        for colonna in range(3):
+            azioni_dati.grid_columnconfigure(colonna, weight=1)
         ctk.CTkButton(
             azioni_dati,
             text="COPIA DATI",
@@ -4501,6 +5274,14 @@ class FranchettiApp(ctk.CTk):
                 self._ftp_cartella_anteprime
             ),
         ).grid(row=0, column=1, padx=(4, 4), sticky="ew")
+        ctk.CTkButton(
+            azioni_dati,
+            text="APRI GALLERIA",
+            height=32,
+            fg_color="#2f6f9f",
+            hover_color="#3b83b8",
+            command=self._apri_galleria_cliente,
+        ).grid(row=0, column=2, padx=(4, 4), sticky="ew")
 
         # ---- Copyright e cartelle
         card_opt = ctk.CTkFrame(scroll)
@@ -4520,24 +5301,65 @@ class FranchettiApp(ctk.CTk):
         self.sw_ftp_copyright.select()
         self.parametri["ftp_copyright"] = True
         self.sw_ftp_copyright.grid(row=1, column=0, padx=14, pady=(0, 4), sticky="w")
+
+        self.sw_ftp_metadati = ctk.CTkSwitch(
+            card_opt,
+            text="Scrivi copyright nei metadati EXIF/IPTC (anche nel batch)",
+            command=lambda: self._toggle_ftp_metadati(
+                bool(self.sw_ftp_metadati.get())
+            ),
+        )
+        self.sw_ftp_metadati.select()
+        self.parametri["copyright_metadati"] = True
+        self.sw_ftp_metadati.grid(
+            row=2, column=0, padx=14, pady=(0, 4), sticky="w"
+        )
+
+        self.sw_ftp_galleria = ctk.CTkSwitch(
+            card_opt,
+            text="Crea la galleria cliente con le caselle di selezione",
+            command=lambda: self._toggle_ftp_galleria(
+                bool(self.sw_ftp_galleria.get())
+            ),
+        )
+        self.sw_ftp_galleria.select()
+        self.parametri["ftp_galleria"] = True
+        self.sw_ftp_galleria.grid(
+            row=3, column=0, padx=14, pady=(0, 4), sticky="w"
+        )
+
+        self.sw_ftp_cloud_auto = ctk.CTkSwitch(
+            card_opt,
+            text="Invia automaticamente le anteprime ai cloud attivi (Telegram/Dropbox)",
+            command=lambda: self._toggle_ftp_cloud_auto(
+                bool(self.sw_ftp_cloud_auto.get())
+            ),
+        )
+        self.sw_ftp_cloud_auto.deselect()
+        self.parametri["ftp_cloud_auto"] = False
+        self.sw_ftp_cloud_auto.grid(
+            row=4, column=0, padx=14, pady=(0, 4), sticky="w"
+        )
+
         ctk.CTkLabel(
             card_opt,
             text=(
                 "Il nome del file originale viene sempre scritto in basso a "
                 "sinistra. Il testo del copyright si imposta in AVANZATE; se "
-                "e' vuoto viene usato \u00a9 Franchetti <anno>."
+                "e' vuoto viene usato \u00a9 Franchetti <anno>. La galleria "
+                "salva un file index.html che il cliente apre con doppio clic."
             ),
             font=ctk.CTkFont(size=10),
             text_color="#9aa0a6",
             anchor="w",
             justify="left",
             wraplength=860,
-        ).grid(row=2, column=0, padx=14, pady=(0, 8), sticky="w")
+        ).grid(row=5, column=0, padx=14, pady=(0, 8), sticky="w")
 
         cartelle = ctk.CTkFrame(card_opt, fg_color="transparent")
-        cartelle.grid(row=3, column=0, padx=10, pady=(0, 12), sticky="ew")
-        cartelle.grid_columnconfigure(0, weight=1)
-        cartelle.grid_columnconfigure(1, weight=1)
+        cartelle.grid(row=6, column=0, padx=10, pady=(0, 12), sticky="ew")
+        for colonna in range(3):
+            cartelle.grid_columnconfigure(colonna, weight=1)
         ctk.CTkButton(
             cartelle,
             text="CARTELLA ORIGINALI",
@@ -4558,6 +5380,16 @@ class FranchettiApp(ctk.CTk):
                 self._ftp_cartella_anteprime
             ),
         ).grid(row=0, column=1, padx=(4, 4), sticky="ew")
+        ctk.CTkButton(
+            cartelle,
+            text="CARTELLA GALLERIA",
+            height=32,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            command=lambda: self._apri_cartella_tethering(
+                self._ftp_cartella_galleria
+            ),
+        ).grid(row=0, column=2, padx=(4, 4), sticky="ew")
 
         # ---- Come si usa, senza promesse impossibili
         card_aiuto = ctk.CTkFrame(scroll)
@@ -4614,16 +5446,44 @@ class FranchettiApp(ctk.CTk):
 
     def _ftp_parametri(self):
         """Dati letti dal thread di elaborazione: nessun accesso ai widget."""
-        return {
-            "ftp_copyright": bool(self.parametri.get("ftp_copyright", True)),
-            "watermark_text": str(self.parametri.get("watermark_text", "")),
-        }
+        chiavi = (
+            "ftp_copyright", "watermark_text", "copyright_metadati",
+            "copyright_autore", "ftp_galleria", "ftp_cloud_auto",
+            "cloud_telegram", "cloud_gdrive", "cloud_meta",
+            "cloud_dropbox", "cloud_swiss",
+            "tg_token", "tg_chat_id", "gdrive_key", "meta_token", "meta_id",
+            "dropbox_token", "swisstransfer_email",
+        )
+        # Copia superficiale: il worker non tocca mai i widget Tk.
+        return {chiave: self.parametri.get(chiave) for chiave in chiavi}
 
     def _toggle_ftp_copyright(self):
         attivo = bool(self.sw_ftp_copyright.get())
         self.parametri["ftp_copyright"] = attivo
         self.scrivi_log(
             "Wi-Fi FTP: copyright attivo." if attivo else "Wi-Fi FTP: copyright disattivato."
+        )
+
+    def _toggle_ftp_metadati(self, attivo):
+        self.parametri["copyright_metadati"] = bool(attivo)
+        self.scrivi_log(
+            "Copyright nei metadati EXIF/IPTC attivo."
+            if attivo
+            else "Copyright nei metadati EXIF/IPTC disattivato."
+        )
+
+    def _toggle_ftp_galleria(self, attivo):
+        self.parametri["ftp_galleria"] = bool(attivo)
+        self.scrivi_log(
+            "Galleria cliente attiva." if attivo else "Galleria cliente disattivata."
+        )
+
+    def _toggle_ftp_cloud_auto(self, attivo):
+        self.parametri["ftp_cloud_auto"] = bool(attivo)
+        self.scrivi_log(
+            "Invio automatico ai cloud attivo."
+            if attivo
+            else "Invio automatico ai cloud disattivato."
         )
 
     def _avvia_ftp(self):
@@ -4710,6 +5570,14 @@ class FranchettiApp(ctk.CTk):
             "utente": utente,
             "password": password,
         }
+        if info.get("originali"):
+            self._ftp_cartella_originali = info["originali"]
+        if info.get("anteprime"):
+            self._ftp_cartella_anteprime = info["anteprime"]
+        if info.get("galleria"):
+            self._ftp_cartella_galleria = info["galleria"]
+        if info.get("galleria_html"):
+            self._ftp_galleria_html = info["galleria_html"]
         try:
             self.lbl_ftp_ip.configure(text=f"IP: {ip}    Porta: {porta}")
             self.lbl_ftp_credenziali.configure(
@@ -4738,6 +5606,35 @@ class FranchettiApp(ctk.CTk):
             os.startfile(percorso)
         except Exception as errore:
             messagebox.showinfo("Cartella", f"Non riesco ad aprire:\n{percorso}\n\n{errore}")
+
+    def _apri_galleria_cliente(self):
+        anteprime = self._ftp_cartella_anteprime
+        html = self._ftp_galleria_html or os.path.join(
+            self._ftp_cartella_galleria, "index.html"
+        )
+        try:
+            os.makedirs(self._ftp_cartella_galleria, exist_ok=True)
+            genera_galleria_cliente(
+                anteprime,
+                html,
+                titolo="Selezione cliente",
+                sottotitolo=(
+                    "Spunta le foto che vuoi e premi «Copia selezione». "
+                    "Il fotografo ricevera' l'elenco dei nomi."
+                ),
+            )
+        except Exception as errore:
+            messagebox.showinfo(
+                "Galleria",
+                f"Non riesco a creare la galleria:\n{html}\n\n{errore}",
+            )
+            return
+        try:
+            os.startfile(html)
+        except Exception as errore:
+            messagebox.showinfo(
+                "Galleria", f"Galleria creata in:\n{html}\n\n{errore}"
+            )
 
     def _ftp_evento(self, messaggio):
         self.scrivi_log(messaggio)
@@ -5239,6 +6136,11 @@ class FranchettiApp(ctk.CTk):
         self.entry_watermark.insert(0, self.parametri.get("watermark_text", ""))
         self.entry_font_size.delete(0, "end")
         self.entry_font_size.insert(0, str(self.parametri.get("font_size", 14)))
+        if hasattr(self, "entry_copyright_autore"):
+            self.entry_copyright_autore.delete(0, "end")
+            self.entry_copyright_autore.insert(
+                0, self.parametri.get("copyright_autore", "Franchetti")
+            )
         self.combo_posizione.set(self.parametri.get("watermark_posizione", "Basso a destra"))
         self.entry_prefisso.delete(0, "end")
         self.entry_prefisso.insert(0, self.parametri.get("prefisso", ""))
@@ -5264,6 +6166,14 @@ class FranchettiApp(ctk.CTk):
         imposta_check(self.chk_cloud_swiss, "cloud_swiss")
         if hasattr(self, "sw_ftp_copyright"):
             imposta_check(self.sw_ftp_copyright, "ftp_copyright", True)
+        if hasattr(self, "sw_ftp_metadati"):
+            imposta_check(self.sw_ftp_metadati, "copyright_metadati", True)
+        if hasattr(self, "sw_ftp_galleria"):
+            imposta_check(self.sw_ftp_galleria, "ftp_galleria", True)
+        if hasattr(self, "sw_ftp_cloud_auto"):
+            imposta_check(self.sw_ftp_cloud_auto, "ftp_cloud_auto", False)
+        self._aggiorna_etichetta_prestazioni()
+        self._aggiorna_widget_prestazioni()
 
         imposta_entry(self.entry_wifi_dir, "wifi_dir")
         imposta_entry(self.entry_wifi_output, "output_dir")
@@ -5382,7 +6292,465 @@ class FranchettiApp(ctk.CTk):
         self.parametri["cloud_swiss"] = bool(self.chk_cloud_swiss.get())
         if hasattr(self, "sw_ftp_copyright"):
             self.parametri["ftp_copyright"] = bool(self.sw_ftp_copyright.get())
+        if hasattr(self, "sw_ftp_metadati"):
+            self.parametri["copyright_metadati"] = bool(self.sw_ftp_metadati.get())
+        if hasattr(self, "sw_ftp_galleria"):
+            self.parametri["ftp_galleria"] = bool(self.sw_ftp_galleria.get())
+        if hasattr(self, "sw_ftp_cloud_auto"):
+            self.parametri["ftp_cloud_auto"] = bool(self.sw_ftp_cloud_auto.get())
+        if hasattr(self, "entry_copyright_autore"):
+            self.parametri["copyright_autore"] = (
+                self.entry_copyright_autore.get().strip() or "Franchetti"
+            )
+        self._aggiorna_etichetta_prestazioni()
         return self.parametri
+
+    # ============================================================ PRESTAZIONI
+    def _processi_ui(self, numero_file=999):
+        """Processi mostrati nella UI: automatici o scelti a mano."""
+        profilo = self.parametri.get("profilo_prestazioni", "Bilanciato")
+        if self.parametri.get("processi_auto", True):
+            return numero_processi_ottimale(
+                numero_file, per_processo_mb(self.parametri), profilo
+            )
+        try:
+            scelto = int(self.parametri.get("processi_manuali", 0) or 0)
+        except (TypeError, ValueError):
+            scelto = 0
+        return max(1, min(scelto or 1, nuclei_logici()))
+
+    def _aggiorna_etichetta_prestazioni(self):
+        try:
+            profilo = self.parametri.get("profilo_prestazioni", "Bilanciato")
+            if self.parametri.get("processi_auto", True):
+                processi = self._processi_ui()
+                testo = f"PRESTAZIONI: {profilo} - automatico (max {processi})"
+            else:
+                processi = self._processi_ui()
+                testo = f"PRESTAZIONI: {profilo} - {processi} processi"
+            if hasattr(self, "btn_prestazioni"):
+                self.btn_prestazioni.configure(text=testo)
+        except Exception:
+            pass
+
+    def _aggiorna_slider_parametro(self, chiave, valore):
+        try:
+            slider, label, fmt = self._slider_widgets[chiave]
+        except Exception:
+            return
+        try:
+            slider.set(float(valore))
+            label.configure(text=fmt.format(float(valore)))
+        except Exception:
+            pass
+
+    def _apri_prestazioni(self):
+        finestra = self._finestra_prestazioni
+        if finestra is not None:
+            try:
+                if finestra.winfo_exists():
+                    finestra.deiconify()
+                    finestra.lift()
+                    finestra.focus_force()
+                    self._aggiorna_widget_prestazioni()
+                    return
+            except Exception:
+                pass
+
+        finestra = ctk.CTkToplevel(self)
+        self._finestra_prestazioni = finestra
+        finestra.title("Prestazioni - Franchetti Raw Converter Pro")
+        finestra.geometry("620x520")
+        finestra.minsize(520, 420)
+        finestra.transient(self)
+        finestra.grid_columnconfigure(0, weight=1)
+
+        def chiudi():
+            self._finestra_prestazioni = None
+            self._perf_stato_label = None
+            try:
+                finestra.destroy()
+            except Exception:
+                pass
+
+        finestra.protocol("WM_DELETE_WINDOW", chiudi)
+
+        ctk.CTkLabel(
+            finestra,
+            text="PRESTAZIONI ADATTIVE",
+            font=ctk.CTkFont(size=15, weight="bold"),
+        ).grid(row=0, column=0, padx=16, pady=(14, 2), sticky="w")
+        ctk.CTkLabel(
+            finestra,
+            text=(
+                "Il programma misura i core, la RAM e (con il benchmark) i tuoi "
+                "file reali. Gli originali non vengono mai modificati."
+            ),
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=580,
+        ).grid(row=1, column=0, padx=16, pady=(0, 8), sticky="w")
+
+        self._perf_info = ctk.CTkLabel(
+            finestra,
+            text="",
+            font=ctk.CTkFont(size=12, family="Consolas"),
+            anchor="w",
+        )
+        self._perf_info.grid(row=2, column=0, padx=16, pady=(0, 8), sticky="w")
+
+        profilo_card = ctk.CTkFrame(finestra)
+        profilo_card.grid(row=3, column=0, padx=16, pady=4, sticky="ew")
+        profilo_card.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(profilo_card, text="Profilo").grid(
+            row=0, column=0, padx=(12, 8), pady=(10, 4), sticky="w"
+        )
+        self._perf_profilo = ctk.CTkComboBox(
+            profilo_card,
+            values=list(PROFILI_PRESTAZIONI.keys()),
+            width=190,
+            command=self._cambia_profilo_prestazioni,
+        )
+        self._perf_profilo.set(self.parametri.get("profilo_prestazioni", "Bilanciato"))
+        self._perf_profilo.grid(row=0, column=1, padx=(0, 12), pady=(10, 4), sticky="w")
+        self._perf_desc = ctk.CTkLabel(
+            profilo_card,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=540,
+        )
+        self._perf_desc.grid(
+            row=1, column=0, columnspan=2, padx=12, pady=(0, 10), sticky="w"
+        )
+
+        processi_card = ctk.CTkFrame(finestra)
+        processi_card.grid(row=4, column=0, padx=16, pady=4, sticky="ew")
+        processi_card.grid_columnconfigure(1, weight=1)
+        self._perf_auto = ctk.CTkSwitch(
+            processi_card,
+            text="Numero processi automatico",
+            command=self._toggle_processi_auto,
+        )
+        self._perf_auto.grid(
+            row=0, column=0, columnspan=3, padx=12, pady=(10, 4), sticky="w"
+        )
+        ctk.CTkLabel(processi_card, text="Processi").grid(
+            row=1, column=0, padx=(12, 8), pady=4, sticky="w"
+        )
+        self._perf_slider = ctk.CTkSlider(
+            processi_card,
+            from_=1,
+            to=nuclei_logici(),
+            number_of_steps=max(1, nuclei_logici() - 1),
+            command=self._on_processi_slider,
+        )
+        self._perf_slider.grid(row=1, column=1, padx=4, pady=4, sticky="ew")
+        self._perf_valore = ctk.CTkLabel(
+            processi_card, text="", font=ctk.CTkFont(size=11, weight="bold")
+        )
+        self._perf_valore.grid(row=1, column=2, padx=(8, 12), pady=4, sticky="e")
+        ctk.CTkLabel(
+            processi_card,
+            text=(
+                "Automatico rispetta RAM libera e core fisici/logici. "
+                "Oltre i core fisici il guadagno e' minimo e la RAM sale."
+            ),
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=540,
+        ).grid(row=2, column=0, columnspan=3, padx=12, pady=(0, 10), sticky="w")
+
+        bench_card = ctk.CTkFrame(finestra)
+        bench_card.grid(row=5, column=0, padx=16, pady=4, sticky="ew")
+        bench_card.grid_columnconfigure(0, weight=1)
+        self._perf_bench_btn = ctk.CTkButton(
+            bench_card,
+            text="BENCHMARK SUI MIEI FILE",
+            height=34,
+            fg_color="#2f6f9f",
+            hover_color="#3b83b8",
+            command=self._avvia_benchmark,
+        )
+        self._perf_bench_btn.grid(row=0, column=0, padx=12, pady=(10, 4), sticky="ew")
+        self._perf_bench_label = ctk.CTkLabel(
+            bench_card,
+            text="Mai eseguito: la stima usa valori prudenti.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=540,
+        )
+        self._perf_bench_label.grid(
+            row=1, column=0, padx=12, pady=(0, 4), sticky="w"
+        )
+        self._perf_stima = ctk.CTkLabel(
+            bench_card,
+            text="",
+            font=ctk.CTkFont(size=11),
+            anchor="w",
+            justify="left",
+            wraplength=540,
+        )
+        self._perf_stima.grid(row=2, column=0, padx=12, pady=(0, 10), sticky="w")
+        self._perf_stato_label = ctk.CTkLabel(
+            bench_card,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color="#8ab4f8",
+            anchor="w",
+        )
+        self._perf_stato_label.grid(row=3, column=0, padx=12, pady=(0, 10), sticky="w")
+
+        ctk.CTkButton(
+            finestra, text="Chiudi", width=120, command=chiudi
+        ).grid(row=6, column=0, padx=16, pady=(8, 14), sticky="e")
+
+        self._aggiorna_widget_prestazioni()
+        try:
+            finestra.after(120, finestra.lift)
+            finestra.after(160, finestra.focus_force)
+        except Exception:
+            pass
+
+    def _cambia_profilo_prestazioni(self, nome):
+        profilo = PROFILI_PRESTAZIONI.get(nome)
+        if not profilo:
+            return
+        self.parametri["profilo_prestazioni"] = nome
+        for chiave, valore in profilo["parametri"].items():
+            self.parametri[chiave] = valore
+            self._aggiorna_slider_parametro(chiave, valore)
+        self._aggiorna_stato_grana()
+        self._aggiorna_etichetta_prestazioni()
+        self._aggiorna_widget_prestazioni()
+        self.scrivi_log(
+            f"Profilo prestazioni: {nome}. Denoise e nitidezza aggiornati; "
+            "il numero di processi resta adattivo."
+        )
+        self._programma_anteprima()
+
+    def _toggle_processi_auto(self):
+        auto = bool(self._perf_auto.get())
+        self.parametri["processi_auto"] = auto
+        if auto:
+            self.parametri["processi_manuali"] = 0
+            try:
+                self._perf_slider.configure(state="disabled")
+            except Exception:
+                pass
+        else:
+            try:
+                self.parametri["processi_manuali"] = max(1, int(round(self._perf_slider.get())))
+                self._perf_slider.configure(state="normal")
+            except Exception:
+                pass
+        self._aggiorna_valore_processi()
+        self._aggiorna_etichetta_prestazioni()
+        self.scrivi_log(
+            "Processi: automatici (RAM e core)."
+            if auto
+            else f"Processi: {self.parametri.get('processi_manuali', 1)} scelti a mano."
+        )
+
+    def _on_processi_slider(self, valore):
+        if not self.parametri.get("processi_auto", True):
+            self.parametri["processi_manuali"] = max(1, int(round(float(valore))))
+        self._aggiorna_valore_processi()
+        self._aggiorna_etichetta_prestazioni()
+
+    def _aggiorna_valore_processi(self):
+        try:
+            processi = self._processi_ui()
+            suffisso = (
+                " max (auto)" if self.parametri.get("processi_auto", True) else ""
+            )
+            self._perf_valore.configure(text=f"{processi}{suffisso}")
+        except Exception:
+            pass
+
+    def _aggiorna_widget_prestazioni(self):
+        finestra = self._finestra_prestazioni
+        if finestra is None:
+            return
+        try:
+            if not finestra.winfo_exists():
+                return
+        except Exception:
+            return
+
+        auto = bool(self.parametri.get("processi_auto", True))
+        try:
+            self._perf_info.configure(
+                text=(
+                    f"CPU: {nuclei_fisici()} fisici / {nuclei_logici()} logici"
+                    f"    RAM libera: {memoria_disponibile_mb() / 1024.0:.1f} GB"
+                )
+            )
+            profilo = self.parametri.get("profilo_prestazioni", "Bilanciato")
+            self._perf_profilo.set(profilo)
+            self._perf_desc.configure(
+                text=PROFILI_PRESTAZIONI.get(profilo, {}).get("descrizione", "")
+            )
+            if auto and not self._perf_auto.get():
+                self._perf_auto.select()
+            elif not auto and self._perf_auto.get():
+                self._perf_auto.deselect()
+            self._perf_slider.configure(state="disabled" if auto else "normal")
+            if auto:
+                self._perf_slider.set(self._processi_ui())
+            else:
+                self._perf_slider.set(
+                    max(1, min(nuclei_logici(), int(self.parametri.get("processi_manuali", 1) or 1)))
+                )
+            self._aggiorna_valore_processi()
+            self._aggiorna_stima_prestazioni()
+        except Exception:
+            pass
+
+    def _aggiorna_stima_prestazioni(self):
+        try:
+            if self._benchmark_secondi_medio is None:
+                self._perf_stima.configure(
+                    text=(
+                        "Stima: esegui il benchmark per misurare il tempo reale "
+                        "sui tuoi file e sul tuo PC."
+                    )
+                )
+                return
+            files = []
+            try:
+                sorgente = self.entry_sorgente.get().strip()
+                if sorgente:
+                    files = raccogli_file_sorgente(
+                        sorgente,
+                        bool(self.parametri.get("ricorsivo", True)),
+                        self.entry_destinazione.get().strip() or None,
+                    )
+            except Exception:
+                files = []
+            numero_file = len(files) or 1
+            # Stessa decisione usata dal batch: niente stime parallele
+            # ottimistiche per 3 JPEG che verranno elaborati in sequenza.
+            processi = processi_per_batch(files, self.parametri) if files else 1
+            secondi = stima_tempo_batch(
+                self._benchmark_secondi_medio, numero_file, processi
+            )
+            velocita = numero_file / max(0.1, secondi) * 60.0
+            dettaglio_processi = (
+                f"{processi} processi"
+                if processi > 1
+                else "1 processo (batch piccolo)"
+            )
+            self._perf_stima.configure(
+                text=(
+                    f"Stima per {numero_file} file: ~{formatta_durata(secondi)} "
+                    f"({velocita:.1f} file/min, {dettaglio_processi})."
+                )
+            )
+        except Exception:
+            pass
+
+    def _avvia_benchmark(self):
+        if self._benchmark_in_corso:
+            return
+        sorgente = self.entry_sorgente.get().strip()
+        if not sorgente:
+            messagebox.showwarning(
+                "Benchmark", "Seleziona prima una cartella o dei file RAW."
+            )
+            return
+        files = raccogli_file_sorgente(
+            sorgente,
+            bool(self.parametri.get("ricorsivo", True)),
+            self.entry_destinazione.get().strip() or None,
+        )
+        if not files:
+            messagebox.showwarning(
+                "Benchmark", "Nessun file RAW o immagine trovato nella sorgente."
+            )
+            return
+
+        self._raccogli_campi()
+        parametri = normalizza_parametri(self.parametri)
+        self._benchmark_in_corso = True
+        try:
+            self._perf_bench_btn.configure(state="disabled", text="BENCHMARK IN CORSO...")
+            self._perf_bench_label.configure(
+                text="Sto elaborando 1-2 file reali in una cartella temporanea..."
+            )
+        except Exception:
+            pass
+        threading.Thread(
+            target=self._benchmark_worker, args=(list(files), parametri), daemon=True
+        ).start()
+
+    def _benchmark_worker(self, files, parametri):
+        try:
+            risultato = benchmark_conversione(
+                files, parametri, massimo_file=2, log=self._log_threadsafe
+            )
+        except Exception as errore:
+            self._coda.put(("bench_error", f"{type(errore).__name__}: {errore}"))
+            return
+        self._coda.put(("bench_done", risultato))
+
+    def _fine_benchmark(self, risultato):
+        self._benchmark_in_corso = False
+        media = float(risultato.get("secondi_medio", 0.0) or 0.0)
+        self._benchmark_secondi_medio = media if media > 0 else None
+        try:
+            self._perf_bench_btn.configure(
+                state="normal", text="RIPETI BENCHMARK"
+            )
+        except Exception:
+            pass
+        if self._benchmark_secondi_medio is None:
+            return
+        processi = self._processi_ui()
+        testo = (
+            f"Misurato: {media:.1f}s per file ({len(risultato.get('secondi', []))} "
+            f"file di prova, 1 processo), ~{60.0 / media:.1f} file/min."
+        )
+        try:
+            self._perf_bench_label.configure(text=testo)
+        except Exception:
+            pass
+        self.scrivi_log("Benchmark completato. " + testo)
+        self._aggiorna_stima_prestazioni()
+
+    def _errore_benchmark(self, errore):
+        self._benchmark_in_corso = False
+        try:
+            self._perf_bench_btn.configure(
+                state="normal", text="BENCHMARK SUI MIEI FILE"
+            )
+            self._perf_bench_label.configure(text=f"Benchmark non riuscito: {errore}")
+        except Exception:
+            pass
+        self.scrivi_log(f"Benchmark non riuscito: {errore}")
+
+    def _stima_batch_corrente(self, files, parametri):
+        if self._benchmark_secondi_medio is None:
+            return ""
+        try:
+            processi = processi_per_batch(list(files), parametri)
+            secondi = stima_tempo_batch(
+                self._benchmark_secondi_medio, len(files), processi
+            )
+            return (
+                f"Stima: ~{formatta_durata(secondi)} per {len(files)} file "
+                f"({processi} processi, misurato {self._benchmark_secondi_medio:.1f}s/file)."
+            )
+        except Exception:
+            return ""
 
     # ============================================================ BATCH
     def _raccogli_file_sorgente(self, sorgente, ricorsivo, escludi=None):
@@ -5672,6 +7040,8 @@ class FranchettiApp(ctk.CTk):
         self._batch_files = files
         self._cancel_event.clear()
         self._batch_attivo = True
+        self._batch_inizio = time.time()
+        self._batch_totale = len(files)
 
         self.btn_avvia.configure(state="disabled")
         self.btn_analizza.configure(state="disabled")
@@ -5682,6 +7052,9 @@ class FranchettiApp(ctk.CTk):
         self.scrivi_log(f"Batch avviato: {len(files)} file -> {destinazione}")
 
         params = normalizza_parametri(self.parametri)
+        stima = self._stima_batch_corrente(files, params)
+        if stima:
+            self.scrivi_log(stima)
         analisi = None
         if self.chk_usa_analisi.get():
             analisi = {
@@ -5727,22 +7100,48 @@ class FranchettiApp(ctk.CTk):
         testo = f"{indice} / {totale}  -  OK: {ok}  Errori: {errori}"
         if saltati:
             testo += f"  Saltati: {saltati}"
+        if self._batch_inizio is not None and indice > 0:
+            trascorso = max(0.1, time.time() - self._batch_inizio)
+            media = trascorso / indice
+            rimanenti = max(0, totale - indice)
+            eta = media * rimanenti
+            velocita = 60.0 / max(0.1, media)
+            testo += f"  -  {velocita:.1f} file/min"
+            if rimanenti:
+                testo += f"  -  ETA {formatta_durata(eta)}"
         self.lbl_progresso.configure(text=testo)
+        if self._perf_stato_label is not None:
+            try:
+                self._perf_stato_label.configure(text=testo)
+            except Exception:
+                pass
 
     def _fine_batch(self, ok, errori, saltati=0, annullato=False):
         self._batch_attivo = False
         self.btn_avvia.configure(state="normal")
         self.btn_analizza.configure(state="normal")
         self.btn_annulla.configure(state="disabled")
+        durata = ""
+        if self._batch_inizio is not None:
+            secondi = max(0.1, time.time() - self._batch_inizio)
+            durata = f", {formatta_durata(secondi)}"
+            if secondi >= 0.1:
+                durata += f" ({max(0, ok + errori + saltati) / secondi * 60.0:.1f} file/min)"
         if annullato:
-            testo = f"Annullato - OK: {ok}, Errori: {errori}"
+            testo = f"Annullato - OK: {ok}, Errori: {errori}{durata}"
         else:
-            testo = f"Completato - OK: {ok}, Errori: {errori}"
+            testo = f"Completato - OK: {ok}, Errori: {errori}{durata}"
         if saltati:
             testo += f", Saltati: {saltati}"
         self.lbl_stato.configure(text=testo)
         self.lbl_progresso.configure(text=testo)
-        self.scrivi_log(f"Batch terminato: OK {ok}, errori {errori}, saltati {saltati}.")
+        self.scrivi_log(f"Batch terminato: OK {ok}, errori {errori}, saltati {saltati}{durata}.")
+        if self._perf_stato_label is not None:
+            try:
+                self._perf_stato_label.configure(text=testo)
+            except Exception:
+                pass
+        self._batch_inizio = None
 
     def annulla_batch(self):
         if self._analisi_in_corso:

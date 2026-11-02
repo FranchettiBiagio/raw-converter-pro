@@ -48,16 +48,16 @@ We follow **Coordinated Vulnerability Disclosure (CVD)**. Public disclosure occu
 | User RAW files | Malicious file parsing | LibRaw sandboxed, no code execution |
 | Output JPEGs | Metadata leakage | Optional EXIF strip (planned) |
 | User system | Privilege escalation | No admin rights, no install, no services |
-| Network | Data exfiltration | **Zero network capability** |
+| Network | Data exfiltration | Outbound only on explicit Cloud Dispatch (Telegram/Dropbox); FTP is inbound LAN-only |
 | Supply chain | Compromised dependencies | Pinned versions, verified hashes |
 
 ### Key Security Properties
 
-1. **No Network Stack**
-   - Application never opens sockets
-   - No HTTP/HTTPS/FTP/websocket libraries bundled
-   - No telemetry, analytics, crash reporting
+1. **No Background Network Stack**
+   - No telemetry, analytics or crash reporting
    - No auto-update mechanism
+   - Outbound sockets are opened only when you explicitly run Cloud Dispatch
+   - The FTP receiver listens on the local LAN (`0.0.0.0:2121`), only while the switch is ON, and never connects to the internet
 
 2. **No Persistence**
    - No registry writes
@@ -162,7 +162,7 @@ python build_exe.py
     <Conditions>
       <FilePublisherCondition PublisherName="O=Franchetti, L=City, S=State, C=IT"
         ProductName="Franchetti Raw Converter Pro" BinaryName="FranchettiRawConverterPro.exe">
-        <BinaryVersionRange LowSection="2.57.0.0" HighSection="2.9999.9999.9999" />
+        <BinaryVersionRange LowSection="2.58.0.0" HighSection="2.9999.9999.9999" />
       </FilePublisherCondition>
     </Conditions>
   </FilePublisherRule>

@@ -2,15 +2,16 @@
 
 **Effective Date**: January 25, 2025  
 **Last Updated**: November 2, 2026  
-**Version**: 2.57.0
+**Version**: 2.58.0
 
 ---
 
 ## Summary
 
 **Franchetti Raw Converter Pro collects zero personal data.**  
-No analytics, no telemetry, no crash reports, no network connections.  
-Your files never leave your computer.
+No analytics, no telemetry, no crash reports. By default it makes no network
+connections. Your files never leave your computer unless you explicitly enable
+**Wi-Fi FTP** (local network only) or **Cloud Dispatch** (Telegram/Dropbox).
 
 ---
 
@@ -38,7 +39,9 @@ All processing occurs **entirely on your device**:
 4. **Output**: Files written to your chosen destination folder
 5. **Memory Cleanup**: All data released on app close
 
-**No temporary files** are created outside your output folder.
+**No temporary files** are created outside your output folder, except the
+benchmark scratch folder (created under the system temp directory, read-only on
+originals, removed afterwards).
 
 ---
 
@@ -50,10 +53,14 @@ All processing occurs **entirely on your device**:
 | Crash Reporting | ❌ No | — |
 | Update Checks | ❌ No | Manual only |
 | License Validation | ❌ No | No license system |
-| Cloud Sync | ❌ No | — |
-| Any Outbound | ❌ No | **Zero network capability** |
+| Cloud Sync | ⚠️ Optional | Telegram/Dropbox only when you enable Cloud Dispatch |
+| Wi-Fi FTP | ⚠️ Optional | Local LAN inbound server on port 2121; no internet |
+| Any Outbound | ⚠️ Optional | Only explicit Cloud Dispatch |
 
-The compiled executable **does not link** any network libraries (WinHTTP, WinINet, curl, OpenSSL, etc.).
+The FTP receiver is an **inbound local-network server**: it accepts uploads from
+your camera and never connects to the internet. Cloud Dispatch is off by
+default; when enabled, previews are sent only to the channels you configured
+(Telegram bot API or Dropbox API). No other outbound traffic exists.
 
 ---
 
@@ -193,12 +200,12 @@ If you consider file conversion "processing," the basis is **Article 6(1)(b)**: 
 
 You can verify our claims:
 
-1. **Network Monitor**: Run Wireshark/Process Monitor — zero connections
-2. **File Monitor**: Run ProcMon — only reads your input, writes your output
+1. **Network Monitor**: Run Wireshark/Process Monitor — no connections unless you enable Cloud Dispatch or Wi-Fi FTP
+2. **File Monitor**: Run ProcMon — reads your input, writes your output (plus the temporary benchmark folder, removed afterwards)
 3. **Registry Monitor**: No keys created/read
 4. **Source Code**: Full source available on GitHub for audit
-5. **Binary Analysis**: Strings, imports, sections — no network APIs
+5. **Binary Analysis**: Network code (`requests`) is present only for explicit Cloud Dispatch; no telemetry or update endpoints
 
 ---
 
-*This policy reflects the actual behavior of Franchetti Raw Converter Pro v2.57.0. If you observe any discrepancy, please contact privacy@franchetti.dev immediately.*
+*This policy reflects the actual behavior of Franchetti Raw Converter Pro v2.58.0. If you observe any discrepancy, please contact privacy@franchetti.dev immediately.*

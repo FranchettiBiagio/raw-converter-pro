@@ -1,6 +1,6 @@
 # User Manual
 
-**Franchetti Raw Converter Pro v2.57.0**  
+**Franchetti Raw Converter Pro v2.58.0**  
 > **Guida in italiano, semplice e completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - tutte le funzioni e le impostazioni consigliate. Versione HTML: [GUIDA_COMPLETA.html](GUIDA_COMPLETA.html).
 
 *Complete guide for photographers — Enterprise Edition*
@@ -14,10 +14,11 @@
 3. [Step-by-Step Workflow](#step-by-step-workflow)
 4. [Advanced Options](#advanced-options)
 5. [Batch Processing Tips](#batch-processing-tips)
-6. [Watermark Best Practices](#watermark-best-practices)
-7. [Troubleshooting](#troubleshooting)
-8. [Keyboard Shortcuts](#keyboard-shortcuts)
-9. [FAQ](#faq)
+6. [Wi-Fi FTP & Client Gallery](#wi-fi-ftp--client-gallery)
+7. [Watermark Best Practices](#watermark-best-practices)
+8. [Troubleshooting](#troubleshooting)
+9. [Keyboard Shortcuts](#keyboard-shortcuts)
+10. [FAQ](#faq)
 
 ---
 
@@ -51,7 +52,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Franchetti Raw Converter Pro v2.57.0                    [×] [−] [□] │
+│  Franchetti Raw Converter Pro v2.58.0                    [×] [−] [□] │
 ├─────────────────────────────────────────────────────────────────┤
 │  Franchetti Raw Converter Pro                                   │
 │  Converti RAW → JPG ridotto + watermark copyright               │
@@ -220,13 +221,71 @@ Franchetti Studio • All Rights Reserved
 | 8 core | ~20–30 file/min |
 | 20 core (i9-12900H) | ~30–50 file/min |
 
-> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale v2.57.0: 4 RAW da 24 MP a 3000 px con denoise automatico in **12,8 s** totali. I preset a risoluzione originale richiedono circa 40-45 s per foto perché il denoise non-locale lavora a 24 MP.
+> **Nota**: il batch usa un pool adattivo. Scegli il profilo in **PRESTAZIONI**: **Veloce** (core logici, denoise leggero), **Bilanciato** (core fisici, default) o **Massima qualità**. Il numero di processi è automatico, con slider manuale; i batch piccoli restano sequenziali. Misura reale v2.58.0: 4 RAW da 24 MP a 3000 px con denoise automatico in **12,8 s** totali. I preset a risoluzione originale richiedono circa 40-45 s per foto perché il denoise non-locale lavora a 24 MP.
+
+### Adaptive Performance Panel
+
+Open **PRESTAZIONI** below **USA TUTTI I CORE**:
+
+- physical and logical cores, free RAM;
+- profile selection (**Veloce / Bilanciato / Massima qualità**);
+- automatic process count, or manual slider;
+- **BENCHMARK SUI MIEI FILE**: measures 1–2 real files in a temp folder (originals are read-only);
+- batch estimate, **file/min** and **ETA** in the progress bar.
+
+If you set the process count manually, your choice overrides the small-batch heuristic.
 
 ### Memory Management
 
 - **Per-process memory**: ~1–1,5 GB durante la decodifica di un RAW da 24 MP
 - **Peak batch memory**: circa 1,2 GB per processo attivo; il programma riduce i processi se la RAM non basta
 - **Large batches**: No accumulation — each file processed independently
+
+---
+
+## Wi-Fi FTP & Client Gallery
+
+### Built-in FTP Receiver
+
+1. Open the **Wi-Fi FTP** tab.
+2. Switch **RICEZIONE WI-FI FTP** to ON.
+3. Enter in the camera: IP shown by the app, port `2121`, user `camera`, password `1234`.
+4. Each completed upload is developed to a **2000 px** preview, JPEG quality 85.
+
+### Session Folders
+
+Every server start creates a dated session (`AAAA-MM-GG_HHMMSS`) with matching
+subfolders:
+
+- `Originali/<session>` — received originals, never modified;
+- `Anteprime_Cliente/<session>` — previews, filename + copyright overlay;
+- `Galleria_Cliente/<session>/index.html` — client gallery.
+
+### Client Gallery
+
+The gallery is a self-contained HTML page:
+
+- thumbnails with `loading="lazy"`;
+- a checkbox for each photo;
+- **Seleziona tutte**, **Deseleziona**, **Copia selezione**, **Scarica elenco .txt**;
+- selected-photo counter.
+
+It works from a shared folder, USB stick or email attachment: no server and no
+internet needed. The page is regenerated after each preview; reload it to see
+new shots.
+
+### Copyright Metadata
+
+Enable **Scrivi copyright nei metadati EXIF/IPTC** to write:
+
+- **EXIF**: `Artist`, `Copyright`, `ImageDescription`;
+- **IPTC**: `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`
+  (direct APP13/Photoshop 3.0, no extra dependency).
+
+### Optional Cloud Dispatch
+
+An off-by-default switch sends new previews to the active Telegram/Dropbox
+channels. Nothing leaves the computer unless you enable it.
 
 ---
 
@@ -377,4 +436,4 @@ When reporting issues, include:
 
 ---
 
-*Manual v2.57.0 - 2 Novembre 2026*
+*Manual v2.58.0 - 2 Novembre 2026*

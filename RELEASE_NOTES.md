@@ -1,6 +1,101 @@
-# Release Notes v2.57.0
+# Release Notes v2.58.0
 
-**Franchetti Raw Converter Pro** — Release v2.57.0  
+**Franchetti Raw Converter Pro** - Release v2.58.0  
+**Data**: 2 Novembre 2026  
+**Build**: 2.58.0.0
+
+---
+
+## Prestazioni adattive, senza interruttori finti
+
+La nuova finestra **PRESTAZIONI** (pulsante sotto `USA TUTTI I CORE`) legge i
+core **fisici** e **logici** del PC e la RAM libera. Da qui scegli:
+
+- **Veloce**: tutti i core logici e denoise leggero, per consegnare prima;
+- **Bilanciato**: core fisici, qualità predefinita;
+- **Massima qualità**: denoise e nitidezza più curati per stampe e consegne.
+
+Il numero di processi è automatico per impostazione predefinita, ma lo slider
+permette di forzarlo. Il batch non avvia più un pool multi-processo per due
+JPEG minuscoli: la soglia tiene conto di peso e numero di file, quindi i batch
+piccoli restano sequenziali e veloci.
+
+Il pulsante **BENCHMARK SUI MIEI FILE** elabora 1-2 file reali in una cartella
+temporanea (gli originali sono solo letti) e misura il tempo vero. Da lì arriva
+una stima del batch e, durante la conversione, la barra mostra **file/min** ed
+**ETA** calcolati sul lavoro già completato.
+
+---
+
+## Galleria cliente con selezione
+
+Ogni sessione FTP crea una cartella separata per **Originali**,
+**Anteprime_Cliente** e **Galleria_Cliente**. In `Galleria_Cliente` viene
+scritto un file `index.html` autonomo:
+
+- miniature delle anteprime;
+- caselle per selezionare le foto preferite;
+- pulsante **Copia selezione** e **Scarica elenco .txt**;
+- nessun server o servizio esterno: funziona da cartella condivisa o chiavetta.
+
+La galleria si aggiorna a ogni anteprima e si apre dal tab **Wi-Fi FTP**.
+
+---
+
+## Copyright anche nei metadati
+
+Il copyright non è più solo sovrapposto all'immagine. Con l'interruttore
+**Scrivi copyright nei metadati EXIF/IPTC** viene scritto in:
+
+- **EXIF**: `Artist`, `Copyright`, `ImageDescription`;
+- **IPTC**: `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`.
+
+Vale sia per il batch sia per le anteprime FTP. L'autore si imposta in
+**AVANZATE**; il testo usa lo stesso campo del watermark e, se vuoto, il
+predefinito `© Franchetti <anno>`.
+
+---
+
+## Invio automatico opzionale
+
+Nel tab **Wi-Fi FTP** c'è un interruttore per inviare automaticamente le
+anteprime ai canali cloud già attivi (Telegram/Dropbox) subito dopo la
+creazione. È spento per default: nessun upload a sorpresa.
+
+---
+
+## Quick win di qualità e UX
+
+- anteprima PRIMA/DOPO con **contain**: le foto verticali non perdono più testa
+  e piedi;
+- overlay FTP sempre con **Pillow**, quindi `©`, accenti e Unicode sono corretti;
+- testi lunghi troncati con ellissi, senza uscire dall'immagine;
+- log di pyftpdlib ridotti e nessun messaggio duplicato nel tab Log;
+- cartelle FTP organizzate per sessione/data;
+- rimossa la variabile inutilizzata dell'anteprima.
+
+---
+
+## Compatibilità
+
+Nessuna nuova dipendenza: IPTC viene scritto direttamente nel blocco APP13,
+senza `iptcinfo3`. Restano richiesti `pyftpdlib` e OpenCV come nella 2.57.
+
+---
+
+## Download v2.58.0
+
+- **Portable**: `FranchettiRawConverterPro.exe` (91,9 MB)
+- **Installer**: `Franchetti_Raw_Converter_Setup_v2.58.0.exe` (93,5 MB)
+
+Gli hash SHA-256 aggiornati sono riportati in `SHA256SUMS.txt` e nella pagina
+della release GitHub.
+
+---
+
+# Archivio v2.57.0
+
+**Franchetti Raw Converter Pro** - Release v2.57.0  
 **Data**: 2 Novembre 2026  
 **Build**: 2.57.0.0
 

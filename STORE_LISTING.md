@@ -1,6 +1,6 @@
 # Scheda Negozio uptodown.dev / FileCR / Itch.io / SourceForge
 
-**Franchetti Raw Converter Pro v2.57.0**  
+**Franchetti Raw Converter Pro v2.58.0**  
 *Convertitore RAW professionale Enterprise per Windows — Pipeline Y/Cb/Cr, Tethering multi-marca, Cloud Dispatch*
 
 ---
@@ -9,7 +9,7 @@
 **Franchetti Raw Converter Pro - RAW → JPEG Pipeline Y/Cb/Cr, Tethering, Cloud**
 
 ## Descrizione Breve (max 300 caratteri)
-Suite Enterprise per sviluppo RAW (25+ formati) con pipeline Y/Cb/Cr (contrasto sigmoidale, vivacità selettiva, nitidezza su canale L), tethering automatico multi-marca (hot-folder), watermark proporzionale, EXIF preservation e dispatch cloud simultaneo (Telegram, Google Drive, Meta). Portable, MIT license.
+Suite RAW Enterprise (25+ formati): pipeline Y/Cb/Cr, profili prestazioni adattivi, tethering multi-marca, watermark, copyright EXIF/IPTC, galleria cliente HTML e cloud Telegram/Dropbox. Portable, MIT, zero telemetria.
 
 ---
 
@@ -17,7 +17,7 @@ Suite Enterprise per sviluppo RAW (25+ formati) con pipeline Y/Cb/Cr (contrasto 
 
 ### 🎯 **Per fotografi professionisti e studi che vogliono controllo totale e automazione**
 
-Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~92 MB), open source (MIT), zero telemetria.
+Franchetti Raw Converter Pro v2.58.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~92 MB), open source (MIT), zero telemetria.
 
 ---
 
@@ -38,7 +38,7 @@ Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🧠 **Nuova Pipeline Y/Cb/Cr (v2.57.0)**
+### 🧠 **Nuova Pipeline Y/Cb/Cr (v2.58.0)**
 
 | Fase | Descrizione | Parametro |
 |------|-------------|-----------|
@@ -56,7 +56,7 @@ Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🧠 **Smart Batch — Analisi e Correzioni per File (v2.57.0)**
+### 🧠 **Smart Batch — Analisi e Correzioni per File (v2.58.0)**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -72,7 +72,7 @@ Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che tr
 
 ---
 
-### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.57.0)**
+### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.58.0)**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -87,15 +87,53 @@ Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che tr
 
 ---
 
-### ☁️ **Cloud Dispatch Multi-Canale Simultaneo**
+### ⚡ **Prestazioni Adattive (v2.58.0)**
 
-| Canale | API | Configurazione UI |
-|--------|-----|-------------------|
-| **Telegram** | Bot API `sendPhoto` | Bot Token + Chat ID |
-| **Google Drive** | Drive API v3 multipart | Folder ID / API Key |
-| **Meta (IG/FB)** | Graph API `media_publish` | Access Token + Account ID |
+| Funzione | Dettaglio |
+|----------|-----------|
+| **Pannello PRESTAZIONI** | Legge core fisici, core logici e RAM libera senza dipendenze extra |
+| **Profili** | Veloce (core logici, denoise leggero), Bilanciato (core fisici), Massima qualità (denoise/nitidezza più curati) |
+| **Processi automatici** | Calcolati da core e RAM; slider per l'override manuale |
+| **Soglia multicore** | Pool solo quando peso e numero file lo giustificano; batch piccoli sequenziali |
+| **Benchmark reale** | 1–2 file dell'utente in cartella temporanea, originali solo letti |
+| **Stima e avanzamento** | Durata prevista, **file/min** ed **ETA** durante il batch |
 
-Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni elaborazione.
+---
+
+### 🖼️ **Galleria Cliente con Selezione (v2.58.0)**
+
+| Funzione | Dettaglio |
+|----------|-----------|
+| **Sessione FTP** | Cartelle datate separate per Originali, Anteprime e Galleria |
+| **index.html autonomo** | Miniatore, checkbox, contatore, nessun server |
+| **Azioni cliente** | Seleziona tutte, Deseleziona, Copia selezione, Scarica elenco .txt |
+| **Consegna** | Cartella condivisa, chiavetta USB, email o archivio |
+| **Aggiornamento** | La galleria si rigenera a ogni anteprima |
+
+---
+
+### © **Copyright nei Metadati EXIF/IPTC (v2.58.0)**
+
+- **EXIF**: `Artist`, `Copyright`, `ImageDescription`
+- **IPTC**: `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`
+- Scrittura IPTC diretta in APP13/Photoshop 3.0, senza `iptcinfo3`
+- Vale per batch e anteprime FTP
+
+---
+
+### ☁️ **Cloud Dispatch Multi-Canale**
+
+| Canale | API | Stato |
+|--------|-----|-------|
+| **Telegram** | Bot API `sendPhoto` | ✅ Operativo |
+| **Dropbox** | `files/upload` | ✅ Operativo |
+| **Google Drive** | Drive API v3 | ⚠️ Predisposto, non attivo |
+| **Meta (IG/FB)** | Graph API | ⚠️ Predisposto, non attivo |
+| **SwissTransfer** | API | ⚠️ Predisposto, non attivo |
+
+I canali attivi vengono eseguiti al completamento di ogni elaborazione; quelli
+non attivi vengono saltati senza errori. L'invio automatico delle anteprime FTP
+è opzionale e spento per default.
 
 ---
 
@@ -108,20 +146,21 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 
 ---
 
-### 🔧 **EXIF Preservation**
+### 🔧 **EXIF Preservation & Copyright**
 
 - Estrazione blocchi EXIF binari originali (piexif)
 - Correzione `Orientation = 1` (rotazione corretta)
 - Preservazione GPS, impostazioni camera, timestamp
 - Iniezione in JPEG finale post-elaborazione
+- Copyright EXIF/IPTC configurabile
 
 ---
 
 ### ⚙️ **Elaborazione Batch Enterprise**
 
 - **Ricorsivo**: Cartella radice + tutte le sotto-cartelle
-- **Multi-thread**: `ProcessPoolExecutor` per throughput massimo
-- **GUI reattiva**: Coda thread-safe, progress bar real-time, cancellabile
+- **Multi-core adattivo**: profili, processi automatici da core e RAM, override manuale
+- **GUI reattiva**: Coda thread-safe, progress bar real-time con file/min ed ETA, cancellabile
 - **Nominazione**: Mantieni originale / Prefisso personalizzato / Anti-collisione (`_1`, `_2`…)
 
 ---
@@ -130,19 +169,19 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 
 | Area | Contenuto |
 |------|-----------|
-| **Sinistra** | Pipeline Y/Cb/Cr: Slider Contrasto, Vivacità, Nitidezza (live update) |
-| | Watermark: Carica logo PNG, preview path |
-| **Destra** | Tethering: Selezione cartella tethering/hot-folder, Avvia/Disattiva monitoraggio |
-| | Cloud: Campi Token/ID per Telegram, Google Drive, Meta |
-| **Basso** | Console Log: Timestamp, color-coding, auto-scroll |
+| **Batch** | Pipeline Y/Cb/Cr, anteprima PRIMA/DOPO, correzioni rapide, pannello **PRESTAZIONI** |
+| **AVANZATE** | Slider completi, curva tonale, split toning, nomi, watermark, preset, autore copyright |
+| **Wi-Fi FTP** | Server FTP, sessione, cartelle Originali/Anteprime/Galleria, copyright EXIF/IPTC, invio automatico |
+| **Tethering & Cloud** | Hot-folder multi-marca, Sony A7S, credenziali Telegram/Dropbox |
+| **Log** | Timestamp, color-coding, auto-scroll |
 
 ---
 
 ### 🔒 **Privacy & Sicurezza (by design)**
 
-| Cosa | Franchetti Raw Converter Pro v2.57.0 |
+| Cosa | Franchetti Raw Converter Pro v2.58.0 |
 |------|--------------------------------------|
-| **Rete** | Solo se attivi Cloud Dispatch (opzionale) |
+| **Rete** | Solo se attivi Cloud Dispatch o Wi-Fi FTP (opzionali) |
 | **Telemetria** | ❌ Nessuna |
 | **Crash reporting** | ❌ Nessuno |
 | **Aggiornamenti auto** | ❌ Manuali |
@@ -150,7 +189,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 | **Dati personali** | ❌ Mai raccolti |
 | **File originali** | ✅ Solo lettura, mai modificati |
 
-### Requisiti di Sistema v2.57.0
+### Requisiti di Sistema v2.58.0
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -180,7 +219,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 - [Specifiche Tecniche](TECHNICAL_SPECS.md) — Architettura, benchmark, formati
 - [Guida Installazione](INSTALLATION_GUIDE.md) — Deployment enterprise (GPO, Intune)
 - [FAQ](FAQ.md) — Risposte alle domande frequenti
-- [Changelog](CHANGELOG.md) — Storico versioni (v2.57.0)
+- [Changelog](CHANGELOG.md) — Storico versioni (v2.58.0)
 - [Privacy Policy](PRIVACY.md) — Zero data collection
 - [Security Policy](SECURITY.md) — Responsible disclosure
 
@@ -218,7 +257,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 - **Sito web / GitHub Pages**: https://franchettibiagio.github.io/raw-converter-pro/
 - **GitHub Repository**: https://github.com/FranchettiBiagio/raw-converter-pro
-- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.57.0
+- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.0
 - **Direct Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe
 - **FileCR**: https://filecr.com/windows/franchetti-raw-converter-pro/
 - **Itch.io**: https://franchetti.itch.io/franchetti-raw-converter-pro
@@ -245,7 +284,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 ## 📋 **Checklist Pubblicazione (tutti gli store)**
 
-- [x] Titolo ottimizzato SEO (v2.57.0 + keywords)
+- [x] Titolo ottimizzato SEO (v2.58.0 + keywords)
 - [x] Descrizione breve < 300 caratteri
 - [x] Descrizione completa Markdown con feature highlights
 - [x] Tag/keywords pertinenti (25+ termini)
@@ -259,8 +298,8 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 - [x] SHA-256 verificato e documentato
 - [x] Nessun falso positivo antivirus (VirusTotal 0/70+)
 - [x] UPX compression attiva (~92 MB)
-- [x] Version metadata embedded (v2.57.0.0)
+- [x] Version metadata embedded (v2.58.0.0)
 
 ---
 
-*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — 2 Novembre 2026 (v2.57.0)*
+*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — 2 Novembre 2026 (v2.58.0)*

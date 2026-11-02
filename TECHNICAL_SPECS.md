@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.57.0**
+**Franchetti Raw Converter Pro v2.58.0**
 
 ---
 
@@ -41,7 +41,7 @@ with rawpy.imread(str(raw_path)) as raw:
 - **Color**: camera WB + camera matrix, output sRGB
 - **Brands**: Sony, Canon, Nikon, Fujifilm, Panasonic, OM System, Leica and other LibRaw-supported cameras
 
-### Image Processing Pipeline (v2.57.0)
+### Image Processing Pipeline (v2.58.0)
 ```
 LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone (exposure/highlight shoulder) -> color -> hybrid denoise -> controlled sharpening -> watermark -> encode
 ```
@@ -54,19 +54,39 @@ LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone (exposure/
 - **Watermark**: Text rendering with alpha compositing
 - **JPEG**: Optimized Huffman tables, progressive scan, quality 90 by default
 
-### Wi-Fi FTP Ingestion Pipeline (v2.57.0)
+### Wi-Fi FTP Ingestion Pipeline (v2.58.0)
 ```
-FTP STOR -> on_file_received -> decode (camera WB/matrix) -> BGR -> Lanczos 2000px -> filename + copyright overlay -> JPEG q85 -> Anteprime_Cliente
+FTP STOR -> on_file_received -> decode (camera WB/matrix) -> BGR -> Lanczos 2000px -> filename + copyright overlay (Pillow) -> JPEG q85 -> EXIF/IPTC -> Anteprime_Cliente/<session> -> gallery refresh -> optional cloud dispatch
 ```
 - **Server**: `pyftpdlib.servers.FTPServer` on `0.0.0.0:2121`, local LAN IP resolved with a UDP socket; runs in a daemon thread.
-- **Credentials**: user `camera`, password `1234`, full write permission on the `Originali` folder.
+- **Credentials**: user `camera`, password `1234`, full write permission on the `Originali` session folder.
 - **Completion hook**: `FTPHandler.on_file_received` is used instead of polling the filesystem, so the pipeline starts only when the transfer is complete.
+- **Session layout**: every server start creates `AAAA-MM-GG_HHMMSS`; `Originali`, `Anteprime_Cliente` and `Galleria_Cliente` each get a matching subfolder, so separate shoots never mix.
 - **Decode**: `use_camera_wb=True`, `use_camera_matrix=True`; Fujifilm → AAHD (12), other brands → AHD (3).
-- **Resize**: `cv2.INTER_LANCZOS4`, longest side capped at 2000 px.
-- **Overlay**: `cv2.putText` with `FONT_HERSHEY_DUPLEX`; white text over a thicker black border (thickness + 3) for legibility. Filename bottom-left, copyright bottom-right.
-- **Output**: JPEG quality 85 in `Anteprime_Cliente`; originals are never modified.
+- **Resize**: `ImageOps.contain` with Lanczos, longest side capped at 2000 px.
+- **Overlay**: Pillow text rendering (Unicode-safe, `©` and accents correct without `cv2`); filename bottom-left, copyright bottom-right, long strings truncated with an ellipsis. White text over a black stroke/border.
+- **Output**: JPEG quality 85 in `Anteprime_Cliente/<session>`; originals are never modified.
+- **Metadata**: optional EXIF (`Artist`, `Copyright`, `ImageDescription`) and IPTC (`By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`) written directly into APP13/Photoshop 3.0.
+- **Gallery**: a self-contained `index.html` is regenerated in `Galleria_Cliente/<session>` after each preview (thumbnails, checkboxes, copy/download selection).
+- **Cloud**: optional automatic dispatch of previews to active Telegram/Dropbox channels; disabled by default.
 - **Shutdown**: `server.close_all()` and thread join; port 2121 is released.
-- **Fallback**: if `cv2` is missing, Pillow handles resize/overlay/encode; the app still starts.
+- **Fallback**: Pillow handles resize/overlay/encode; the app still starts without `cv2`.
+
+### Adaptive Parallel Processing (v2.58.0)
+```python
+processi = numero_processi_ottimale(
+    numero_file, per_processo_mb=1200, profilo="Bilanciato", override=0
+)
+if conviene_elaborazione_parallela(files, parameters):
+    with ProcessPoolExecutor(max_workers=processi) as pool: ...
+```
+- **Profiles**: `Veloce` (logical cores, lighter denoise/sharpening), `Bilanciato` (physical cores, defaults), `Massima qualità` (physical cores, stronger denoise/sharpening).
+- **Physical vs logical cores**: detected through the Windows API with `ctypes` (`GetLogicalProcessorInformation`), no `psutil` dependency.
+- **Memory guard**: `per_processo_mb` (default 1200 MB) caps the worker count against available RAM.
+- **Adaptive threshold**: a pool is used only when the estimated batch weight justifies it (`>= 25 MP` equivalent, or `>= 8 files` and `>= 12 MP` equivalent). Small batches stay sequential.
+- **Manual override**: when `processi_auto=False` and `processi_manuali > 1`, the user's choice wins over the small-batch heuristic.
+- **Benchmark**: `benchmark_conversione` processes 1–2 real files in a temporary folder, reading originals only; results feed `stima_tempo_batch`, progress file/min and ETA.
+- **Isolation**: each output is written to a temporary file and published atomically; a corrupt file does not stop the batch.
 
 ### Watermark Algorithm
 ```
@@ -117,7 +137,7 @@ Font: Arial/DejaVuSans fallback → default bitmap
 | Watermark | O(text_pixels) | Negligible |
 | JPEG encode | O(W×H) | libjpeg-turbo (SIMD) |
 
-### Benchmarks (v2.57.0, measured)
+### Benchmarks (v2.58.0, measured)
 | Source | Target | Result |
 |--------|--------|--------|
 | 4× RAW 24 MP | 3000px, denoise auto | **12,8 s** batch, 4/4 OK |
@@ -127,6 +147,12 @@ Font: Arial/DejaVuSans fallback → default bitmap
 
 | 1x Fujifilm RAF 26 MP | Original, JPEG, denoise auto | **38.45 s**, 6264x4176, 5.8 MB |
 | Batch Sony + Fujifilm | Original, JPEG, denoise auto | **50.4 s**, 2/2 OK, 2 processi/20 core |
+| 3× synthetic noisy JPEG 4.7 MP | 1500px, denoise off, 3 workers (override) | **1.18 s**, 3/3 OK |
+| 3× JPEG 1.3 MP (GUI benchmark) | 3000px, defaults | **1.4 s/file**, batch **0:04**, **42.9 file/min** |
+
+> Adaptive threshold measured on 5 small JPEGs (~0.3 MP each): the app keeps
+> the batch sequential instead of spawning 5 workers; a 3-file noisy batch with
+> manual override uses 3 workers and completes in 1.18 s.
 
 ### Memory Profile
 | Phase | Peak RSS | Notes |
@@ -183,7 +209,7 @@ Worker Thread (daemon)
 
 - **Nessuno stato condiviso** tra processi: ogni file riceve una copia dei parametri
 - **Comunicazione thread-safe** tramite coda; i processi figli non toccano Tk
-- **Numero di processi**: tutti i core logici, ridotto in base alla RAM libera e ai file
+- **Numero di processi**: adattivo (profili Veloce/Bilanciato/Massima qualità), core fisici o logici, ridotto in base alla RAM libera; pool solo se il peso del batch lo giustifica
 - **Annullamento**: `cancel_event` + `terminate()` dei processi figli
 - **Output atomico**: un file parziale non viene mai pubblicato
 
@@ -233,8 +259,8 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.57.0.0 |
-| **ProductVersion** | 2.57.0.0 |
+| **FileVersion** | 2.58.0.0 |
+| **ProductVersion** | 2.58.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
@@ -258,15 +284,17 @@ cmd = [
 
 ---
 
-## Limiti noti (v2.57.0)
+## Limiti noti (v2.58.0)
 
 | Voce | Stato |
 |------|-------|
 | Preservazione EXIF | ✅ Implementata (JPEG/ARW, orientamento normalizzato) |
+| Copyright EXIF/IPTC | ✅ `Artist`, `Copyright`, `ImageDescription` + IPTC APP13 |
 | Profilo colore | ✅ Solo sRGB con ICC incorporato (Adobe RGB/ProPhoto non supportati) |
 | Posizioni watermark | ✅ Cinque posizioni + logo PNG |
 | Preset | ✅ Web/Social, Stampa Fine Art, Archivio JPEG, Ritratto, Paesaggio, Bianco e Nero |
-| Parallelismo | ✅ Tutti i core logici, limite RAM |
+| Parallelismo | ✅ Adattivo: profili Veloce/Bilanciato/Massima qualità, core fisici/logici e limite RAM; pool solo se il batch lo giustifica |
+| Galleria cliente | ✅ HTML autonomo per sessione, senza server |
 | Cloud | ✅ Telegram e Dropbox; Google Drive/Meta/SwissTransfer non attivi |
 | CR3 compresso | ⚠️ Alcuni file possono fallire (limite LibRaw upstream) |
 | Firma del codice | ❌ Non firmato (verifica SHA-256 su GitHub Releases) |
@@ -287,4 +315,4 @@ cmd = [
 
 ---
 
-*Technical specs v2.57.0 — 2 Novembre 2026*
+*Technical specs v2.58.0 — 2 Novembre 2026*

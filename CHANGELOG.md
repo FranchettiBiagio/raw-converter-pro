@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.58.0] - 2026-11-02
+
+### Added
+- **Pannello PRESTAZIONI adattive** nel tab Batch.
+  - rilevamento core fisici/logici senza `psutil` (API Windows via ctypes);
+  - profili **Veloce**, **Bilanciato**, **Massima qualità** con denoise e nitidezza coerenti;
+  - numero processi automatico (RAM libera + core) oppure slider manuale;
+  - **BENCHMARK SUI MIEI FILE** su 1-2 file reali in cartella temporanea;
+  - stima del batch, **file/min** ed **ETA** durante la conversione.
+- **Soglia multicore adattiva**: niente pool per batch piccoli o file leggeri;
+  il pool parte solo quando il lavoro stimato lo giustifica, salvo override manuale.
+- **Galleria cliente HTML** in `Galleria_Cliente/<sessione>/index.html` con
+  miniature, checkbox, **Copia selezione**, **Scarica elenco .txt**, `loading="lazy"`.
+- **Cartelle FTP per sessione** per `Originali`, `Anteprime_Cliente` e `Galleria_Cliente`.
+- **Copyright nei metadati**: EXIF `Artist`, `Copyright`, `ImageDescription` e
+  IPTC `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`.
+  Scrittura IPTC diretta in APP13/Photoshop 3.0, senza dipendenze aggiuntive.
+- **Invio automatico opzionale** delle anteprime FTP ai cloud attivi
+  (Telegram/Dropbox), spento per default.
+
+### Changed
+- Anteprima PRIMA/DOPO con `ImageOps.contain` e fondo neutro: nessun taglio
+  sui ritratti verticali.
+- Overlay FTP sempre con Pillow: Unicode e `©` corretti anche senza OpenCV.
+- Troncamento automatico con ellissi per watermark e testi FTP lunghi.
+- Log pyftpdlib ridotti a WARNING e rimossi i doppi messaggi nel tab Log.
+- Rimossa la variabile inutilizzata `_anteprima_ctk`.
+- Versione applicazione e installer aggiornate a **2.58.0**.
+- Documentazione completa aggiornata: README, guida Markdown/HTML, specifiche,
+  FAQ, manuale, guida installazione, privacy, sicurezza e scheda store.
+- **EXE e installer 2.58.0 ricostruiti**; hash SHA-256 in `SHA256SUMS.txt`.
+
+---
+
 ## [2.57.0] - 2026-11-02
 
 ### Added
