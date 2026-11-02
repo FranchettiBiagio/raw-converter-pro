@@ -64,7 +64,8 @@ Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che tr
 | **Piano per file** | Suggerimenti conservativi e diversi per ogni foto: esposizione, luci, ombre, bianchi, neri, contrasto, colore, denoise |
 | **Applicazione opzionale** | Checkbox **Usa correzioni per file**: se disattivata, il batch usa solo le impostazioni globali |
 | **Correzioni rapide** | CONTRASTO NATURALE, SALVA LUCI, COLORE PIÙ RICCO, SOVRAESPOSTA, SOTTOESPOSTA, ANNULLA CORREZIONI |
-| **Protezione luci** | Curva di spalla Möbius che comprime le alte luci mantenendo il punto bianco |
+| **Protezione luci** | Curva di spalla C1 (Hermite) che comprime le alte luci mantenendo il punto bianco, senza scalini di pendenza |
+| **Vivacità corretta** | La crominanza viene scalata attorno alla luminanza: i toni spenti si arricchiscono davvero, quelli già saturi restano stabili |
 | **Cumulatività** | Le correzioni rapide aggiornano gli slider esistenti e sono reversibili in blocco |
 
 **Limite dichiarato**: le alte luci completamente saturate nel RAW/JPEG non contengono più dettaglio e non possono essere recuperate.

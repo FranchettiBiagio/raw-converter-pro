@@ -18,7 +18,8 @@
 - **ANALIZZA FILE**: legge tutti i RAW/JPEG, misura esposizione, clipping, contrasto, colore, incarnati, rumore e ISO, poi propone un piano **diverso per ogni foto**.
 - **Correzioni per file**: il batch unisce le impostazioni globali con i suggerimenti del singolo file; la casella **Usa correzioni per file** rende il piano opzionale.
 - **Correzioni rapide**: **CONTRASTO NATURALE**, **SALVA LUCI**, **COLORE PIÙ RICCO**, **SOVRAESPOSTA**, **SOTTOESPOSTA** e **ANNULLA CORREZIONI**. Aggiornano gli slider esistenti e sono reversibili in blocco.
-- **Protezione luci**: curva di spalla che comprime le alte luci senza perdere il punto bianco. Non è un semplice abbassamento dell'esposizione.
+- **Protezione luci**: curva di spalla **C1** (Hermite) che comprime le alte luci senza perdere il punto bianco e senza scalini di pendenza. Non è un semplice abbassamento dell'esposizione.
+- **Vivacità corretta**: la crominanza viene scalata attorno alla luminanza, quindi i toni spenti si arricchiscono davvero e i colori già saturi restano stabili.
 - **Limite dichiarato**: se il RAW/JPEG è completamente bruciato, il dettaglio non esiste e non può essere recuperato.
 
 ---

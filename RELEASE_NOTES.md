@@ -104,6 +104,26 @@ quanti sono già corretti e quanti sono critici.
 
 ---
 
+## Correzioni di qualità
+
+Questa release non si limita ad aggiungere pulsanti: durante la validazione sono
+emersi due difetti reali della pipeline, corretti prima del rilascio.
+
+- **Vivacità selettiva corretta.** La formula precedente spostava i canali verso
+  il massimo, quindi **riduceva** la saturazione: su un incarnato la crominanza
+  scendeva da 0,300 a 0,237 e su un colore saturo da 0,700 a 0,357. Ora la
+  crominanza viene scalata attorno alla luminanza, con più incisività sui toni
+  spenti e quasi nessun effetto sui colori già saturi. Su una foto reale la
+  crominanza media passa da 0,095 a 0,126 (**+33%**) senza schiarire la pelle.
+- **Protezione luci C1.** La curva di spalla ora usa un innesto cubico di
+  Hermite: valore e pendenza sono continui nel punto di soglia. Su un gradiente
+  liscio l'artefatto di continuità scende di oltre **100 volte**, il bianco
+  resta **1,0** e i toni sotto 0,68 restano **identici**.
+- **Nessuna regressione nascosta.** Con `vivacità = 0` e `proteggi_luci`
+  disattivato, l'output è **pixel per pixel identico alla 2.56.0**.
+
+---
+
 ## Test
 
 - Analisi di **4 RAW Sony reali**: circa **1,3 s** in parallelo.
@@ -125,8 +145,11 @@ quanti sono già corretti e quanti sono critici.
 - Le configurazioni e il flusso di lavoro delle versioni precedenti restano
   validi.
 - Il profilo predefinito resta **3000 px, JPEG 90, denoise automatico**.
-- Senza analisi il programma si comporta come la 2.56.0: il piano per-file è
+- Senza analisi il flusso di lavoro è quello della 2.56.0: il piano per-file è
   opzionale.
+- Con **vivacità 0** e **protezione luci disattivata** l'output è pixel per
+  pixel identico alla 2.56.0. La resa predefinita cambia solo per la correzione
+  della vivacità, che ora aumenta davvero il colore invece di ridurlo.
 
 ---
 

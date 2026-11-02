@@ -255,6 +255,8 @@ Le correzioni sono **cumulative**: puoi premere più pulsanti di seguito. **ANNU
 
 **Protezione luci:** quando **SALVA LUCI** è attivo, il pulsante diventa verde e la voce **Proteggi luci attivo** è selezionata. La curva comprime la spalla delle alte luci e mantiene il bianco pieno; non è un semplice abbassamento dell'esposizione.
 
+> **Correzione 2.57.0:** la **Vivacità selettiva** ora aumenta davvero la crominanza dei toni spenti scalando i canali attorno alla luminanza. Nelle versioni precedenti la formula avvicinava i canali al massimo e finiva per desaturare. Con vivacità a 0 la resa resta identica alla 2.56.0.
+
 ### 4.1 PIÙ LUMINOSA (BETA)
 
 Lo stesso interruttore della scheda Batch. È un'elaborazione automatica dell'esposizione e della vividezza. Attivalo qui o nella scheda Batch: è condiviso.

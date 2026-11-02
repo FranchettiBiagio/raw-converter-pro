@@ -1096,19 +1096,20 @@ class ImageEngine:
         return np.clip(img * fattore[:, :, None], 0.0, 1.0)
 
     @classmethod
-    def _proteggi_luci(cls, img, soglia=0.68, morbidezza=1.40):
+    def _proteggi_luci(cls, img, soglia=0.68, pendenza_finale=1.40):
         """Comprime la spalla delle alte luci senza perdere il punto bianco.
 
-        Sotto la soglia l'immagine resta identica; sopra, la curva di
-        shoulder riduce la distanza tra i toni chiari e il bianco. Non e' un
-        semplice abbassamento delle luci: il bianco pieno resta bianco e la
-        separazione locale viene conservata molto piu' a lungo.
+        Sotto la soglia l'immagine resta identica. Sopra, una curva di
+        Hermite cubica mantiene continuita' di valore e di pendenza nel punto
+        di innesto (niente scalino visibile), comprime i toni alti e conserva
+        il bianco pieno. La pendenza finale maggiore di 1 mantiene la
+        separazione tra i toni quasi bianchi invece di schiacciarli.
         """
         lum = np.clip(cls._luma(img), 0.0, 1.0)
-        t = np.clip((lum - soglia) / max(1.0 - soglia, 1e-6), 0.0, 1.0)
-        denominatore = morbidezza + (1.0 - morbidezza) * t
-        spalla = soglia + (1.0 - soglia) * (t / np.maximum(denominatore, 1e-6))
-        nuova = np.where(lum > soglia, spalla, lum)
+        ampiezza = 1.0 - soglia
+        u = np.clip((lum - soglia) / ampiezza, 0.0, 1.0)
+        relativo = u + (1.0 - pendenza_finale) * (u * u - u * u * u)
+        nuova = np.where(lum > soglia, soglia + ampiezza * relativo, lum)
         return cls._applica_luminanza(img, np.clip(nuova, 0.0, 1.0))
 
     @staticmethod
@@ -1184,15 +1185,22 @@ class ImageEngine:
     # ------------------------------------------------------ fase 2: colore
     @staticmethod
     def _fase_colore(img, p):
-        # Vivacità selettiva
+        # Vivacità selettiva: aumenta la crominanza soprattutto sui toni
+        # spenti, lasciando quasi intatti i colori già saturi. La luminanza
+        # resta invariata, quindi la pelle non si schiarisce né si scurisce.
         viv = float(p.get("vivacita", 0.0))
         if viv > 1e-4:
-            maxv = img.max(axis=2)
-            lcs = maxv - img.min(axis=2)
-            out = img.copy()
-            for i in range(3):
-                out[:, :, i] = img[:, :, i] + (maxv - img[:, :, i]) * lcs * viv * 2.0
-            img = np.clip(out, 0.0, 1.0)
+            lum = ImageEngine._luma(img)[:, :, None]
+            crominanza = img.max(axis=2) - img.min(axis=2)
+            obiettivo = crominanza + viv * 0.5 * crominanza * (1.0 - crominanza)
+            fattore = np.where(
+                crominanza > 1e-6,
+                obiettivo / np.maximum(crominanza, 1e-6),
+                1.0,
+            )
+            img = np.clip(
+                lum + (img - lum) * fattore[:, :, None], 0.0, 1.0
+            )
 
         # Saturazione globale
         sat = float(p.get("saturazione", 1.0))
@@ -3137,14 +3145,14 @@ class FranchettiApp(ctk.CTk):
 
         elif nome == "colore":
             self._imposta_parametro_slider(
-                "vivacita", min(0.90, float(self.parametri.get("vivacita", 0.35)) + 0.18)
+                "vivacita", min(0.90, float(self.parametri.get("vivacita", 0.35)) + 0.14)
             )
             self._imposta_parametro_slider(
-                "saturazione", min(1.30, float(self.parametri.get("saturazione", 1.0)) + 0.08)
+                "saturazione", min(1.30, float(self.parametri.get("saturazione", 1.0)) + 0.06)
             )
             for chiave in ("hsl_rosso", "hsl_verde", "hsl_blu"):
                 self._imposta_parametro_slider(
-                    chiave, min(25.0, float(self.parametri.get(chiave, 0.0)) + 3.0)
+                    chiave, min(25.0, float(self.parametri.get(chiave, 0.0)) + 2.0)
                 )
             messaggio = "Colore più ricco applicato."
 

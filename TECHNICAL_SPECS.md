@@ -46,8 +46,8 @@ with rawpy.imread(str(raw_path)) as raw:
 LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone (exposure/highlight shoulder) -> color -> hybrid denoise -> controlled sharpening -> watermark -> encode
 ```
 - **Resampling**: Lanczos-3 before the pipeline, so the denoise works at the final size
-- **Tone/color**: luminance-preserving exposure, sigmoid contrast, selective vibrance, HSL
-- **Highlight protection** (`proteggi_luci`): Möbius shoulder that compresses values above 0.68 while keeping white at 1.0 and leaving lower tones untouched
+- **Tone/color**: luminance-preserving exposure, sigmoid contrast, selective vibrance (chroma scaled around luminance, stronger on muted tones), HSL
+- **Highlight protection** (`proteggi_luci`): C1 cubic Hermite shoulder that compresses values above 0.68, keeps slope continuity at the knee, preserves white at 1.0 and leaves lower tones untouched
 - **Smart Batch**: optional per-file analysis (half-size decode, histogram/clipping/noise metrics) merged with global parameters at batch time
 - **Denoise**: guided filter + detail coring; non-local means only in flat areas (skipped for images < 8 px on a side)
 - **Sharpening**: luminance-only unsharp mask with a noise-derived threshold

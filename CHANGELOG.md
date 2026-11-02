@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.57.0] - 2026-11-01
+## [2.57.0] - 2026-11-02
 
 ### Added
 - **Smart Batch — ANALIZZA FILE**: analisi preventiva di tutti i RAW/JPEG della sorgente.
@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `esegui_batch` accetta un dizionario di analisi per percorso e unisce impostazioni globali e correzioni del singolo file.
 - La pipeline di tono applica `proteggi_luci` dopo luci/ombre/contrasto, prima della fase colore.
 - Analisi e conversione restano separate: **ANALIZZA FILE non modifica mai gli originali**.
+
+### Fixed
+- **Vivacità selettiva**: la formula precedente avvicinava i canali al massimo e quindi **riduceva** la saturazione (un incarnato passava da 0,300 a 0,237 di crominanza). Ora la crominanza viene scalata attorno alla luminanza: i toni spenti si arricchiscono, quelli già saturi restano quasi invariati e la luminanza non cambia.
+- **Protezione luci**: sostituita la curva con un innesto cubico di Hermite **C1**. Il punto di soglia (0,68) non produce più uno scalino di pendenza (artefatto di continuità ridotto di oltre 100 volte su un gradiente liscio), il bianco resta 1,0 e i toni sotto soglia restano identici.
+- Con `vivacita = 0` e `proteggi_luci` disattivato l'output resta **pixel per pixel identico alla 2.56.0**; la resa predefinita cambia solo per la correzione della vivacità.
 
 ### Performance
 - Analisi di 4 RAW Sony reali: circa **1,3 s** in parallelo.
