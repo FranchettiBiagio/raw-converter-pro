@@ -52,6 +52,8 @@ def main():
         import rawpy
         import PIL
         import numpy
+        import cv2
+        import pyftpdlib
         print("Dipendenze OK")
     except ImportError:
         print("Installazione dipendenze...")
@@ -99,6 +101,13 @@ def main():
         "--collect-all=watchdog",
         "--collect-all=piexif",
         "--collect-all=requests",
+        "--collect-all=pyftpdlib",
+        "--hidden-import=cv2",
+        "--hidden-import=pyftpdlib",
+        "--hidden-import=pyftpdlib.authorizers",
+        "--hidden-import=pyftpdlib.handlers",
+        "--hidden-import=pyftpdlib.servers",
+        "--hidden-import=pyftpdlib.filesystems",
         "--hidden-import=rawpy",
         "--hidden-import=rawpy._rawpy",
         "--hidden-import=numpy",

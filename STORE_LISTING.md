@@ -17,7 +17,7 @@ Suite Enterprise per sviluppo RAW (25+ formati) con pipeline Y/Cb/Cr (contrasto 
 
 ### 🎯 **Per fotografi professionisti e studi che vogliono controllo totale e automazione**
 
-Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~78 MB), open source (MIT), zero telemetria.
+Franchetti Raw Converter Pro v2.57.0 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~92 MB), open source (MIT), zero telemetria.
 
 ---
 
@@ -166,7 +166,7 @@ Tutti e tre i canali vengono attivati **in parallelo** al completamento di ogni 
 
 **Nessuna installazione richiesta — Portable al 100%:**
 
-1. Scarica `FranchettiRawConverterPro.exe` (~78 MB)
+1. Scarica `FranchettiRawConverterPro.exe` (~92 MB)
 2. Doppio clic per avviare
 3. (Opzionale) Crea collegamento su Desktop/Menu Start
 
@@ -258,7 +258,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 - [x] File `.exe` testato su Windows 10/11 pulito
 - [x] SHA-256 verificato e documentato
 - [x] Nessun falso positivo antivirus (VirusTotal 0/70+)
-- [x] UPX compression attiva (~78 MB)
+- [x] UPX compression attiva (~92 MB)
 - [x] Version metadata embedded (v2.57.0.0)
 
 ---

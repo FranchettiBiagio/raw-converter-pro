@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.57.0] - 2026-11-02
 
 ### Added
+- **Nuova interfaccia Batch**: la scheda **Sviluppo RAW** è stata rimossa.
+  - anteprima **PRIMA / DOPO** integrata con decodifica singola e aggiornamento debounced;
+  - correzioni rapide nella finestra di conversione;
+  - pulsante **AVANZATE** con slider completi, curva tonale, split toning, nomi file, watermark e preset in una finestra separata;
+  - anteprima grande ridimensionabile.
+- **Wi-Fi FTP** (nuova scheda): server FTP integrato in un thread separato, IP locale automatico, porta **2121**, utente **camera**, password **1234**, scrittura completa nella cartella **Originali**.
+  - sviluppo RAW con WB e matrice camera;
+  - Fujifilm → **AAHD 12**, altri marchi → **AHD 3**;
+  - ridimensionamento a **2000 px** lato lungo con Lanczos;
+  - overlay nome file (sinistra) e copyright (destra) con testo bianco su bordo nero;
+  - JPEG qualità **85** in **Anteprime_Cliente**;
+  - interruttore ON/OFF con arresto sicuro (`server.close_all()`) e rilascio della porta.
+- Dipendenze **pyftpdlib** e **opencv-python-headless**.
 - **Smart Batch — ANALIZZA FILE**: analisi preventiva di tutti i RAW/JPEG della sorgente.
   - decodifica RAW a mezza risoluzione, con la stessa resa auto-bright del batch;
   - lettura del clipping direttamente dal sensore RAW, oltre all'istogramma dell'immagine;
@@ -17,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - piano di correzione conservativo e diverso per ogni file;
   - finestra con stato **OK / CORREGGI / CRITICO**, motivo e valori suggeriti;
   - casella **Usa correzioni per file** per applicare o ignorare il piano.
-- **Correzioni rapide** nella scheda Sviluppo RAW:
+- **Correzioni rapide** nella finestra di conversione Batch:
   - **CONTRASTO NATURALE**;
   - **SALVA LUCI**;
   - **COLORE PIÙ RICCO**;

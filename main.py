@@ -19,7 +19,9 @@ import json
 import math
 import time
 import queue
+import socket
 import logging
+import tempfile
 import threading
 import traceback
 import multiprocessing
@@ -49,6 +51,20 @@ except ImportError as e:  # pragma: no cover
     print(f"[ERRORE DI DIPENDENZA] Manca una libreria fondamentale: {e}")
     print("Esegui: pip install numpy rawpy piexif customtkinter Pillow scikit-image requests watchdog")
     sys.exit(1)
+
+# Dipendenze opzionali per la ricezione FTP dalle fotocamere e per il testo
+# sovrapposto. Se mancano, il programma resta avviabile e avvisa l'utente.
+try:
+    import cv2
+except Exception:  # pragma: no cover
+    cv2 = None
+
+try:
+    from pyftpdlib.authorizers import DummyAuthorizer
+    from pyftpdlib.handlers import FTPHandler
+    from pyftpdlib.servers import FTPServer
+except Exception:  # pragma: no cover
+    DummyAuthorizer = FTPHandler = FTPServer = None
 
 
 APP_VERSION = "2.57.0"
@@ -179,6 +195,7 @@ def parametri_default():
         "logo_path": "",
         "logo_opacita": 0.55,
         # --- Tethering / Cloud ---
+        "ftp_copyright": True,
         "wifi_dir": "",
         "output_dir": "",
         "tg_token": "",
@@ -1943,6 +1960,63 @@ class ImageEngine:
 
 
 # ================================================================================
+# 2b. ANTEPRIMA PRIMA / DOPO
+# ================================================================================
+def carica_anteprima(percorso, lato=900, use_camera_wb=True):
+    """Decodifica una versione ridotta del file per l'anteprima interattiva.
+
+    I RAW vengono letti a metà risoluzione (molto più veloce) e poi ridotti:
+    il risultato serve solo a mostrare l'effetto delle correzioni, non a
+    produrre il file finale. Gli originali non vengono mai modificati.
+    """
+    estensione = os.path.splitext(percorso)[1].lower()
+    if estensione in RAW_ESTENSIONI:
+        with rawpy.imread(percorso) as raw:
+            rgb = raw.postprocess(
+                half_size=True,
+                use_camera_wb=bool(use_camera_wb),
+                no_auto_bright=False,
+                output_color=rawpy.ColorSpace.sRGB,
+                output_bps=8,
+            )
+        immagine = Image.fromarray(rgb, "RGB")
+    else:
+        with Image.open(percorso) as im:
+            immagine = ImageOps.exif_transpose(im).convert("RGB")
+    immagine.thumbnail((int(lato), int(lato)), Image.Resampling.LANCZOS)
+    return immagine.copy()
+
+
+def sviluppa_anteprima(base, parametri):
+    """Applica la stessa pipeline fotografica del batch a un'immagine ridotta.
+
+    La grana viene disattivata (cambierebbe a ogni anteprima) e il denoise
+    lavora alla risoluzione ridotta: l'aspetto di toni e colori resta fedele
+    senza rallentare l'interfaccia.
+    """
+    p = normalizza_parametri(parametri)
+    p["max_dim"] = 0
+    p["_iso"] = 0.0
+    p["grana"] = 0.0
+
+    rgb = np.asarray(base.convert("RGB"), dtype=np.float32) / 255.0
+    img = ImageEngine._fase_tono(rgb, p)
+    img = ImageEngine._fase_colore(img, p)
+    img = ImageEngine._fase_dettaglio(img, p)
+    if p.get("auto_luminosita"):
+        pil_auto = Image.fromarray(
+            (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8), "RGB"
+        )
+        pil_auto = ImageEngine.correggi_luminosita_auto(pil_auto)
+        img = np.asarray(pil_auto, dtype=np.float32) / 255.0
+    img = ImageEngine._fase_lab(img, p)
+    img = ImageEngine._fase_effetti(img, p)
+    return Image.fromarray(
+        (np.clip(img, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8), "RGB"
+    )
+
+
+# ================================================================================
 # 3. CLOUD DISPATCHER MULTI-CANALE
 # ================================================================================
 class CloudDispatcher:
@@ -2034,6 +2108,396 @@ class CloudDispatcher:
         if callback and esiti:
             callback("Cloud: " + ", ".join(f"{n}={'OK' if o else 'saltato'}" for n, o in esiti))
         return esiti
+
+
+# ================================================================================
+# 3b. RICEZIONE FTP DIRETTA DALLA FOTOCAMERA
+# ================================================================================
+def cartella_tethering_predefinita():
+    """Cartella stabile e facile da trovare per originali e anteprime."""
+    immagini = os.path.join(os.path.expanduser("~"), "Pictures")
+    if not os.path.isdir(immagini):
+        immagini = os.path.join(os.path.expanduser("~"), "Immagini")
+    if not os.path.isdir(immagini):
+        immagini = os.path.expanduser("~")
+    return os.path.join(immagini, "FranchettiRawConverterPro", "Tethering")
+
+
+def ip_locale_per_ftp():
+    """IP LAN del PC, ricavato dal socket (non 127.0.0.1)."""
+    try:
+        sonda = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sonda.connect(("8.8.8.8", 80))
+        except OSError:
+            sonda.connect(("1.1.1.1", 80))
+        indirizzo = sonda.getsockname()[0]
+        sonda.close()
+        if indirizzo and not indirizzo.startswith("127."):
+            return indirizzo
+    except Exception:
+        pass
+    try:
+        indirizzo = socket.gethostbyname(socket.gethostname())
+        return indirizzo or "127.0.0.1"
+    except Exception:
+        return "127.0.0.1"
+
+
+class RicevitoreFTP:
+    """Server FTP minimale che riceve gli scatti e crea le anteprime cliente.
+
+    La fotocamera (o un client FTP) invia i file nella cartella Originali.
+    Appena un file e' completo viene accodato a un worker che sviluppa il RAW,
+    riduce il lato lungo a 2000 px, sovrappone nome file e copyright e salva
+    un JPEG leggero in Anteprime_Cliente. Gli originali non vengono toccati.
+    """
+
+    UTENTE = "camera"
+    PASSWORD = "1234"
+    PORTA = 2121
+    LATO_MASSIMO = 2000
+    QUALITA_JPEG = 85
+
+    def __init__(
+        self,
+        cartella_originali=None,
+        cartella_anteprime=None,
+        log=None,
+        notifica=None,
+        parametri_getter=None,
+    ):
+        base = cartella_tethering_predefinita()
+        self.cartella_originali = cartella_originali or os.path.join(base, "Originali")
+        self.cartella_anteprime = cartella_anteprime or os.path.join(
+            base, "Anteprime_Cliente"
+        )
+        self._log = log
+        self._notifica_esterna = notifica
+        self._parametri_getter = parametri_getter
+        self._server = None
+        self._thread_server = None
+        self._thread_worker = None
+        self._stop_event = threading.Event()
+        self._coda = queue.Queue()
+        self._ip = ""
+        self._attivo = False
+        self._lock = threading.Lock()
+
+    # ---------------------------------------------------------------- stato
+    def info(self):
+        return {
+            "ip": self._ip or ip_locale_per_ftp(),
+            "porta": self.PORTA,
+            "utente": self.UTENTE,
+            "password": self.PASSWORD,
+            "originali": self.cartella_originali,
+            "anteprime": self.cartella_anteprime,
+            "attivo": self._attivo,
+        }
+
+    def _notifica(self, messaggio):
+        logging.info(messaggio)
+        if self._log:
+            try:
+                self._log(messaggio)
+            except Exception:
+                pass
+        if self._notifica_esterna:
+            try:
+                self._notifica_esterna(messaggio)
+            except Exception:
+                pass
+
+    # ---------------------------------------------------------------- avvio
+    def start(self):
+        with self._lock:
+            if self._attivo:
+                return self.info()
+            if FTPServer is None or DummyAuthorizer is None or FTPHandler is None:
+                raise RuntimeError(
+                    "La libreria pyftpdlib non e' installata. Esegui: "
+                    "pip install pyftpdlib"
+                )
+            os.makedirs(self.cartella_originali, exist_ok=True)
+            os.makedirs(self.cartella_anteprime, exist_ok=True)
+
+            autorizzatore = DummyAuthorizer()
+            autorizzatore.add_user(
+                self.UTENTE,
+                self.PASSWORD,
+                self.cartella_originali,
+                perm="elradfmwMT",
+            )
+            ricevitore = self
+
+            class GestoreFTP(FTPHandler):
+                def on_file_received(self, file):
+                    ricevitore._file_ricevuto(file)
+
+                def on_incomplete_file_received(self, file):
+                    ricevitore._notifica(
+                        "Trasferimento incompleto: " + os.path.basename(str(file))
+                    )
+
+            GestoreFTP.authorizer = autorizzatore
+            GestoreFTP.banner = "Franchetti Raw Converter Pro - FTP pronto"
+            # Porte passive esplicite: piu' facile da aprire nel firewall.
+            GestoreFTP.passive_ports = range(50000, 50100)
+
+            self._server = FTPServer(("0.0.0.0", self.PORTA), GestoreFTP)
+            self._server.max_cons = 30
+            self._server.max_cons_per_ip = 8
+            self._ip = ip_locale_per_ftp()
+            self._stop_event.clear()
+            self._attivo = True
+
+            self._thread_worker = threading.Thread(
+                target=self._ciclo_elaborazione, daemon=True
+            )
+            self._thread_worker.start()
+            self._thread_server = threading.Thread(
+                target=self._ciclo_server, daemon=True
+            )
+            self._thread_server.start()
+
+        self._notifica(
+            f"Server FTP attivo su {self._ip}:{self.PORTA} - "
+            f"cartella originale: {self.cartella_originali}"
+        )
+        return self.info()
+
+    def _ciclo_server(self):
+        server = self._server
+        try:
+            if server is not None:
+                server.serve_forever(timeout=0.5, blocking=True, handle_exit=False)
+        except Exception as errore:
+            if not self._stop_event.is_set():
+                self._notifica(f"Server FTP interrotto: {errore}")
+
+    def stop(self):
+        with self._lock:
+            if not self._attivo and self._server is None:
+                return
+            self._attivo = False
+            self._stop_event.set()
+            server = self._server
+            self._server = None
+        if server is not None:
+            try:
+                server.close_all()
+            except Exception:
+                pass
+        for thread in (self._thread_server, self._thread_worker):
+            if thread is not None:
+                try:
+                    thread.join(timeout=3.0)
+                except Exception:
+                    pass
+        self._thread_server = None
+        self._thread_worker = None
+        self._notifica("Server FTP fermato.")
+
+    # ------------------------------------------------------------ ricezione
+    def _file_ricevuto(self, percorso):
+        percorso = os.path.abspath(str(percorso))
+        if not percorso.lower().endswith(ESTENSIONI_ACCETTATE):
+            self._notifica(
+                "File ignorato (formato non supportato): "
+                + os.path.basename(percorso)
+            )
+            return
+        self._notifica(f"File ricevuto: {os.path.basename(percorso)}")
+        self._coda.put(percorso)
+
+    def _ciclo_elaborazione(self):
+        while not self._stop_event.is_set():
+            try:
+                percorso = self._coda.get(timeout=0.4)
+            except queue.Empty:
+                continue
+            try:
+                self._elabora(percorso)
+            except Exception as errore:
+                logging.exception("Errore anteprima FTP per %s", percorso)
+                self._notifica(
+                    f"Anteprima non riuscita per {os.path.basename(percorso)}: "
+                    f"{type(errore).__name__}: {errore}"
+                )
+            finally:
+                try:
+                    self._coda.task_done()
+                except Exception:
+                    pass
+
+    def _parametri_correnti(self):
+        if not self._parametri_getter:
+            return {}
+        try:
+            dati = self._parametri_getter()
+            return dati if isinstance(dati, dict) else {}
+        except Exception:
+            return {}
+
+    def _testo_copyright(self):
+        parametri = self._parametri_correnti()
+        if not bool(parametri.get("ftp_copyright", True)):
+            return ""
+        testo = str(parametri.get("watermark_text", "") or "").strip()
+        return testo or f"\u00a9 Franchetti {datetime.now().year}"
+
+    def _carica_rgb(self, percorso):
+        estensione = os.path.splitext(percorso)[1].lower()
+        if estensione in RAW_ESTENSIONI:
+            fujifilm = ImageEngine._rileva_fujifilm(percorso)
+            algoritmo = (
+                getattr(rawpy.DemosaicAlgorithm, "AAHD", rawpy.DemosaicAlgorithm.AHD)
+                if fujifilm
+                else rawpy.DemosaicAlgorithm.AHD
+            )
+            with rawpy.imread(percorso) as raw:
+                opzioni = {
+                    "demosaic_algorithm": algoritmo,
+                    "use_camera_wb": True,
+                    "no_auto_bright": False,
+                    "output_color": rawpy.ColorSpace.sRGB,
+                    "output_bps": 8,
+                }
+                try:
+                    rgb = raw.postprocess(use_camera_matrix=True, **opzioni)
+                except Exception as errore:
+                    if "use_camera_matrix" not in str(errore):
+                        raise
+                    rgb = raw.postprocess(**opzioni)
+            return rgb
+        with Image.open(percorso) as immagine:
+            immagine = ImageOps.exif_transpose(immagine).convert("RGB")
+            return np.array(immagine)
+
+    def _ridimensiona_bgr(self, bgr):
+        altezza, larghezza = bgr.shape[:2]
+        lato = max(altezza, larghezza)
+        if lato <= self.LATO_MASSIMO:
+            return bgr
+        fattore = self.LATO_MASSIMO / float(lato)
+        nuova = (
+            max(1, int(round(larghezza * fattore))),
+            max(1, int(round(altezza * fattore))),
+        )
+        if cv2 is not None:
+            return cv2.resize(bgr, nuova, interpolation=cv2.INTER_LANCZOS4)
+        immagine = Image.fromarray(bgr[:, :, ::-1], "RGB").resize(
+            nuova, Image.Resampling.LANCZOS
+        )
+        return np.array(immagine)[:, :, ::-1]
+
+    def _sovrapponi_cv(self, bgr, nome_file, copyright_testo):
+        altezza, larghezza = bgr.shape[:2]
+        scala = max(0.45, min(1.55, larghezza / 2600.0))
+        spessore = max(1, int(round(1.6 * scala)))
+        margine = max(14, int(round(larghezza * 0.012)))
+        font = cv2.FONT_HERSHEY_DUPLEX
+
+        def scrivi(testo, x, y):
+            # Bordo nero piu' spesso sotto il testo bianco: leggibile su
+            # sfondi chiari e scuri senza bisogno di una barra piena.
+            cv2.putText(
+                bgr, testo, (int(x), int(y)), font, scala,
+                (0, 0, 0), spessore + 3, cv2.LINE_AA,
+            )
+            cv2.putText(
+                bgr, testo, (int(x), int(y)), font, scala,
+                (255, 255, 255), spessore, cv2.LINE_AA,
+            )
+
+        scrivi(f"File: {nome_file}", margine, altezza - margine)
+        if copyright_testo:
+            (larghezza_testo, _), _ = cv2.getTextSize(
+                copyright_testo, font, scala, spessore + 3
+            )
+            x = max(margine, larghezza - margine - larghezza_testo)
+            scrivi(copyright_testo, x, altezza - margine)
+        return bgr
+
+    def _sovrapponi_pil(self, immagine, nome_file, copyright_testo):
+        disegno = ImageDraw.Draw(immagine)
+        larghezza, altezza = immagine.size
+        dimensione = max(14, int(round(larghezza / 58.0)))
+        font = ImageEngine._carica_font(dimensione)
+        margine = max(12, int(round(larghezza * 0.012)))
+
+        def scrivi(testo, posizione, ancoraggio):
+            x, y = posizione
+            for dx, dy in ((1, 1), (-1, -1), (1, -1), (-1, 1)):
+                disegno.text(
+                    (x + dx, y + dy), testo, font=font,
+                    fill=(0, 0, 0), anchor=ancoraggio,
+                )
+            disegno.text(
+                (x, y), testo, font=font, fill=(255, 255, 255), anchor=ancoraggio
+            )
+
+        scrivi(f"File: {nome_file}", (margine, altezza - margine), "ls")
+        if copyright_testo:
+            scrivi(
+                copyright_testo, (larghezza - margine, altezza - margine), "rs"
+            )
+        return immagine
+
+    def _salva_jpeg(self, immagine, percorso):
+        os.makedirs(os.path.dirname(percorso), exist_ok=True)
+        if cv2 is not None and isinstance(immagine, np.ndarray):
+            esito, buffer = cv2.imencode(
+                ".jpg",
+                immagine,
+                [int(cv2.IMWRITE_JPEG_QUALITY), int(self.QUALITA_JPEG)],
+            )
+            if not esito:
+                raise RuntimeError("codifica JPEG non riuscita")
+            buffer.tofile(percorso)
+            return
+        if isinstance(immagine, np.ndarray):
+            immagine = Image.fromarray(immagine[:, :, ::-1], "RGB")
+        immagine.save(
+            percorso, "JPEG", quality=self.QUALITA_JPEG, optimize=False
+        )
+
+    def _elabora(self, percorso):
+        inizio = time.time()
+        nome_originale = os.path.basename(percorso)
+        rgb = self._carica_rgb(percorso)
+
+        if cv2 is not None:
+            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            bgr = self._ridimensiona_bgr(bgr)
+            bgr = self._sovrapponi_cv(
+                bgr, nome_originale, self._testo_copyright()
+            )
+            immagine = bgr
+            altezza, larghezza = bgr.shape[:2]
+        else:
+            immagine = Image.fromarray(rgb, "RGB")
+            immagine.thumbnail(
+                (self.LATO_MASSIMO, self.LATO_MASSIMO),
+                Image.Resampling.LANCZOS,
+            )
+            immagine = self._sovrapponi_pil(
+                immagine, nome_originale, self._testo_copyright()
+            )
+            larghezza, altezza = immagine.size
+
+        radice, _ = os.path.splitext(nome_originale)
+        nome_anteprima = f"{radice}_anteprima.jpg"
+        uscita = percorso_unico(
+            os.path.join(self.cartella_anteprime, nome_anteprima)
+        )
+        self._salva_jpeg(immagine, uscita)
+        durata = time.time() - inizio
+        self._notifica(
+            f"Anteprima pronta: {os.path.basename(uscita)} "
+            f"({larghezza}x{altezza}, {durata:.1f}s)"
+        )
 
 
 # ================================================================================
@@ -2456,6 +2920,32 @@ class FranchettiApp(ctk.CTk):
         self._ultima_cartella = os.path.expanduser("~")
         self._coda = queue.Queue()
 
+        # Anteprima Prima/Dopo: una sola decodifica per file, poi la pipeline
+        # viene rieseguita solo sull'immagine ridotta gia' in memoria.
+        self._anteprima_file = None
+        self._anteprima_prima = None
+        self._anteprima_dopo = None
+        self._anteprima_generazione = 0
+        self._anteprima_after_id = None
+        self._anteprima_in_corso = False
+        self._anteprima_richiesta = False
+        self._anteprima_lato = 900
+        self._anteprima_ctk = []
+        self._dim_anteprima = (180, 112)
+        self._dim_av_anteprima = (300, 170)
+        self._dim_grande_anteprima = (520, 330)
+        self._finestra_avanzate = None
+        self._finestra_anteprima = None
+        self._resize_prev_job = None
+        self._resize_av_job = None
+        self._resize_grande_job = None
+
+        # Ricezione Wi-Fi FTP dalla fotocamera. Il server gira in un thread
+        # separato; qui teniamo solo il riferimento e lo stato mostrato in UI.
+        self._ftp_server = None
+        self._ftp_attivo = False
+        self._ftp_in_avvio = False
+
         self._crea_interfaccia()
         self._aggiorna_stato_grana()
         self.protocol("WM_DELETE_WINDOW", self._chiudi_app)
@@ -2463,6 +2953,9 @@ class FranchettiApp(ctk.CTk):
         # PyInstaller il fattore 125% può essere applicato due volte e tagliare
         # la parte destra dell'interfaccia.
         self.after(300, self._sincronizza_scaling)
+        # Mostra subito il segnaposto dell'anteprima; se la sorgente e' gia'
+        # compilata carica il primo file appena la finestra e' pronta.
+        self.after(900, self._aggiorna_file_anteprima)
         # Se il PC e' gia' collegato al Wi-Fi della Sony, prova a connettersi
         # da solo: l'utente trova la fotocamera gia' pronta.
         self.after(2000, self._auto_connetti_sony)
@@ -2531,20 +3024,24 @@ class FranchettiApp(ctk.CTk):
         ).grid(row=0, column=1, padx=(0, 14), pady=(22, 4), sticky="w")
         ctk.CTkLabel(
             header,
-            text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Tethering multi-marca",
+            text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Wi-Fi FTP e tethering",
             font=ctk.CTkFont(size=10),
             text_color="#8ab4f8",
         ).grid(row=0, column=2, padx=10, pady=10, sticky="w")
 
         self.tabview = ctk.CTkTabview(self)
         self.tabview.grid(row=1, column=0, padx=12, pady=(6, 4), sticky="nsew")
-        for nome in ("Batch", "Sviluppo RAW", "Tethering & Cloud", "Log"):
+        for nome in ("Batch", "Wi-Fi FTP", "Tethering & Cloud", "Log"):
             self.tabview.add(nome)
 
         self._costruisci_tab_batch(self.tabview.tab("Batch"))
-        self._costruisci_tab_sviluppo(self.tabview.tab("Sviluppo RAW"))
+        self._costruisci_tab_ftp(self.tabview.tab("Wi-Fi FTP"))
         self._costruisci_tab_tethering(self.tabview.tab("Tethering & Cloud"))
         self._costruisci_tab_log(self.tabview.tab("Log"))
+        # La finestra avanzata viene costruita subito (ma resta nascosta):
+        # cosi' tutti i campi esistono anche se l'utente salva una configurazione
+        # senza aver mai aperto gli slider.
+        self._crea_finestra_avanzate()
 
         # STATUS BAR
         status = ctk.CTkFrame(self, corner_radius=0, height=30)
@@ -2572,6 +3069,14 @@ class FranchettiApp(ctk.CTk):
                     self._aggiorna_progresso_analisi(*messaggio[1:])
                 elif tipo == "analisi_done":
                     self._fine_analisi(*messaggio[1:])
+                elif tipo == "anteprima_done":
+                    self._fine_anteprima(*messaggio[1:])
+                elif tipo == "anteprima_error":
+                    self._errore_anteprima(*messaggio[1:])
+                elif tipo == "ftp_evento":
+                    self._ftp_evento(messaggio[1])
+                elif tipo == "ftp_stato":
+                    self._ftp_stato_ui(*messaggio[1:])
                 elif tipo == "done":
                     self._fine_batch(*messaggio[1:])
         except queue.Empty:
@@ -2610,6 +3115,8 @@ class FranchettiApp(ctk.CTk):
         ctk.CTkLabel(sx, text="File / Cartella:").grid(row=r, column=0, padx=6, pady=3, sticky="w")
         self.entry_sorgente = ctk.CTkEntry(sx, placeholder_text="Cartella oppure file RAW multipli...")
         self.entry_sorgente.grid(row=r, column=1, columnspan=2, padx=6, pady=3, sticky="ew")
+        self.entry_sorgente.bind("<Return>", lambda e: self._aggiorna_file_anteprima())
+        self.entry_sorgente.bind("<FocusOut>", lambda e: self._aggiorna_file_anteprima())
         r += 1
 
         btn_row = ctk.CTkFrame(sx, fg_color="transparent")
@@ -2739,108 +3246,87 @@ class FranchettiApp(ctk.CTk):
         self.chk_multicore.select()
         self.chk_multicore.grid(row=7, column=0, columnspan=2, padx=6, pady=(4, 1), sticky="w")
 
-        # ================= BLOCCO NOMI / WATERMARK / PRESET =================
+        # ================= ANTEPRIMA PRIMA / DOPO =================
         dx = ctk.CTkFrame(contenuto, fg_color="transparent")
         dx.grid(row=0, column=1, padx=(8, 4), pady=2, sticky="nsew")
-        dx.grid_columnconfigure(1, weight=1)
+        dx.grid_columnconfigure(0, weight=1)
 
-        r = 0
-        ctk.CTkLabel(dx, text="NOMI FILE E SOVRASCRITTURA",
-                     font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
-        ); r += 1
+        card_prev = ctk.CTkFrame(dx)
+        card_prev.grid(row=0, column=0, sticky="ew")
+        card_prev.grid_columnconfigure(0, weight=1, uniform="prev")
+        card_prev.grid_columnconfigure(1, weight=1, uniform="prev")
+        card_prev.bind("<Configure>", self._on_prev_resize)
+        larghezza_ant, altezza_ant = self._dim_anteprima
 
-        self.chk_mantieni_nomi = ctk.CTkCheckBox(dx, text="Mantieni nome originale")
-        self.chk_mantieni_nomi.select()
-        self.chk_mantieni_nomi.grid(row=r, column=0, columnspan=2, padx=6, pady=3, sticky="w")
-        r += 1
-
-        nomi = ctk.CTkFrame(dx)
-        nomi.grid(row=r, column=0, columnspan=2, padx=6, pady=2, sticky="ew")
-        nomi.grid_columnconfigure(1, weight=1)
-        nomi.grid_columnconfigure(3, weight=1)
-        r += 1
-
-        ctk.CTkLabel(nomi, text="Prefisso:").grid(row=0, column=0, padx=(6, 2), pady=3, sticky="w")
-        self.entry_prefisso = ctk.CTkEntry(nomi, width=90, placeholder_text="FRC_")
-        self.entry_prefisso.grid(row=0, column=1, padx=(0, 6), pady=3, sticky="ew")
-
-        ctk.CTkLabel(nomi, text="Suffisso:").grid(row=0, column=2, padx=(6, 2), pady=3, sticky="w")
-        self.entry_suffisso = ctk.CTkEntry(nomi, width=90, placeholder_text="_web")
-        self.entry_suffisso.grid(row=0, column=3, padx=(0, 6), pady=3, sticky="ew")
-
-        ctk.CTkLabel(nomi, text="Se esiste:").grid(row=1, column=0, padx=(6, 2), pady=3, sticky="w")
-        self.combo_sovrascrittura = ctk.CTkComboBox(
-            nomi, values=["Rinomina", "Sovrascrivi", "Salta"], width=150,
-            command=lambda v: self.parametri.__setitem__("sovrascrittura", v),
+        ctk.CTkLabel(
+            card_prev,
+            text="ANTEPRIMA PRIMA / DOPO",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 1), sticky="w")
+        self.lbl_anteprima_info = ctk.CTkLabel(
+            card_prev,
+            text="Seleziona una sorgente per vedere l'anteprima.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=400,
         )
-        self.combo_sovrascrittura.set("Rinomina")
-        self.combo_sovrascrittura.grid(row=1, column=1, columnspan=3, padx=(0, 6), pady=3, sticky="w")
-
-        ctk.CTkLabel(dx, text="WATERMARK", font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
-        ); r += 1
-
-        self.chk_watermark = ctk.CTkCheckBox(dx, text="Applica testo")
-        self.chk_watermark.select()
-        self.chk_watermark.grid(row=r, column=0, columnspan=2, padx=6, pady=3, sticky="w")
-        r += 1
-
-        self.entry_watermark = ctk.CTkEntry(dx, placeholder_text="Testo watermark")
-        self.entry_watermark.insert(0, self.parametri["watermark_text"])
-        self.entry_watermark.grid(row=r, column=0, columnspan=2, padx=6, pady=3, sticky="ew")
-        r += 1
-
-        wm = ctk.CTkFrame(dx)
-        wm.grid(row=r, column=0, columnspan=2, padx=6, pady=2, sticky="ew")
-        wm.grid_columnconfigure(1, weight=1)
-        wm.grid_columnconfigure(3, weight=1)
-        r += 1
-
-        ctk.CTkLabel(wm, text="Font (px):").grid(row=0, column=0, padx=(6, 2), pady=3, sticky="w")
-        self.entry_font_size = ctk.CTkEntry(wm, width=70)
-        self.entry_font_size.insert(0, "14")
-        self.entry_font_size.grid(row=0, column=1, padx=(0, 6), pady=3, sticky="w")
-
-        ctk.CTkLabel(wm, text="Posizione:").grid(row=0, column=2, padx=(10, 4), pady=3, sticky="w")
-        self.combo_posizione = ctk.CTkComboBox(
-            wm,
-            values=["Basso a destra", "Basso a sinistra", "Alto a destra", "Alto a sinistra", "Centro"],
-            width=150,
-            command=lambda v: self.parametri.__setitem__("watermark_posizione", v),
-        )
-        self.combo_posizione.set("Basso a destra")
-        self.combo_posizione.grid(row=0, column=3, padx=(0, 6), pady=3, sticky="w")
-
-        ctk.CTkLabel(wm, text="Logo PNG:").grid(row=1, column=0, padx=(6, 2), pady=3, sticky="w")
-        self.lbl_logo = ctk.CTkLabel(wm, text="Nessun logo", anchor="w", text_color="#9aa0a6")
-        self.lbl_logo.grid(row=1, column=1, padx=(0, 6), pady=3, sticky="ew")
-        ctk.CTkButton(wm, text="Carica", width=90, command=self.seleziona_logo).grid(
-            row=1, column=2, columnspan=2, padx=(0, 6), pady=3, sticky="w"
+        self.lbl_anteprima_info.grid(
+            row=1, column=0, columnspan=2, padx=10, pady=(0, 4), sticky="w"
         )
 
-        ctk.CTkLabel(dx, text="PRESET E CONFIGURAZIONE",
-                     font=ctk.CTkFont(size=12, weight="bold")).grid(
-            row=r, column=0, columnspan=2, padx=6, pady=(3, 1), sticky="w"
-        ); r += 1
+        self.lbl_anteprima_prima = ctk.CTkLabel(
+            card_prev,
+            text="PRIMA",
+            width=larghezza_ant,
+            height=altezza_ant,
+            fg_color="#1b1f24",
+            corner_radius=6,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#9aa0a6",
+        )
+        self.lbl_anteprima_prima.grid(row=2, column=0, padx=(10, 4), pady=2, sticky="ew")
+        self.lbl_anteprima_dopo = ctk.CTkLabel(
+            card_prev,
+            text="DOPO",
+            width=180,
+            height=112,
+            fg_color="#1b1f24",
+            corner_radius=6,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#9aa0a6",
+        )
+        self.lbl_anteprima_dopo.grid(row=2, column=1, padx=(4, 10), pady=2, sticky="ew")
+        ctk.CTkLabel(
+            card_prev, text="PRIMA", font=ctk.CTkFont(size=9), text_color="#9aa0a6"
+        ).grid(row=3, column=0, pady=(0, 2))
+        ctk.CTkLabel(
+            card_prev, text="DOPO", font=ctk.CTkFont(size=9), text_color="#9aa0a6"
+        ).grid(row=3, column=1, pady=(0, 2))
 
-        self.combo_preset = ctk.CTkComboBox(
+        ctk.CTkButton(
+            card_prev,
+            text="APRI ANTEPRIMA GRANDE",
+            height=28,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            font=ctk.CTkFont(size=11),
+            command=self._apri_anteprima_grande,
+        ).grid(row=4, column=0, columnspan=2, padx=10, pady=(2, 8), sticky="ew")
+
+        # ---- Correzioni rapide: restano nella finestra di conversione.
+        self._costruisci_correzioni_rapide(dx, riga=1)
+
+        ctk.CTkButton(
             dx,
-            values=["Personalizzato", "Web / Social", "Stampa Fine Art", "Archivio JPEG",
-                    "Ritratto", "Paesaggio", "Bianco e Nero"],
-            width=190,
-            command=self.applica_preset,
-        )
-        self.combo_preset.set("Personalizzato")
-        self.combo_preset.grid(row=r, column=0, padx=6, pady=3, sticky="w")
-        r += 1
-
-        cfg = ctk.CTkFrame(dx, fg_color="transparent")
-        cfg.grid(row=r, column=0, columnspan=2, padx=6, pady=2, sticky="ew")
-        ctk.CTkButton(cfg, text="Salva config", width=130,
-                      command=self.salva_configurazione).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(cfg, text="Carica config", width=130,
-                      command=self.carica_configurazione).pack(side="left")
+            text="AVANZATE  ▸  slider completi, nomi, watermark, preset",
+            height=36,
+            fg_color="#2f6f9f",
+            hover_color="#3b83b8",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            command=self._apri_avanzate,
+        ).grid(row=2, column=0, sticky="ew", pady=(6, 0))
 
         # ---- azioni (sempre visibili in basso)
         azioni = ctk.CTkFrame(tab, fg_color="transparent")
@@ -2884,44 +3370,13 @@ class FranchettiApp(ctk.CTk):
             row=2, column=3, padx=4, pady=(0, 4), sticky="e"
         )
 
-    # -------------------------------------------------------- tab SVILUPPO
-    def _costruisci_tab_sviluppo(self, tab):
-        tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(0, weight=1)
-        tab.grid_propagate(False)
-
-        scroll = ctk.CTkScrollableFrame(tab, label_text="Correzioni colore e sviluppo", height=320)
-        scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
-        scroll.grid_columnconfigure(0, weight=1)
-
-        card_auto = ctk.CTkFrame(scroll)
-        card_auto.pack(fill="x", padx=6, pady=(6, 2))
-        self.sw_auto_sviluppo = ctk.CTkSwitch(
-            card_auto,
-            text="PIÙ LUMINOSA (BETA) - sistema automaticamente foto scure e troppo esposte",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            command=lambda: self._toggle_auto_luminosita(self.sw_auto_sviluppo.get()),
-        )
-        self.sw_auto_sviluppo.pack(padx=10, pady=(10, 4), anchor="w")
-
-        # Denoise ISO subito sotto PIU' LUMINOSA, come nel tab Batch.
-        self.btn_rimuovi_grana_sviluppo = ctk.CTkButton(
-            card_auto,
-            text="RIMUOVI GRANA (AUTO ISO)",
-            height=30,
-            width=210,
-            fg_color="#6a4c93",
-            hover_color="#7e5aa8",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            command=self.toggle_rimuovi_grana,
-        )
-        self.btn_rimuovi_grana_sviluppo.pack(padx=10, pady=(0, 10), anchor="w")
-
-        # ---- Correzioni rapide (Smart Batch): modificano gli slider
-        # esistenti, restano visibili e si possono annullare in blocco.
-        card_rapide = ctk.CTkFrame(scroll)
-        card_rapide.pack(fill="x", padx=6, pady=(2, 6))
+    # ------------------------------------------------ correzioni rapide (UI)
+    def _costruisci_correzioni_rapide(self, parent, riga=0):
+        """Pulsanti Smart Batch condivisi dalla finestra di conversione."""
+        card_rapide = ctk.CTkFrame(parent)
+        card_rapide.grid(row=riga, column=0, sticky="ew", pady=(6, 0))
         card_rapide.grid_columnconfigure(0, weight=1)
+
         ctk.CTkLabel(
             card_rapide,
             text="CORREZIONI RAPIDE",
@@ -2929,7 +3384,7 @@ class FranchettiApp(ctk.CTk):
         ).grid(row=0, column=0, padx=10, pady=(8, 2), sticky="w")
         ctk.CTkLabel(
             card_rapide,
-            text="Correzioni cumulative e reversibili: agiscono sugli slider qui sotto.",
+            text="Cumulative e reversibili: l'anteprima si aggiorna subito.",
             font=ctk.CTkFont(size=10),
             text_color="#9aa0a6",
         ).grid(row=1, column=0, padx=10, pady=(0, 6), sticky="w")
@@ -2974,6 +3429,90 @@ class FranchettiApp(ctk.CTk):
             command=lambda: self._toggle_proteggi_luci(self.sw_proteggi_luci.get()),
         )
         self.sw_proteggi_luci.grid(row=3, column=0, padx=10, pady=(2, 8), sticky="w")
+        return card_rapide
+
+    # -------------------------------------------------- finestra AVANZATE
+    def _crea_finestra_avanzate(self):
+        """Costruisce (nascosta) la finestra con slider e opzioni di output."""
+        finestra = ctk.CTkToplevel(self)
+        self._finestra_avanzate = finestra
+        finestra.title("Regolazioni avanzate - Franchetti Raw Converter Pro")
+        finestra.geometry("900x760")
+        finestra.minsize(760, 560)
+        finestra.transient(self)
+        finestra.withdraw()
+        finestra.protocol("WM_DELETE_WINDOW", self._chiudi_avanzate)
+        finestra.grid_columnconfigure(0, weight=1)
+        finestra.grid_rowconfigure(1, weight=1)
+
+        testata = ctk.CTkFrame(finestra, fg_color="transparent")
+        testata.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 2))
+        testata.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(
+            testata,
+            text="REGOLAZIONI AVANZATE",
+            font=ctk.CTkFont(size=15, weight="bold"),
+        ).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(
+            testata,
+            text="Sviluppo, nomi file, watermark e preset. Le modifiche si vedono nell'anteprima.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+        ).grid(row=1, column=0, sticky="w")
+        ctk.CTkButton(
+            testata, text="Chiudi", width=100, command=self._chiudi_avanzate
+        ).grid(row=0, column=1, rowspan=2, padx=(8, 0), sticky="e")
+
+        scroll = ctk.CTkScrollableFrame(
+            finestra, label_text="Sviluppo, nomi, watermark e preset"
+        )
+        scroll.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        scroll.grid_columnconfigure(0, weight=1)
+
+        # Anteprima compatta anche qui: gli slider restano sotto controllo.
+        card_prev = ctk.CTkFrame(scroll)
+        card_prev.pack(fill="x", padx=6, pady=(6, 2))
+        card_prev.grid_columnconfigure(0, weight=1, uniform="avprev")
+        card_prev.grid_columnconfigure(1, weight=1, uniform="avprev")
+        card_prev.bind("<Configure>", self._on_av_prev_resize)
+        larghezza_av, altezza_av = self._dim_av_anteprima
+        ctk.CTkLabel(
+            card_prev,
+            text="ANTEPRIMA PRIMA / DOPO",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 1), sticky="w")
+        self.lbl_av_info = ctk.CTkLabel(
+            card_prev,
+            text="Seleziona una sorgente per vedere l'anteprima.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+        )
+        self.lbl_av_info.grid(
+            row=1, column=0, columnspan=2, padx=10, pady=(0, 4), sticky="w"
+        )
+        self.lbl_av_prima = ctk.CTkLabel(
+            card_prev,
+            text="PRIMA",
+            width=larghezza_av,
+            height=altezza_av,
+            fg_color="#1b1f24",
+            corner_radius=6,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#9aa0a6",
+        )
+        self.lbl_av_prima.grid(row=2, column=0, padx=(10, 4), pady=(2, 8), sticky="ew")
+        self.lbl_av_dopo = ctk.CTkLabel(
+            card_prev,
+            text="DOPO",
+            width=larghezza_av,
+            height=altezza_av,
+            fg_color="#1b1f24",
+            corner_radius=6,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#9aa0a6",
+        )
+        self.lbl_av_dopo.grid(row=2, column=1, padx=(4, 10), pady=(2, 8), sticky="ew")
 
         sezioni = [
             ("ESPOSIZIONE E BILANCIAMENTO", [
@@ -3019,7 +3558,6 @@ class FranchettiApp(ctk.CTk):
             for idx, (chiave, etichetta, minimo, massimo, default, fmt) in enumerate(sliders, start=1):
                 self._crea_slider(card, idx, chiave, etichetta, minimo, massimo, default, fmt)
 
-
         # curva tonale + split toning
         card2 = ctk.CTkFrame(scroll)
         card2.pack(fill="x", padx=6, pady=6)
@@ -3030,9 +3568,9 @@ class FranchettiApp(ctk.CTk):
         ctk.CTkLabel(card2, text="Curva tonale:").grid(row=1, column=0, padx=10, pady=4, sticky="w")
         self.combo_curva = ctk.CTkComboBox(
             card2, values=["Lineare", "Media", "Forte", "Contrasto Alto", "Schiarisci", "Scurisci"],
-            width=170, command=lambda v: self.parametri.__setitem__("curva_tonale", v),
+            width=170, command=self._on_curva_tonale,
         )
-        self.combo_curva.set("Lineare")
+        self.combo_curva.set(self.parametri.get("curva_tonale", "Lineare"))
         self.combo_curva.grid(row=1, column=1, padx=10, pady=4, sticky="w")
 
         self._crea_slider(card2, 2, "intensita_ombre", "Split toning ombre (intensità)", 0.0, 100.0, 0.0, "{:.0f}")
@@ -3040,29 +3578,573 @@ class FranchettiApp(ctk.CTk):
         self._crea_slider(card2, 4, "intensita_luci", "Split toning luci (intensità)", 0.0, 100.0, 0.0, "{:.0f}")
         self.entry_colore_luci = self._crea_entry_colore(card2, 5, "Colore luci", "#e0b070", "colore_luci")
 
-        reset = ctk.CTkButton(scroll, text="Ripristina tutti i parametri di sviluppo", command=self.ripristina_sviluppo)
-        reset.pack(pady=12)
+        # ---- Nomi file, watermark, preset (prima nel tab Batch)
+        card3 = ctk.CTkFrame(scroll)
+        card3.pack(fill="x", padx=6, pady=6)
+        card3.grid_columnconfigure(1, weight=1)
+        r = 0
+        ctk.CTkLabel(card3, text="NOMI FILE E SOVRASCRITTURA",
+                     font=ctk.CTkFont(size=12, weight="bold")).grid(
+            row=r, column=0, columnspan=2, padx=10, pady=(8, 2), sticky="w"
+        ); r += 1
+
+        self.chk_mantieni_nomi = ctk.CTkCheckBox(card3, text="Mantieni nome originale")
+        self.chk_mantieni_nomi.select()
+        self.chk_mantieni_nomi.grid(row=r, column=0, columnspan=2, padx=10, pady=3, sticky="w")
+        r += 1
+
+        nomi = ctk.CTkFrame(card3, fg_color="transparent")
+        nomi.grid(row=r, column=0, columnspan=2, padx=10, pady=2, sticky="ew")
+        nomi.grid_columnconfigure(1, weight=1)
+        nomi.grid_columnconfigure(3, weight=1)
+        r += 1
+
+        ctk.CTkLabel(nomi, text="Prefisso:").grid(row=0, column=0, padx=(0, 2), pady=3, sticky="w")
+        self.entry_prefisso = ctk.CTkEntry(nomi, width=120, placeholder_text="FRC_")
+        self.entry_prefisso.grid(row=0, column=1, padx=(0, 8), pady=3, sticky="ew")
+
+        ctk.CTkLabel(nomi, text="Suffisso:").grid(row=0, column=2, padx=(0, 2), pady=3, sticky="w")
+        self.entry_suffisso = ctk.CTkEntry(nomi, width=120, placeholder_text="_web")
+        self.entry_suffisso.grid(row=0, column=3, padx=(0, 0), pady=3, sticky="ew")
+
+        ctk.CTkLabel(nomi, text="Se esiste:").grid(row=1, column=0, padx=(0, 2), pady=3, sticky="w")
+        self.combo_sovrascrittura = ctk.CTkComboBox(
+            nomi, values=["Rinomina", "Sovrascrivi", "Salta"], width=150,
+            command=lambda v: self.parametri.__setitem__("sovrascrittura", v),
+        )
+        self.combo_sovrascrittura.set(self.parametri.get("sovrascrittura", "Rinomina"))
+        self.combo_sovrascrittura.grid(row=1, column=1, columnspan=3, padx=(0, 0), pady=3, sticky="w")
+
+        ctk.CTkLabel(card3, text="WATERMARK", font=ctk.CTkFont(size=12, weight="bold")).grid(
+            row=r, column=0, columnspan=2, padx=10, pady=(8, 2), sticky="w"
+        ); r += 1
+
+        self.chk_watermark = ctk.CTkCheckBox(card3, text="Applica testo")
+        self.chk_watermark.select()
+        self.chk_watermark.grid(row=r, column=0, columnspan=2, padx=10, pady=3, sticky="w")
+        r += 1
+
+        self.entry_watermark = ctk.CTkEntry(card3, placeholder_text="Testo watermark")
+        self.entry_watermark.insert(0, self.parametri["watermark_text"])
+        self.entry_watermark.grid(row=r, column=0, columnspan=2, padx=10, pady=3, sticky="ew")
+        r += 1
+
+        wm = ctk.CTkFrame(card3, fg_color="transparent")
+        wm.grid(row=r, column=0, columnspan=2, padx=10, pady=2, sticky="ew")
+        wm.grid_columnconfigure(1, weight=1)
+        wm.grid_columnconfigure(3, weight=1)
+        r += 1
+
+        ctk.CTkLabel(wm, text="Font (px):").grid(row=0, column=0, padx=(0, 2), pady=3, sticky="w")
+        self.entry_font_size = ctk.CTkEntry(wm, width=70)
+        self.entry_font_size.insert(0, "14")
+        self.entry_font_size.grid(row=0, column=1, padx=(0, 8), pady=3, sticky="w")
+
+        ctk.CTkLabel(wm, text="Posizione:").grid(row=0, column=2, padx=(0, 4), pady=3, sticky="w")
+        self.combo_posizione = ctk.CTkComboBox(
+            wm,
+            values=["Basso a destra", "Basso a sinistra", "Alto a destra", "Alto a sinistra", "Centro"],
+            width=150,
+            command=lambda v: self.parametri.__setitem__("watermark_posizione", v),
+        )
+        self.combo_posizione.set(self.parametri.get("watermark_posizione", "Basso a destra"))
+        self.combo_posizione.grid(row=0, column=3, padx=(0, 0), pady=3, sticky="w")
+
+        ctk.CTkLabel(wm, text="Logo PNG:").grid(row=1, column=0, padx=(0, 2), pady=3, sticky="w")
+        self.lbl_logo = ctk.CTkLabel(wm, text="Nessun logo", anchor="w", text_color="#9aa0a6")
+        self.lbl_logo.grid(row=1, column=1, padx=(0, 8), pady=3, sticky="ew")
+        ctk.CTkButton(wm, text="Carica", width=90, command=self.seleziona_logo).grid(
+            row=1, column=2, columnspan=2, padx=(0, 0), pady=3, sticky="w"
+        )
+
+        ctk.CTkLabel(card3, text="PRESET E CONFIGURAZIONE",
+                     font=ctk.CTkFont(size=12, weight="bold")).grid(
+            row=r, column=0, columnspan=2, padx=10, pady=(8, 2), sticky="w"
+        ); r += 1
+
+        self.combo_preset = ctk.CTkComboBox(
+            card3,
+            values=["Personalizzato", "Web / Social", "Stampa Fine Art", "Archivio JPEG",
+                    "Ritratto", "Paesaggio", "Bianco e Nero"],
+            width=190,
+            command=self.applica_preset,
+        )
+        self.combo_preset.set("Personalizzato")
+        self.combo_preset.grid(row=r, column=0, padx=10, pady=3, sticky="w")
+        r += 1
+
+        cfg = ctk.CTkFrame(card3, fg_color="transparent")
+        cfg.grid(row=r, column=0, columnspan=2, padx=10, pady=(2, 8), sticky="ew")
+        ctk.CTkButton(cfg, text="Salva config", width=130,
+                      command=self.salva_configurazione).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(cfg, text="Carica config", width=130,
+                      command=self.carica_configurazione).pack(side="left")
+
+        ctk.CTkButton(
+            scroll, text="Ripristina tutti i parametri di sviluppo",
+            command=self.ripristina_sviluppo,
+        ).pack(pady=12)
+
+    def _apri_avanzate(self):
+        finestra = self._finestra_avanzate
+        if finestra is None or not finestra.winfo_exists():
+            self._crea_finestra_avanzate()
+            finestra = self._finestra_avanzate
+        try:
+            larghezza = 900
+            altezza = min(760, max(560, self.winfo_screenheight() - 90))
+            x = max(10, self.winfo_screenwidth() - larghezza - 20)
+            y = max(10, (self.winfo_screenheight() - altezza) // 2)
+            finestra.geometry(f"{larghezza}x{altezza}+{x}+{y}")
+        except Exception:
+            pass
+        finestra.deiconify()
+        try:
+            finestra.lift()
+            finestra.after(80, finestra.focus_force)
+        except Exception:
+            pass
+
+    def _chiudi_avanzate(self):
+        try:
+            self._raccogli_campi()
+        except Exception:
+            pass
+        self._programma_anteprima()
+        try:
+            if self._finestra_avanzate is not None:
+                self._finestra_avanzate.withdraw()
+        except Exception:
+            pass
+
+    # -------------------------------------------------- anteprima Prima/Dopo
+    def _file_anteprima_corrente(self):
+        try:
+            sorgente = self.entry_sorgente.get().strip()
+        except Exception:
+            return None
+        if not sorgente:
+            return None
+        try:
+            destinazione = self.entry_destinazione.get().strip() or None
+        except Exception:
+            destinazione = None
+        try:
+            files = raccogli_file_sorgente(
+                sorgente, bool(self.parametri.get("ricorsivo", True)), escludi=destinazione
+            )
+        except Exception:
+            return None
+        return files[0] if files else None
+
+    def _imposta_info_anteprima(self, testo):
+        for nome in ("lbl_anteprima_info", "lbl_av_info"):
+            etichetta = getattr(self, nome, None)
+            if etichetta is None:
+                continue
+            try:
+                etichetta.configure(text=testo)
+            except Exception:
+                pass
+
+    def _mostra_segnaposto_anteprima(self, messaggio):
+        self._imposta_info_anteprima(messaggio)
+        for nome, testo in (
+            ("lbl_anteprima_prima", "PRIMA"),
+            ("lbl_anteprima_dopo", "DOPO"),
+            ("lbl_av_prima", "PRIMA"),
+            ("lbl_av_dopo", "DOPO"),
+        ):
+            etichetta = getattr(self, nome, None)
+            if etichetta is None:
+                continue
+            try:
+                etichetta.configure(image="", text=testo)
+            except Exception:
+                pass
+
+    def _aggiorna_file_anteprima(self, forza=False):
+        """Sceglie il primo file della sorgente e prepara la base ridotta."""
+        percorso = self._file_anteprima_corrente()
+        if not forza and percorso == self._anteprima_file:
+            return
+        self._anteprima_file = percorso
+        self._anteprima_prima = None
+        self._anteprima_dopo = None
+        self._anteprima_generazione += 1
+        if not percorso:
+            self._mostra_segnaposto_anteprima(
+                "Seleziona una cartella o un file: l'anteprima mostra il primo file."
+            )
+            return
+        self._imposta_info_anteprima(
+            f"File: {os.path.basename(percorso)} - caricamento anteprima..."
+        )
+        self._programma_anteprima(immediato=True)
+
+    def _programma_anteprima(self, immediato=False):
+        """Aggiorna l'anteprima con un piccolo debounce durante gli slider."""
+        if getattr(self, "lbl_anteprima_prima", None) is None:
+            return
+        precedente = self._anteprima_after_id
+        if precedente:
+            try:
+                self.after_cancel(precedente)
+            except Exception:
+                pass
+            self._anteprima_after_id = None
+        try:
+            self._anteprima_after_id = self.after(
+                0 if immediato else 320, self._avvia_anteprima
+            )
+        except Exception:
+            self._anteprima_after_id = None
+
+    def _avvia_anteprima(self):
+        self._anteprima_after_id = None
+        if not self._anteprima_file:
+            self._aggiorna_file_anteprima()
+            if not self._anteprima_file:
+                return
+        if self._anteprima_in_corso:
+            self._anteprima_richiesta = True
+            return
+        self._anteprima_generazione += 1
+        generazione = self._anteprima_generazione
+        self._anteprima_richiesta = False
+        self._anteprima_in_corso = True
+        base = self._anteprima_prima
+        percorso = self._anteprima_file
+        parametri = normalizza_parametri(self.parametri)
+        usa_wb = bool(self.parametri.get("use_camera_wb", True))
+        threading.Thread(
+            target=self._anteprima_worker,
+            args=(generazione, percorso, base, parametri, usa_wb),
+            daemon=True,
+        ).start()
+
+    def _anteprima_worker(self, generazione, percorso, base, parametri, usa_wb):
+        try:
+            if base is None:
+                base = carica_anteprima(
+                    percorso, lato=self._anteprima_lato, use_camera_wb=usa_wb
+                )
+            dopo = sviluppa_anteprima(base, parametri)
+            self._coda.put(("anteprima_done", generazione, percorso, base, dopo))
+        except Exception as errore:
+            logging.debug("Anteprima non disponibile per %s: %s", percorso, errore)
+            self._coda.put(
+                (
+                    "anteprima_error",
+                    generazione,
+                    percorso,
+                    f"{type(errore).__name__}: {errore}",
+                )
+            )
+
+    def _fine_anteprima(self, generazione, percorso, base, dopo):
+        self._anteprima_in_corso = False
+        if percorso == self._anteprima_file:
+            self._anteprima_prima = base
+            if generazione == self._anteprima_generazione:
+                self._anteprima_dopo = dopo
+                self._mostra_anteprima(base, dopo)
+        if self._anteprima_richiesta:
+            self._anteprima_richiesta = False
+            self._programma_anteprima(immediato=True)
+
+    def _errore_anteprima(self, generazione, percorso, errore):
+        self._anteprima_in_corso = False
+        if percorso == self._anteprima_file:
+            self._imposta_info_anteprima(f"Anteprima non disponibile: {errore}")
+        if self._anteprima_richiesta:
+            self._anteprima_richiesta = False
+            self._programma_anteprima(immediato=True)
+
+    def _aggiorna_immagine_label(self, etichetta, immagine, dimensione, segnaposto):
+        if etichetta is None:
+            return
+        if immagine is None:
+            try:
+                etichetta.configure(image="", text=segnaposto)
+            except Exception:
+                pass
+            return
+        try:
+            miniatura = ImageOps.fit(
+                immagine.convert("RGB"),
+                dimensione,
+                Image.Resampling.LANCZOS,
+                centering=(0.5, 0.5),
+            )
+            ctk_immagine = ctk.CTkImage(
+                light_image=miniatura, dark_image=miniatura, size=dimensione
+            )
+            # Il riferimento deve restare agganciato alla label: se lo
+            # tenessimo solo in una lista, ogni ridisegno ne aggiungerebbe
+            # uno nuovo finche' la finestra non viene chiusa.
+            try:
+                etichetta._immagine_ctk = ctk_immagine
+            except Exception:
+                pass
+            etichetta.configure(image=ctk_immagine, text="")
+        except Exception:
+            try:
+                etichetta.configure(image="", text=segnaposto)
+            except Exception:
+                pass
+
+    def _mostra_anteprima(self, prima, dopo):
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_anteprima_prima", None), prima, self._dim_anteprima, "PRIMA"
+        )
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_anteprima_dopo", None), dopo, self._dim_anteprima, "DOPO"
+        )
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_av_prima", None), prima, self._dim_av_anteprima, "PRIMA"
+        )
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_av_dopo", None), dopo, self._dim_av_anteprima, "DOPO"
+        )
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_grande_prima", None), prima, self._dim_grande_anteprima, "PRIMA"
+        )
+        self._aggiorna_immagine_label(
+            getattr(self, "lbl_grande_dopo", None), dopo, self._dim_grande_anteprima, "DOPO"
+        )
+        if self._anteprima_file:
+            self._imposta_info_anteprima(
+                f"{os.path.basename(self._anteprima_file)} - anteprima rapida "
+                f"{prima.size[0]}x{prima.size[1]} px (l'originale non viene modificato)."
+            )
+
+    # ------------------------------------------------ ridimensionamento live
+    def _on_prev_resize(self, evento=None):
+        if self._resize_prev_job:
+            try:
+                self.after_cancel(self._resize_prev_job)
+            except Exception:
+                pass
+        self._resize_prev_job = self.after(220, self._applica_resize_prev)
+
+    def _applica_resize_prev(self):
+        self._resize_prev_job = None
+        etichetta = getattr(self, "lbl_anteprima_prima", None)
+        if etichetta is None:
+            return
+        try:
+            larghezza = max(140, (etichetta.master.winfo_width() - 40) // 2)
+        except Exception:
+            return
+        altezza = max(90, int(round(larghezza * 0.62)))
+        if (
+            abs(larghezza - self._dim_anteprima[0]) < 8
+            and abs(altezza - self._dim_anteprima[1]) < 8
+        ):
+            return
+        self._dim_anteprima = (larghezza, altezza)
+        for nome in ("lbl_anteprima_prima", "lbl_anteprima_dopo"):
+            widget = getattr(self, nome, None)
+            if widget is not None:
+                try:
+                    widget.configure(width=larghezza, height=altezza)
+                except Exception:
+                    pass
+        if self._anteprima_prima is not None and self._anteprima_dopo is not None:
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_anteprima_prima", None),
+                self._anteprima_prima,
+                self._dim_anteprima,
+                "PRIMA",
+            )
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_anteprima_dopo", None),
+                self._anteprima_dopo,
+                self._dim_anteprima,
+                "DOPO",
+            )
+
+    def _on_av_prev_resize(self, evento=None):
+        if self._resize_av_job:
+            try:
+                self.after_cancel(self._resize_av_job)
+            except Exception:
+                pass
+        self._resize_av_job = self.after(220, self._applica_resize_av)
+
+    def _applica_resize_av(self):
+        self._resize_av_job = None
+        etichetta = getattr(self, "lbl_av_prima", None)
+        if etichetta is None:
+            return
+        try:
+            larghezza = max(200, (etichetta.master.winfo_width() - 40) // 2)
+        except Exception:
+            return
+        altezza = max(130, int(round(larghezza * 0.58)))
+        if (
+            abs(larghezza - self._dim_av_anteprima[0]) < 8
+            and abs(altezza - self._dim_av_anteprima[1]) < 8
+        ):
+            return
+        self._dim_av_anteprima = (larghezza, altezza)
+        for nome in ("lbl_av_prima", "lbl_av_dopo"):
+            widget = getattr(self, nome, None)
+            if widget is not None:
+                try:
+                    widget.configure(width=larghezza, height=altezza)
+                except Exception:
+                    pass
+        if self._anteprima_prima is not None and self._anteprima_dopo is not None:
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_av_prima", None),
+                self._anteprima_prima,
+                self._dim_av_anteprima,
+                "PRIMA",
+            )
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_av_dopo", None),
+                self._anteprima_dopo,
+                self._dim_av_anteprima,
+                "DOPO",
+            )
+
+    def _on_grande_resize(self, evento=None):
+        if self._resize_grande_job:
+            try:
+                self.after_cancel(self._resize_grande_job)
+            except Exception:
+                pass
+        self._resize_grande_job = self.after(220, self._applica_resize_grande)
+
+    def _applica_resize_grande(self):
+        self._resize_grande_job = None
+        finestra = self._finestra_anteprima
+        if finestra is None:
+            return
+        try:
+            larghezza = max(240, (finestra.winfo_width() - 42) // 2)
+            altezza = max(160, finestra.winfo_height() - 78)
+        except Exception:
+            return
+        if (
+            abs(larghezza - self._dim_grande_anteprima[0]) < 8
+            and abs(altezza - self._dim_grande_anteprima[1]) < 8
+        ):
+            return
+        self._dim_grande_anteprima = (larghezza, altezza)
+        if self._anteprima_prima is not None and self._anteprima_dopo is not None:
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_grande_prima", None),
+                self._anteprima_prima,
+                self._dim_grande_anteprima,
+                "PRIMA",
+            )
+            self._aggiorna_immagine_label(
+                getattr(self, "lbl_grande_dopo", None),
+                self._anteprima_dopo,
+                self._dim_grande_anteprima,
+                "DOPO",
+            )
+
+    def _apri_anteprima_grande(self):
+        if self._anteprima_prima is None or self._anteprima_dopo is None:
+            messagebox.showinfo(
+                "Anteprima",
+                "Seleziona prima una sorgente con almeno un file RAW o un'immagine.",
+            )
+            return
+        finestra = self._finestra_anteprima
+        if finestra is not None and finestra.winfo_exists():
+            finestra.deiconify()
+            finestra.lift()
+            self._mostra_anteprima(self._anteprima_prima, self._anteprima_dopo)
+            return
+
+        finestra = ctk.CTkToplevel(self)
+        self._finestra_anteprima = finestra
+        finestra.title("Anteprima Prima / Dopo - Franchetti Raw Converter Pro")
+        finestra.geometry("1120x470")
+        finestra.minsize(820, 360)
+        finestra.transient(self)
+        finestra.grid_columnconfigure(0, weight=1, uniform="grande")
+        finestra.grid_columnconfigure(1, weight=1, uniform="grande")
+        finestra.grid_rowconfigure(1, weight=1)
+        finestra.bind("<Configure>", self._on_grande_resize)
+
+        ctk.CTkLabel(
+            finestra,
+            text="PRIMA",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).grid(row=0, column=0, padx=12, pady=(10, 2))
+        ctk.CTkLabel(
+            finestra,
+            text="DOPO",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#66bb6a",
+        ).grid(row=0, column=1, padx=12, pady=(10, 2))
+        self.lbl_grande_prima = ctk.CTkLabel(
+            finestra, text="PRIMA", fg_color="#1b1f24", corner_radius=8,
+            text_color="#9aa0a6",
+        )
+        self.lbl_grande_prima.grid(row=1, column=0, padx=(12, 6), pady=(0, 10), sticky="nsew")
+        self.lbl_grande_dopo = ctk.CTkLabel(
+            finestra, text="DOPO", fg_color="#1b1f24", corner_radius=8,
+            text_color="#9aa0a6",
+        )
+        self.lbl_grande_dopo.grid(row=1, column=1, padx=(6, 12), pady=(0, 10), sticky="nsew")
+
+        def chiudi():
+            self._finestra_anteprima = None
+            self.lbl_grande_prima = None
+            self.lbl_grande_dopo = None
+            try:
+                finestra.destroy()
+            except Exception:
+                pass
+
+        finestra.protocol("WM_DELETE_WINDOW", chiudi)
+        try:
+            finestra.after(120, finestra.lift)
+            finestra.after(160, finestra.focus_force)
+        except Exception:
+            pass
+        self._mostra_anteprima(self._anteprima_prima, self._anteprima_dopo)
+
 
     def _crea_slider(self, parent, riga, chiave, etichetta, minimo, massimo, default, fmt):
         ctk.CTkLabel(parent, text=etichetta).grid(row=riga, column=0, padx=10, pady=2, sticky="w")
         slider = ctk.CTkSlider(parent, from_=minimo, to=massimo,
                                command=lambda v, k=chiave: self._on_slider(k, v))
-        slider.set(default)
+        # La finestra avanzata viene costruita dopo i preset/config: parte
+        # sempre dal valore corrente, non dai default.
+        valore_iniziale = float(self.parametri.get(chiave, default))
+        slider.set(valore_iniziale)
         slider.grid(row=riga, column=1, padx=10, pady=2, sticky="ew")
-        valore = ctk.CTkLabel(parent, text=fmt.format(default), width=60)
+        valore = ctk.CTkLabel(parent, text=fmt.format(valore_iniziale), width=60)
         valore.grid(row=riga, column=2, padx=10, pady=2, sticky="e")
         self._slider_widgets[chiave] = (slider, valore, fmt)
-        self.parametri[chiave] = default
+        self.parametri.setdefault(chiave, valore_iniziale)
         return slider
 
     def _crea_entry_colore(self, parent, riga, etichetta, default, chiave):
         ctk.CTkLabel(parent, text=etichetta).grid(row=riga, column=0, padx=10, pady=2, sticky="w")
         entry = ctk.CTkEntry(parent, width=110)
-        entry.insert(0, default)
+        valore_iniziale = str(self.parametri.get(chiave, default) or default)
+        entry.insert(0, valore_iniziale)
         entry.grid(row=riga, column=1, padx=10, pady=2, sticky="w")
-        entry.bind("<KeyRelease>", lambda e, k=chiave, w=entry: self.parametri.__setitem__(k, w.get().strip()))
-        self.parametri[chiave] = default
+        entry.bind("<KeyRelease>", lambda e, k=chiave, w=entry: self._on_entry_colore(k, w))
+        self.parametri.setdefault(chiave, valore_iniziale)
         return entry
+
+    def _on_entry_colore(self, chiave, widget):
+        self.parametri[chiave] = widget.get().strip()
+        self._programma_anteprima()
+
+    def _on_curva_tonale(self, valore):
+        self.parametri["curva_tonale"] = valore
+        self._programma_anteprima()
 
     def _on_slider(self, chiave, valore):
         self.parametri[chiave] = float(valore)
@@ -3077,6 +4159,7 @@ class FranchettiApp(ctk.CTk):
             ):
                 self.parametri["rimuovi_grana_auto"] = False
             self._aggiorna_stato_grana()
+        self._programma_anteprima()
 
     def _imposta_parametro_slider(self, chiave, valore):
         """Aggiorna slider, etichetta e parametro in un solo passaggio."""
@@ -3086,6 +4169,7 @@ class FranchettiApp(ctk.CTk):
             slider, label, fmt = self._slider_widgets[chiave]
             slider.set(valore)
             label.configure(text=fmt.format(valore))
+        self._programma_anteprima()
 
     # ------------------------------------------------- correzioni rapide
     _CHIAVI_RAPIDE = (
@@ -3115,6 +4199,7 @@ class FranchettiApp(ctk.CTk):
         self._snapshot_rapido = {}
         self._snapshot_luci = None
         self._aggiorna_stato_proteggi_luci()
+        self._programma_anteprima()
         return True
 
     def _correzione_rapida(self, nome):
@@ -3216,6 +4301,7 @@ class FranchettiApp(ctk.CTk):
             return
 
         self.scrivi_log(messaggio)
+        self._programma_anteprima()
 
     def _toggle_proteggi_luci(self, attivo):
         """Allinea interruttore e parametro di protezione luci."""
@@ -3225,6 +4311,7 @@ class FranchettiApp(ctk.CTk):
         self.scrivi_log(
             "Protezione luci attiva." if attivo else "Protezione luci disattivata."
         )
+        self._programma_anteprima()
 
     def _aggiorna_stato_proteggi_luci(self):
         attivo = bool(self.parametri.get("proteggi_luci", False))
@@ -3271,6 +4358,7 @@ class FranchettiApp(ctk.CTk):
             self._imposta_parametro_slider("nitidezza_raggio", 0.9)
             self.parametri["rimuovi_grana_auto"] = True
         self._aggiorna_stato_grana()
+        self._programma_anteprima()
 
     def _aggiorna_stato_grana(self):
         attivo = bool(self.parametri.get("rimuovi_grana_auto", False))
@@ -3302,8 +4390,415 @@ class FranchettiApp(ctk.CTk):
         self.combo_curva.set("Lineare")
         self.parametri["curva_tonale"] = "Lineare"
         self.scrivi_log("Parametri di sviluppo ripristinati ai valori di default.")
+        self._programma_anteprima()
 
     # ------------------------------------------------------ tab TETHERING
+    # ------------------------------------------------------- tab WI-FI FTP
+    def _costruisci_tab_ftp(self, tab):
+        """Ricezione diretta: la fotocamera invia, il PC prepara l'anteprima."""
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1)
+        tab.grid_propagate(False)
+
+        base = cartella_tethering_predefinita()
+        self._ftp_cartella_originali = os.path.join(base, "Originali")
+        self._ftp_cartella_anteprime = os.path.join(base, "Anteprime_Cliente")
+        self._ftp_info_corrente = {}
+
+        scroll = ctk.CTkScrollableFrame(
+            tab, label_text="Scatta, invia via Wi-Fi, ricevi l'anteprima pronta"
+        )
+        scroll.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        scroll.grid_columnconfigure(0, weight=1)
+
+        # ---- Accensione
+        card = ctk.CTkFrame(scroll)
+        card.pack(fill="x", padx=6, pady=(8, 6))
+        card.grid_columnconfigure(0, weight=1)
+
+        self.sw_ftp = ctk.CTkSwitch(
+            card,
+            text="RICEZIONE WI-FI FTP",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            command=self._toggle_ftp_switch,
+        )
+        self.sw_ftp.grid(row=0, column=0, padx=14, pady=(12, 4), sticky="w")
+
+        self.lbl_ftp_stato = ctk.CTkLabel(
+            card,
+            text="Spento. Accendi l'interruttore per ricevere le foto.",
+            font=ctk.CTkFont(size=11),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+        )
+        self.lbl_ftp_stato.grid(row=1, column=0, padx=14, pady=(0, 8), sticky="w")
+
+        self.btn_ftp = ctk.CTkButton(
+            card,
+            text="ACCENDI WI-FI FTP",
+            height=40,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#1f7a3d",
+            hover_color="#258c47",
+            command=lambda: self._toggle_ftp(not self._ftp_attivo),
+        )
+        self.btn_ftp.grid(row=2, column=0, padx=14, pady=(0, 12), sticky="ew")
+
+        # ---- Dati da inserire nella fotocamera
+        card_dati = ctk.CTkFrame(scroll)
+        card_dati.pack(fill="x", padx=6, pady=6)
+        card_dati.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            card_dati,
+            text="DATI PER LA FOTOCAMERA",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, padx=14, pady=(10, 2), sticky="w")
+
+        self.lbl_ftp_avviso = ctk.CTkLabel(
+            card_dati,
+            text="Inserisci questi dati nel menu FTP della fotocamera.",
+            font=ctk.CTkFont(size=11),
+            text_color="#9aa0a6",
+            anchor="w",
+        )
+        self.lbl_ftp_avviso.grid(row=1, column=0, padx=14, pady=(0, 6), sticky="w")
+
+        ip_iniziale = ip_locale_per_ftp()
+        self.lbl_ftp_ip = ctk.CTkLabel(
+            card_dati,
+            text=f"IP: {ip_iniziale}    Porta: {RicevitoreFTP.PORTA}",
+            font=ctk.CTkFont(size=14, family="Consolas"),
+            anchor="w",
+        )
+        self.lbl_ftp_ip.grid(row=2, column=0, padx=14, pady=2, sticky="w")
+        self.lbl_ftp_credenziali = ctk.CTkLabel(
+            card_dati,
+            text=f"Utente: {RicevitoreFTP.UTENTE}    Password: {RicevitoreFTP.PASSWORD}",
+            font=ctk.CTkFont(size=14, family="Consolas"),
+            anchor="w",
+        )
+        self.lbl_ftp_credenziali.grid(row=3, column=0, padx=14, pady=2, sticky="w")
+
+        azioni_dati = ctk.CTkFrame(card_dati, fg_color="transparent")
+        azioni_dati.grid(row=4, column=0, padx=10, pady=(6, 12), sticky="ew")
+        azioni_dati.grid_columnconfigure(0, weight=1)
+        azioni_dati.grid_columnconfigure(1, weight=1)
+        ctk.CTkButton(
+            azioni_dati,
+            text="COPIA DATI",
+            height=32,
+            command=self._copia_dati_ftp,
+        ).grid(row=0, column=0, padx=(4, 4), sticky="ew")
+        ctk.CTkButton(
+            azioni_dati,
+            text="APRI ANTEPRIME",
+            height=32,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            command=lambda: self._apri_cartella_tethering(
+                self._ftp_cartella_anteprime
+            ),
+        ).grid(row=0, column=1, padx=(4, 4), sticky="ew")
+
+        # ---- Copyright e cartelle
+        card_opt = ctk.CTkFrame(scroll)
+        card_opt.pack(fill="x", padx=6, pady=6)
+        card_opt.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            card_opt,
+            text="COSA SCRIVE SOPRA LE FOTO",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, padx=14, pady=(10, 2), sticky="w")
+        self.sw_ftp_copyright = ctk.CTkSwitch(
+            card_opt,
+            text="Aggiungi copyright/watermark (in basso a destra)",
+            command=self._toggle_ftp_copyright,
+        )
+        self.sw_ftp_copyright.select()
+        self.parametri["ftp_copyright"] = True
+        self.sw_ftp_copyright.grid(row=1, column=0, padx=14, pady=(0, 4), sticky="w")
+        ctk.CTkLabel(
+            card_opt,
+            text=(
+                "Il nome del file originale viene sempre scritto in basso a "
+                "sinistra. Il testo del copyright si imposta in AVANZATE; se "
+                "e' vuoto viene usato \u00a9 Franchetti <anno>."
+            ),
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=860,
+        ).grid(row=2, column=0, padx=14, pady=(0, 8), sticky="w")
+
+        cartelle = ctk.CTkFrame(card_opt, fg_color="transparent")
+        cartelle.grid(row=3, column=0, padx=10, pady=(0, 12), sticky="ew")
+        cartelle.grid_columnconfigure(0, weight=1)
+        cartelle.grid_columnconfigure(1, weight=1)
+        ctk.CTkButton(
+            cartelle,
+            text="CARTELLA ORIGINALI",
+            height=32,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            command=lambda: self._apri_cartella_tethering(
+                self._ftp_cartella_originali
+            ),
+        ).grid(row=0, column=0, padx=(4, 4), sticky="ew")
+        ctk.CTkButton(
+            cartelle,
+            text="CARTELLA ANTEPRIME",
+            height=32,
+            fg_color="#3a3f45",
+            hover_color="#4a5158",
+            command=lambda: self._apri_cartella_tethering(
+                self._ftp_cartella_anteprime
+            ),
+        ).grid(row=0, column=1, padx=(4, 4), sticky="ew")
+
+        # ---- Come si usa, senza promesse impossibili
+        card_aiuto = ctk.CTkFrame(scroll)
+        card_aiuto.pack(fill="x", padx=6, pady=(6, 12))
+        card_aiuto.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(
+            card_aiuto,
+            text="COME FUNZIONA (IN 3 PASSI)",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, padx=14, pady=(10, 2), sticky="w")
+        ctk.CTkLabel(
+            card_aiuto,
+            text=(
+                "1) Accendi il Wi-Fi FTP: il PC resta in ascolto sulla rete locale.\n"
+                "2) Nella fotocamera apri il trasferimento FTP e inserisci IP, "
+                "porta, utente e password qui sopra.\n"
+                "3) Scatta e invia: appena il file arriva, il programma sviluppa "
+                "il RAW, riduce il lato lungo a 2000 px e salva il JPEG pronto "
+                "per il cliente in Anteprime_Cliente. L'originale non viene toccato."
+            ),
+            font=ctk.CTkFont(size=11),
+            anchor="w",
+            justify="left",
+            wraplength=860,
+        ).grid(row=1, column=0, padx=14, pady=(0, 6), sticky="w")
+        ctk.CTkLabel(
+            card_aiuto,
+            text=(
+                "Compatibilita': Nikon, Canon, Fujifilm e molti modelli Sony con "
+                "trasferimento FTP integrato possono inviare direttamente. I modelli "
+                "senza client FTP nella fotocamera non possono farlo da soli: in quel "
+                "caso usa l'app del produttore o la scheda, oppure la cartella "
+                "monitorata in 'Tethering & Cloud'. Il Bluetooth non trasferisce RAW "
+                "di alta qualita' in modo universale: non lo simuliamo."
+            ),
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=860,
+        ).grid(row=2, column=0, padx=14, pady=(0, 10), sticky="w")
+
+        self._aggiorna_dati_ftp({})
+
+    # ------------------------------------------------------ controllo FTP
+    def _toggle_ftp_switch(self):
+        self._toggle_ftp(bool(self.sw_ftp.get()))
+
+    def _toggle_ftp(self, attivo):
+        if attivo:
+            self._avvia_ftp()
+        else:
+            self._ferma_ftp()
+
+    def _ftp_parametri(self):
+        """Dati letti dal thread di elaborazione: nessun accesso ai widget."""
+        return {
+            "ftp_copyright": bool(self.parametri.get("ftp_copyright", True)),
+            "watermark_text": str(self.parametri.get("watermark_text", "")),
+        }
+
+    def _toggle_ftp_copyright(self):
+        attivo = bool(self.sw_ftp_copyright.get())
+        self.parametri["ftp_copyright"] = attivo
+        self.scrivi_log(
+            "Wi-Fi FTP: copyright attivo." if attivo else "Wi-Fi FTP: copyright disattivato."
+        )
+
+    def _avvia_ftp(self):
+        if self._ftp_in_avvio:
+            return
+        if self._ftp_server is not None and self._ftp_attivo:
+            return
+        self._ftp_in_avvio = True
+        try:
+            self._raccogli_campi()
+        except Exception:
+            pass
+        try:
+            self.sw_ftp.select()
+            self.btn_ftp.configure(state="disabled", text="AVVIO IN CORSO...")
+        except Exception:
+            pass
+        self._imposta_stato_ftp("Avvio del server Wi-Fi...", "#ffb74d")
+        threading.Thread(target=self._ftp_avvia_worker, daemon=True).start()
+
+    def _ftp_avvia_worker(self):
+        try:
+            ricevitore = RicevitoreFTP(
+                log=lambda messaggio: self._coda.put(("ftp_evento", messaggio)),
+                parametri_getter=self._ftp_parametri,
+            )
+            info = ricevitore.start()
+            self._ftp_server = ricevitore
+            self._ftp_attivo = True
+            self._coda.put(("ftp_stato", True, info, ""))
+        except Exception as errore:
+            self._ftp_server = None
+            self._ftp_attivo = False
+            logging.exception("Avvio Wi-Fi FTP non riuscito")
+            self._coda.put(
+                (
+                    "ftp_stato",
+                    False,
+                    {},
+                    f"{type(errore).__name__}: {errore}",
+                )
+            )
+
+    def _ferma_ftp(self):
+        server = self._ftp_server
+        self._ftp_server = None
+        self._ftp_attivo = False
+        self._ftp_in_avvio = False
+        try:
+            self.sw_ftp.deselect()
+            self.btn_ftp.configure(state="disabled", text="ARRESTO IN CORSO...")
+        except Exception:
+            pass
+        self._imposta_stato_ftp("Spegnimento del server Wi-Fi...", "#ffb74d")
+        if server is None:
+            self._ftp_stato_ui(False, {}, "")
+            return
+        threading.Thread(
+            target=self._ftp_ferma_worker, args=(server,), daemon=True
+        ).start()
+
+    def _ftp_ferma_worker(self, server):
+        try:
+            server.stop()
+        except Exception:
+            logging.exception("Arresto Wi-Fi FTP non riuscito")
+        self._coda.put(("ftp_stato", False, server.info(), ""))
+
+    def _imposta_stato_ftp(self, testo, colore="#9aa0a6"):
+        try:
+            self.lbl_ftp_stato.configure(text=testo, text_color=colore)
+        except Exception:
+            pass
+
+    def _aggiorna_dati_ftp(self, info):
+        info = info or {}
+        ip = info.get("ip") or ip_locale_per_ftp()
+        porta = info.get("porta") or RicevitoreFTP.PORTA
+        utente = info.get("utente") or RicevitoreFTP.UTENTE
+        password = info.get("password") or RicevitoreFTP.PASSWORD
+        self._ftp_info_corrente = {
+            "ip": ip,
+            "porta": porta,
+            "utente": utente,
+            "password": password,
+        }
+        try:
+            self.lbl_ftp_ip.configure(text=f"IP: {ip}    Porta: {porta}")
+            self.lbl_ftp_credenziali.configure(
+                text=f"Utente: {utente}    Password: {password}"
+            )
+        except Exception:
+            pass
+
+    def _copia_dati_ftp(self):
+        dati = self._ftp_info_corrente or {}
+        ip = dati.get("ip") or ip_locale_per_ftp()
+        porta = dati.get("porta") or RicevitoreFTP.PORTA
+        utente = dati.get("utente") or RicevitoreFTP.UTENTE
+        password = dati.get("password") or RicevitoreFTP.PASSWORD
+        testo = f"IP: {ip}\nPorta: {porta}\nUtente: {utente}\nPassword: {password}"
+        try:
+            self.clipboard_clear()
+            self.clipboard_append(testo)
+            self.scrivi_log("Dati Wi-Fi FTP copiati negli appunti.")
+        except Exception:
+            pass
+
+    def _apri_cartella_tethering(self, percorso):
+        try:
+            os.makedirs(percorso, exist_ok=True)
+            os.startfile(percorso)
+        except Exception as errore:
+            messagebox.showinfo("Cartella", f"Non riesco ad aprire:\n{percorso}\n\n{errore}")
+
+    def _ftp_evento(self, messaggio):
+        self.scrivi_log(messaggio)
+        if "Anteprima pronta" in messaggio:
+            self._imposta_stato_ftp(messaggio, "#66bb6a")
+        elif "non riuscita" in messaggio or "incompleto" in messaggio:
+            self._imposta_stato_ftp(messaggio, "#ef5350")
+
+    def _ftp_stato_ui(self, attivo, info, errore):
+        self._ftp_in_avvio = False
+        try:
+            self.btn_ftp.configure(state="normal")
+        except Exception:
+            pass
+
+        if errore:
+            self._ftp_attivo = False
+            self._ftp_server = None
+            try:
+                self.sw_ftp.deselect()
+                self.btn_ftp.configure(
+                    text="ACCENDI WI-FI FTP",
+                    fg_color="#1f7a3d",
+                    hover_color="#258c47",
+                )
+            except Exception:
+                pass
+            self._imposta_stato_ftp(f"Wi-Fi non attivo: {errore}", "#ef5350")
+            self.scrivi_log(f"Wi-Fi FTP non avviato: {errore}")
+            return
+
+        if attivo:
+            self._ftp_attivo = True
+            self._aggiorna_dati_ftp(info)
+            try:
+                self.sw_ftp.select()
+                self.btn_ftp.configure(
+                    text="SPEGNI WI-FI FTP",
+                    fg_color="#a33a3a",
+                    hover_color="#b54545",
+                )
+            except Exception:
+                pass
+            self._imposta_stato_ftp(
+                "Wi-Fi attivo! Invia le foto dalla fotocamera.", "#66bb6a"
+            )
+            return
+
+        self._ftp_attivo = False
+        self._aggiorna_dati_ftp(info)
+        try:
+            self.sw_ftp.deselect()
+            self.btn_ftp.configure(
+                text="ACCENDI WI-FI FTP",
+                fg_color="#1f7a3d",
+                hover_color="#258c47",
+            )
+        except Exception:
+            pass
+        self._imposta_stato_ftp("Spento. La porta 2121 e' libera.", "#9aa0a6")
+
     def _costruisci_tab_tethering(self, tab):
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(0, weight=1)
@@ -3533,6 +5028,7 @@ class FranchettiApp(ctk.CTk):
             self.entry_sorgente.delete(0, "end")
             self.entry_sorgente.insert(0, cartella)
             self._invalida_analisi()
+            self._aggiorna_file_anteprima()
             self.scrivi_log(f"Sorgente: {cartella}")
 
     def seleziona_file_sorgente(self):
@@ -3550,6 +5046,7 @@ class FranchettiApp(ctk.CTk):
             self.entry_sorgente.delete(0, "end")
             self.entry_sorgente.insert(0, "; ".join(files))
             self._invalida_analisi()
+            self._aggiorna_file_anteprima()
             self.scrivi_log(f"Selezionati {len(files)} file.")
 
     def seleziona_cartella_destinazione(self):
@@ -3668,6 +5165,7 @@ class FranchettiApp(ctk.CTk):
         self._aggiorna_stato_grana()
         self._aggiorna_stato_proteggi_luci()
         self.scrivi_log(f"Preset applicato: {nome}")
+        self._programma_anteprima()
 
     # ============================================================ CONFIG
     def salva_configurazione(self):
@@ -3764,6 +5262,8 @@ class FranchettiApp(ctk.CTk):
         imposta_check(self.chk_cloud_meta, "cloud_meta")
         imposta_check(self.chk_cloud_dropbox, "cloud_dropbox")
         imposta_check(self.chk_cloud_swiss, "cloud_swiss")
+        if hasattr(self, "sw_ftp_copyright"):
+            imposta_check(self.sw_ftp_copyright, "ftp_copyright", True)
 
         imposta_entry(self.entry_wifi_dir, "wifi_dir")
         imposta_entry(self.entry_wifi_output, "output_dir")
@@ -3786,6 +5286,7 @@ class FranchettiApp(ctk.CTk):
         self._toggle_auto_luminosita(bool(self.parametri.get("auto_luminosita", False)))
         self._aggiorna_stato_grana()
         self._aggiorna_stato_proteggi_luci()
+        self._programma_anteprima()
 
     # ============================================================ CAMPI
     def _toggle_auto_luminosita(self, attivo):
@@ -3803,6 +5304,7 @@ class FranchettiApp(ctk.CTk):
                     widget.deselect()
             except Exception:
                 pass
+        self._programma_anteprima()
 
     def _imposta_max_dim(self, valore):
         """Imposta il lato lungo da una misura pronta."""
@@ -3878,6 +5380,8 @@ class FranchettiApp(ctk.CTk):
         self.parametri["cloud_meta"] = bool(self.chk_cloud_meta.get())
         self.parametri["cloud_dropbox"] = bool(self.chk_cloud_dropbox.get())
         self.parametri["cloud_swiss"] = bool(self.chk_cloud_swiss.get())
+        if hasattr(self, "sw_ftp_copyright"):
+            self.parametri["ftp_copyright"] = bool(self.sw_ftp_copyright.get())
         return self.parametri
 
     # ============================================================ BATCH
@@ -4423,6 +5927,12 @@ class FranchettiApp(ctk.CTk):
     def _chiudi_app(self):
         try:
             self._cancel_event.set()
+            if self._ftp_server is not None:
+                try:
+                    self._ftp_server.stop()
+                except Exception:
+                    pass
+                self._ftp_server = None
             if self.observer and self.observer.is_alive():
                 self.observer.stop()
                 self.observer.join(timeout=2)

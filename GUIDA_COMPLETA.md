@@ -13,14 +13,15 @@ Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e ind
 1. [Primi passi in 2 minuti](#1-primi-passi-in-2-minuti)
 2. [Come è fatta la finestra](#2-come-e-fatta-la-finestra)
 3. [Scheda Batch: conversione di tante foto](#3-scheda-batch-conversione-di-tante-foto)
-4. [Scheda Sviluppo RAW: regolazioni fotografiche](#4-scheda-sviluppo-raw-regolazioni-fotografiche)
-5. [Scheda Tethering & Cloud](#5-scheda-tethering-cloud)
-6. [Scheda Log: messaggi ed errori](#6-scheda-log-messaggi-ed-errori)
-7. [Impostazioni consigliate per tipo di foto](#7-impostazioni-consigliate-per-tipo-di-foto)
-8. [Flussi di lavoro pronti all'uso](#8-flussi-di-lavoro-pronti-alluso)
-9. [Domande frequenti e soluzione problemi](#9-domande-frequenti-e-soluzione-problemi)
-10. [Glossario semplice](#10-glossario-semplice)
-11. [Scheda riassuntiva da stampare](#11-scheda-riassuntiva-da-stampare)
+4. [Scheda Batch: anteprima e regolazioni avanzate](#4-scheda-batch-anteprima-e-regolazioni-avanzate)
+5. [Scheda Wi-Fi FTP](#5-scheda-wi-fi-ftp)
+6. [Scheda Tethering & Cloud](#6-scheda-tethering-cloud)
+7. [Scheda Log: messaggi ed errori](#7-scheda-log-messaggi-ed-errori)
+8. [Impostazioni consigliate per tipo di foto](#8-impostazioni-consigliate-per-tipo-di-foto)
+9. [Flussi di lavoro pronti all'uso](#9-flussi-di-lavoro-pronti-alluso)
+10. [Domande frequenti e soluzione problemi](#10-domande-frequenti-e-soluzione-problemi)
+11. [Glossario semplice](#11-glossario-semplice)
+12. [Scheda riassuntiva da stampare](#12-scheda-riassuntiva-da-stampare)
 
 ---
 
@@ -42,14 +43,16 @@ La finestra ha quattro schede:
 
 | Scheda | A cosa serve |
 |---|---|
-| **Batch** | Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. È la scheda principale. |
-| **Sviluppo RAW** | Imposta esposizione, colore, dettaglio, riduzione grana, nitidezza, vignettatura e split toning. |
+| **Batch** | Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. Contiene l'anteprima **PRIMA / DOPO** e le correzioni rapide. È la scheda principale. |
+| **Wi-Fi FTP** | Accende il server FTP integrato: la fotocamera invia gli scatti e il programma prepara le anteprime cliente a 2000 px. |
 | **Tethering & Cloud** | Monitora una cartella per Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre marche; per Sony è disponibile anche il controllo Wi-Fi diretto. Invia i risultati a Telegram o Dropbox. |
 | **Log** | Mostra cosa sta facendo il programma e permette di salvare il registro. |
 
-In basso c'è la **barra di stato**: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, rimozione grana, avanzamento e apertura della cartella.
+Il pulsante **AVANZATE** nella scheda Batch apre una **finestra separata** con tutti gli slider, la curva tonale, lo split toning, i nomi file, il watermark e i preset.
 
-> **Importante:** le regolazioni della scheda **Sviluppo RAW** non sono un'anteprima dal vivo. Vengono applicate quando avvii la conversione Batch. Per provarle, converti prima una sola foto.
+In basso c'è la **barra di stato**: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, avanzamento e apertura della cartella.
+
+> **Anteprima dal vivo:** le regolazioni si vedono subito nell'anteprima **PRIMA / DOPO**. L'anteprima decodifica il RAW una sola volta e lavora su una copia ridotta: l'originale non viene mai modificato.
 
 ---
 
@@ -234,13 +237,13 @@ L'analisi usa una decodifica RAW a mezza risoluzione e legge il clipping diretta
 
 ---
 
-## 4. Scheda Sviluppo RAW: regolazioni fotografiche
+## 4. Scheda Batch: anteprima e regolazioni avanzate
 
 Queste regolazioni si applicano a tutte le foto del batch. Sono pensate per un risultato naturale: meglio poco e buono che troppo e artificiale.
 
 #### Correzioni rapide Smart Batch
 
-La scheda **CORREZIONI RAPIDE** è in cima alla scheda **Sviluppo RAW**. I pulsanti non creano impostazioni nascoste: spostano gli slider che vedi qui sotto, così puoi controllare e modificare ogni valore.
+La scheda **CORREZIONI RAPIDE** è nella finestra di conversione **Batch**, sotto l'anteprima. I pulsanti non creano impostazioni nascoste: spostano gli slider della finestra **AVANZATE**, così puoi controllare e modificare ogni valore.
 
 | Pulsante | Cosa cambia | Quando usarlo |
 |---|---|---|
@@ -312,7 +315,7 @@ Lo stesso interruttore della scheda Batch. È un'elaborazione automatica dell'es
 
 ### 4.6 RIMUOVI GRANA (AUTO ISO)
 
-Questo è il pulsante **un clic** per le foto rumorose. È **attivo di default** e si trova subito sotto **PIÙ LUMINOSA**, sia nel tab Batch sia nel tab Sviluppo RAW.
+Questo è il pulsante **un clic** per le foto rumorose. È **attivo di default** e si trova subito sotto **PIÙ LUMINOSA**, sia nel tab Batch sia nella finestra AVANZATE.
 
 **Quando lo premi, imposta:**
 
@@ -379,9 +382,59 @@ Riporta gli slider, la curva e lo split toning ai valori predefiniti. **Non** ca
 
 ---
 
-## 5. Scheda Tethering & Cloud
+## 5. Scheda Wi-Fi FTP
 
-### 5.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica
+La scheda **Wi-Fi FTP** accende un piccolo server FTP dentro il programma. Serve a far arrivare gli scatti dalla fotocamera al PC **senza software esterni**. È pensata per chi vuole: scatta → la foto arriva → il cliente riceve l'anteprima già pronta.
+
+### 5.1 Accensione e dati di configurazione
+
+1. Apri la scheda **Wi-Fi FTP**.
+2. Sposta su **ON** l'interruttore **RICEZIONE WI-FI FTP** (oppure premi **ACCENDI WI-FI FTP**).
+3. Il programma mostra i dati da inserire nella fotocamera:
+
+| Voce | Valore |
+|---|---|
+| **IP** | l'indirizzo locale del PC (cambia da rete a rete) |
+| **Porta** | `2121` |
+| **Utente** | `camera` |
+| **Password** | `1234` |
+
+Il pulsante **COPIA DATI** copia questi valori negli appunti.
+
+> Il PC e la fotocamera devono essere sulla **stessa rete** (stesso router Wi-Fi o cavo). Se la fotocamera crea una propria rete DIRECT, collega il PC a quella rete.
+>
+> Al primo avvio Windows può chiedere l'autorizzazione del firewall per la porta **2121**: consenti l'accesso sulle **reti private**.
+
+### 5.2 Cosa succede quando arriva uno scatto
+
+1. La fotocamera carica il file nella cartella **Originali**.
+2. Appena il trasferimento è completo, il programma sviluppa il RAW con **WB e matrice colore della fotocamera**.
+3. **Fujifilm** usa la demosaicizzazione **AAHD (qualità 12)**, gli altri marchi **AHD (3)**.
+4. Il lato lungo viene ridotto a **2000 px** con Lanczos.
+5. In basso a sinistra compare **File: nome originale**; in basso a destra il **copyright/watermark**, con testo bianco su bordo nero per restare leggibile su sfondi chiari e scuri.
+6. Il JPEG qualità **85** viene salvato in **Anteprime_Cliente**. L'originale resta intatto.
+
+I pulsanti **CARTELLA ORIGINALI** e **CARTELLA ANTEPRIME** aprono le due cartelle.
+
+### 5.3 Copyright
+
+L'interruttore **Aggiungi copyright/watermark** è attivo di default. Il testo si imposta in **AVANZATE → WATERMARK → Testo watermark**. Se il campo è vuoto viene usato `© Franchetti <anno>`. Il nome del file originale viene scritto sempre.
+
+### 5.4 Spegnimento
+
+Sposta l'interruttore su **OFF** (o premi **SPEGNI WI-FI FTP**). Il server viene chiuso in modo sicuro e la porta **2121** torna libera.
+
+### 5.5 Quali fotocamere funzionano davvero
+
+- **Funzionano direttamente** i modelli con un client **FTP integrato** nel menu di rete: molti Nikon, Canon, Fujifilm e alcuni Sony.
+- **Non funzionano da soli** i modelli che non hanno FTP nella fotocamera. In quel caso usa l'app del produttore (EOS Utility, NX Tether, X Acquire, Imaging Edge, Lumix Tether…), la scheda di memoria o la cartella monitorata nella scheda **Tethering & Cloud**.
+- **Bluetooth:** non esiste un trasferimento RAW universale e veloce via Bluetooth. Il programma non simula questa funzione.
+
+---
+
+## 6. Scheda Tethering & Cloud
+
+### 6.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica
 
 Il programma **non pilota direttamente** il corpo macchina di queste marche. Usa il software di tethering del produttore, che salva gli scatti in una cartella: il programma monitora quella cartella e applica automaticamente la pipeline completa.
 
@@ -399,7 +452,7 @@ Il programma **non pilota direttamente** il corpo macchina di queste marche. Usa
 
 > Per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica il flusso è quindi **software del produttore + hot-folder**. Non serve installare driver proprietari nel programma.
 
-### 5.2 Sony Wi-Fi — Smart Remote Control
+### 6.2 Sony Wi-Fi — Smart Remote Control
 
 Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La fotocamera **non invia da sola** le foto: è il programma a comandarla.
 
@@ -419,7 +472,7 @@ Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La f
 - Se la fotocamera si spegne, riconnetti la rete Wi-Fi e premi di nuovo **CONNETTI FOTOCAMERA**.
 - La distanza ideale è di pochi metri, senza muri spessi.
 
-### 5.3 Hot-folder (cartella monitorata)
+### 6.3 Hot-folder (cartella monitorata)
 
 È il modo più semplice per automatizzare l'arrivo delle foto.
 
@@ -431,7 +484,7 @@ Quando arriva un file supportato, il programma aspetta che la scrittura sia fini
 
 **Consiglio:** usa una cartella di appoggio dedicata solo all'arrivo delle foto. Non puntare il monitoraggio sulla cartella che contiene l'intero archivio: sarebbe inutile e lento.
 
-### 5.4 Credenziali Cloud
+### 6.4 Credenziali Cloud
 
 **Telegram (operativo):**
 
@@ -458,7 +511,7 @@ Questi campi sono predisposti, ma l'invio viene saltato senza errori. Non perder
 
 ---
 
-## 6. Scheda Log: messaggi ed errori
+## 7. Scheda Log: messaggi ed errori
 
 La scheda **Log** mostra in tempo reale:
 
@@ -474,7 +527,7 @@ La scheda **Log** mostra in tempo reale:
 
 ---
 
-## 7. Impostazioni consigliate per tipo di foto
+## 8. Impostazioni consigliate per tipo di foto
 
 ### 7.1 Tabella rapida
 
@@ -539,7 +592,7 @@ La scheda **Log** mostra in tempo reale:
 
 ---
 
-## 8. Flussi di lavoro pronti all'uso
+## 9. Flussi di lavoro pronti all'uso
 
 ### 8.1 Web e social in 4 passi
 
@@ -593,7 +646,7 @@ La scheda **Log** mostra in tempo reale:
 
 ---
 
-## 9. Domande frequenti e soluzione problemi
+## 10. Domande frequenti e soluzione problemi
 
 ### Il programma è lento. Perché?
 
@@ -684,7 +737,7 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-## 10. Glossario semplice
+## 11. Glossario semplice
 
 | Termine | Significato |
 |---|---|
@@ -713,7 +766,7 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-## 11. Scheda riassuntiva da stampare
+## 12. Scheda riassuntiva da stampare
 
 ### Web / social
 

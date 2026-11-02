@@ -25,9 +25,56 @@ momento deselezionando la casella.
 
 ---
 
+## Interfaccia semplificata: tutto nella finestra di conversione
+
+La scheda **Sviluppo RAW** è stata rimossa. Ora la schermata **Batch** contiene:
+
+- **anteprima PRIMA / DOPO** integrata, aggiornata mentre sposti gli slider;
+- **correzioni rapide** a un clic;
+- pulsante **AVANZATE** che apre una finestra separata con tutti gli slider,
+  la curva tonale, lo split toning, i nomi file, il watermark e i preset.
+
+L'anteprima decodifica il RAW **una sola volta** e riusa la base ridotta: gli
+slider non rileggono il file a ogni movimento. L'originale non viene mai
+modificato. Il pulsante **APRI ANTEPRIMA GRANDE** mostra il confronto a piena
+finestra.
+
+---
+
+## Nuovo Wi-Fi FTP: scatta, invia, ricevi l'anteprima cliente
+
+La nuova scheda **Wi-Fi FTP** accende un server FTP integrato nel programma,
+senza software esterni:
+
+- ascolta sull'IP locale del PC, porta **2121**;
+- utente **camera**, password **1234**;
+- la fotocamera scrive nella cartella **Originali**;
+- appena un file è completo, il programma lo sviluppa in background.
+
+Pipeline automatica:
+
+1. sviluppo RAW con `use_camera_wb=True` e `use_camera_matrix=True`;
+2. Fujifilm → demosaicizzazione **AAHD (qualità 12)**, altri marchi → **AHD (3)**;
+3. ridimensionamento del lato lungo a **2000 px** con Lanczos;
+4. nome file originale in basso a sinistra e copyright/watermark in basso a
+   destra, testo bianco su bordo nero più spesso per la massima leggibilità;
+5. JPEG qualità **85** in **Anteprime_Cliente**.
+
+L'interruttore **RICEZIONE WI-FI FTP** mostra subito IP, porta, utente e
+password; spegnendolo il server viene chiuso e la porta 2121 liberata.
+
+> **Compatibilità onesta:** Nikon, Canon, Fujifilm e molti modelli Sony con
+> trasferimento FTP integrato possono inviare direttamente. I modelli senza
+> client FTP nella fotocamera non possono farlo da soli: in quel caso restano
+> disponibili l'app del produttore, la scheda o la cartella monitorata. Il
+> Bluetooth non trasferisce RAW di alta qualità in modo universale e non viene
+> simulato.
+
+---
+
 ## Correzioni rapide
 
-Nella scheda **Sviluppo RAW** c'è una nuova scheda **CORREZIONI RAPIDE**:
+Nella finestra di conversione **Batch** c'è la scheda **CORREZIONI RAPIDE**:
 
 | Pulsante | Effetto |
 |---|---|

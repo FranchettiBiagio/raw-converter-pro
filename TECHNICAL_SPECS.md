@@ -54,6 +54,20 @@ LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone (exposure/
 - **Watermark**: Text rendering with alpha compositing
 - **JPEG**: Optimized Huffman tables, progressive scan, quality 90 by default
 
+### Wi-Fi FTP Ingestion Pipeline (v2.57.0)
+```
+FTP STOR -> on_file_received -> decode (camera WB/matrix) -> BGR -> Lanczos 2000px -> filename + copyright overlay -> JPEG q85 -> Anteprime_Cliente
+```
+- **Server**: `pyftpdlib.servers.FTPServer` on `0.0.0.0:2121`, local LAN IP resolved with a UDP socket; runs in a daemon thread.
+- **Credentials**: user `camera`, password `1234`, full write permission on the `Originali` folder.
+- **Completion hook**: `FTPHandler.on_file_received` is used instead of polling the filesystem, so the pipeline starts only when the transfer is complete.
+- **Decode**: `use_camera_wb=True`, `use_camera_matrix=True`; Fujifilm → AAHD (12), other brands → AHD (3).
+- **Resize**: `cv2.INTER_LANCZOS4`, longest side capped at 2000 px.
+- **Overlay**: `cv2.putText` with `FONT_HERSHEY_DUPLEX`; white text over a thicker black border (thickness + 3) for legibility. Filename bottom-left, copyright bottom-right.
+- **Output**: JPEG quality 85 in `Anteprime_Cliente`; originals are never modified.
+- **Shutdown**: `server.close_all()` and thread join; port 2121 is released.
+- **Fallback**: if `cv2` is missing, Pillow handles resize/overlay/encode; the app still starts.
+
 ### Watermark Algorithm
 ```
 Position: (W - text_w - margin, H - text_h - margin)
@@ -207,7 +221,7 @@ cmd = [
 | Property | Value |
 |----------|-------|
 | **File** | `FranchettiRawConverterPro.exe` |
-| **Size** | ~78 MB |
+| **Size** | ~92 MB |
 | **Architecture** | x64 (PE32+) |
 | **Subsystem** | Windows GUI (2) |
 | **Dependencies** | None (fully bundled) |

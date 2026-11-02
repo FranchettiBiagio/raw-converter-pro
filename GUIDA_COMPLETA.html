@@ -61,14 +61,15 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li><a href="#1-primi-passi-in-2-minuti">Primi passi in 2 minuti</a></li>
 <li><a href="#2-come-e-fatta-la-finestra">Come è fatta la finestra</a></li>
 <li><a href="#3-scheda-batch-conversione-di-tante-foto">Scheda Batch: conversione di tante foto</a></li>
-<li><a href="#4-scheda-sviluppo-raw-regolazioni-fotografiche">Scheda Sviluppo RAW: regolazioni fotografiche</a></li>
-<li><a href="#5-scheda-tethering-cloud">Scheda Tethering &amp; Cloud</a></li>
-<li><a href="#6-scheda-log-messaggi-ed-errori">Scheda Log: messaggi ed errori</a></li>
-<li><a href="#7-impostazioni-consigliate-per-tipo-di-foto">Impostazioni consigliate per tipo di foto</a></li>
-<li><a href="#8-flussi-di-lavoro-pronti-alluso">Flussi di lavoro pronti all'uso</a></li>
-<li><a href="#9-domande-frequenti-e-soluzione-problemi">Domande frequenti e soluzione problemi</a></li>
-<li><a href="#10-glossario-semplice">Glossario semplice</a></li>
-<li><a href="#11-scheda-riassuntiva-da-stampare">Scheda riassuntiva da stampare</a></li>
+<li><a href="#4-scheda-batch-anteprima-e-regolazioni-avanzate">Scheda Batch: anteprima e regolazioni avanzate</a></li>
+<li><a href="#5-scheda-wi-fi-ftp">Scheda Wi-Fi FTP</a></li>
+<li><a href="#6-scheda-tethering-cloud">Scheda Tethering &amp; Cloud</a></li>
+<li><a href="#7-scheda-log-messaggi-ed-errori">Scheda Log: messaggi ed errori</a></li>
+<li><a href="#8-impostazioni-consigliate-per-tipo-di-foto">Impostazioni consigliate per tipo di foto</a></li>
+<li><a href="#9-flussi-di-lavoro-pronti-alluso">Flussi di lavoro pronti all'uso</a></li>
+<li><a href="#10-domande-frequenti-e-soluzione-problemi">Domande frequenti e soluzione problemi</a></li>
+<li><a href="#11-glossario-semplice">Glossario semplice</a></li>
+<li><a href="#12-scheda-riassuntiva-da-stampare">Scheda riassuntiva da stampare</a></li>
 </ol>
 <hr />
 <h2 id="1-primi-passi-in-2-minuti">1. Primi passi in 2 minuti</h2>
@@ -93,11 +94,11 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <tbody>
 <tr>
 <td><strong>Batch</strong></td>
-<td>Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. È la scheda principale.</td>
+<td>Converte una o centinaia di foto in JPEG, PNG, TIFF o WebP. Contiene l'anteprima <strong>PRIMA / DOPO</strong> e le correzioni rapide. È la scheda principale.</td>
 </tr>
 <tr>
-<td><strong>Sviluppo RAW</strong></td>
-<td>Imposta esposizione, colore, dettaglio, riduzione grana, nitidezza, vignettatura e split toning.</td>
+<td><strong>Wi-Fi FTP</strong></td>
+<td>Accende il server FTP integrato: la fotocamera invia gli scatti e il programma prepara le anteprime cliente a 2000 px.</td>
 </tr>
 <tr>
 <td><strong>Tethering &amp; Cloud</strong></td>
@@ -109,9 +110,10 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tr>
 </tbody>
 </table>
-<p>In basso c'è la <strong>barra di stato</strong>: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, rimozione grana, avanzamento e apertura della cartella.</p>
+<p>Il pulsante <strong>AVANZATE</strong> nella scheda Batch apre una <strong>finestra separata</strong> con tutti gli slider, la curva tonale, lo split toning, i nomi file, il watermark e i preset.</p>
+<p>In basso c'è la <strong>barra di stato</strong>: a sinistra il messaggio corrente, a destra il percorso della cartella di output. In fondo alla scheda Batch ci sono i pulsanti di avvio, annullamento, avanzamento e apertura della cartella.</p>
 <blockquote>
-<p><strong>Importante:</strong> le regolazioni della scheda <strong>Sviluppo RAW</strong> non sono un'anteprima dal vivo. Vengono applicate quando avvii la conversione Batch. Per provarle, converti prima una sola foto.</p>
+<p><strong>Anteprima dal vivo:</strong> le regolazioni si vedono subito nell'anteprima <strong>PRIMA / DOPO</strong>. L'anteprima decodifica il RAW una sola volta e lavora su una copia ridotta: l'originale non viene mai modificato.</p>
 </blockquote>
 <hr />
 <h2 id="3-scheda-batch-conversione-di-tante-foto">3. Scheda Batch: conversione di tante foto</h2>
@@ -364,10 +366,10 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <p><strong>Limite importante:</strong> se il RAW o il JPEG è completamente bruciato, il dettaglio non esiste più. La protezione luci comprime le alte luci ancora presenti, ma non può ricostruire pixel già saturi.</p>
 </blockquote>
 <hr />
-<h2 id="4-scheda-sviluppo-raw-regolazioni-fotografiche">4. Scheda Sviluppo RAW: regolazioni fotografiche</h2>
+<h2 id="4-scheda-batch-anteprima-e-regolazioni-avanzate">4. Scheda Batch: anteprima e regolazioni avanzate</h2>
 <p>Queste regolazioni si applicano a tutte le foto del batch. Sono pensate per un risultato naturale: meglio poco e buono che troppo e artificiale.</p>
 <h3 id="correzioni-rapide-smart-batch">Correzioni rapide Smart Batch</h3>
-<p>La scheda <strong>CORREZIONI RAPIDE</strong> è in cima alla scheda <strong>Sviluppo RAW</strong>. I pulsanti non creano impostazioni nascoste: spostano gli slider che vedi qui sotto, così puoi controllare e modificare ogni valore.</p>
+<p>La scheda <strong>CORREZIONI RAPIDE</strong> è nella finestra di conversione <strong>Batch</strong>, sotto l'anteprima. I pulsanti non creano impostazioni nascoste: spostano gli slider della finestra <strong>AVANZATE</strong>, così puoi controllare e modificare ogni valore.</p>
 <table>
 <thead>
 <tr><th>Pulsante</th><th>Cosa cambia</th><th>Quando usarlo</th></tr>
@@ -562,7 +564,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <p><strong>Come funziona la nitidezza:</strong> viene applicata solo alla luminanza, quindi non crea bordi colorati. La maschera ha una <strong>soglia sul rumore</strong>: interviene sui dettagli veri e lascia pulite le zone piatte, così la grana non torna visibile dopo la nitidezza.</p>
 <p><strong>Come funziona la riduzione rumore:</strong> è un <strong>denoise ibrido</strong>. Un guided filter separa base e dettaglio; il dettaglio viene “coringato” per spegnere solo la grana fine. Nelle zone realmente piatte (cieli, pareti, ombre) interviene anche un secondo passaggio <strong>non-local means</strong> che elimina i residui senza toccare visi, capelli e tessuti. La crominanza viene pulita a metà risoluzione: è più veloce e il risultato visivo è lo stesso.</p>
 <h3 id="46-rimuovi-grana-auto-iso">4.6 RIMUOVI GRANA (AUTO ISO)</h3>
-<p>Questo è il pulsante <strong>un clic</strong> per le foto rumorose. È <strong>attivo di default</strong> e si trova subito sotto <strong>PIÙ LUMINOSA</strong>, sia nel tab Batch sia nel tab Sviluppo RAW.</p>
+<p>Questo è il pulsante <strong>un clic</strong> per le foto rumorose. È <strong>attivo di default</strong> e si trova subito sotto <strong>PIÙ LUMINOSA</strong>, sia nel tab Batch sia nella finestra AVANZATE.</p>
 <p><strong>Quando lo premi, imposta:</strong></p>
 <ul>
 <li>riduzione rumore luminanza <strong>88</strong>;</li>
@@ -692,8 +694,51 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h3 id="49-ripristina-tutti-i-parametri-di-sviluppo">4.9 Ripristina tutti i parametri di sviluppo</h3>
 <p>Riporta gli slider, la curva e lo split toning ai valori predefiniti. <strong>Non</strong> cancella il watermark, la destinazione, i nomi file o le credenziali cloud. Se il pulsante <strong>RIMUOVI GRANA</strong> era attivo, viene disattivato.</p>
 <hr />
-<h2 id="5-scheda-tethering-cloud">5. Scheda Tethering &amp; Cloud</h2>
-<h3 id="51-tutte-le-marche-canon-nikon-fujifilm-panasonic-om-system-leica">5.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica</h3>
+<h2 id="5-scheda-wi-fi-ftp">5. Scheda Wi-Fi FTP</h2>
+<p>La scheda <strong>Wi-Fi FTP</strong> accende un piccolo server FTP dentro il programma. Serve a far arrivare gli scatti dalla fotocamera al PC <strong>senza software esterni</strong>. È pensata per chi vuole: scatta → la foto arriva → il cliente riceve l'anteprima già pronta.</p>
+<h3 id="51-accensione-e-dati-di-configurazione">5.1 Accensione e dati di configurazione</h3>
+<ol>
+<li>Apri la scheda <strong>Wi-Fi FTP</strong>.</li>
+<li>Sposta su <strong>ON</strong> l'interruttore <strong>RICEZIONE WI-FI FTP</strong> (oppure premi <strong>ACCENDI WI-FI FTP</strong>).</li>
+<li>Il programma mostra i dati da inserire nella fotocamera.</li>
+</ol>
+<table>
+<thead><tr><th>Voce</th><th>Valore</th></tr></thead>
+<tbody>
+<tr><td><strong>IP</strong></td><td>l'indirizzo locale del PC (cambia da rete a rete)</td></tr>
+<tr><td><strong>Porta</strong></td><td><code>2121</code></td></tr>
+<tr><td><strong>Utente</strong></td><td><code>camera</code></td></tr>
+<tr><td><strong>Password</strong></td><td><code>1234</code></td></tr>
+</tbody>
+</table>
+<p>Il pulsante <strong>COPIA DATI</strong> copia questi valori negli appunti.</p>
+<blockquote>
+<p>Il PC e la fotocamera devono essere sulla <strong>stessa rete</strong> (stesso router Wi-Fi o cavo). Se la fotocamera crea una propria rete DIRECT, collega il PC a quella rete.</p>
+<p>Al primo avvio Windows può chiedere l'autorizzazione del firewall per la porta <strong>2121</strong>: consenti l'accesso sulle <strong>reti private</strong>.</p>
+</blockquote>
+<h3 id="52-cosa-succede-quando-arriva-uno-scatto">5.2 Cosa succede quando arriva uno scatto</h3>
+<ol>
+<li>La fotocamera carica il file nella cartella <strong>Originali</strong>.</li>
+<li>Appena il trasferimento è completo, il programma sviluppa il RAW con <strong>WB e matrice colore della fotocamera</strong>.</li>
+<li><strong>Fujifilm</strong> usa la demosaicizzazione <strong>AAHD (qualità 12)</strong>, gli altri marchi <strong>AHD (3)</strong>.</li>
+<li>Il lato lungo viene ridotto a <strong>2000 px</strong> con Lanczos.</li>
+<li>In basso a sinistra compare <strong>File: nome originale</strong>; in basso a destra il <strong>copyright/watermark</strong>, con testo bianco su bordo nero per restare leggibile su sfondi chiari e scuri.</li>
+<li>Il JPEG qualità <strong>85</strong> viene salvato in <strong>Anteprime_Cliente</strong>. L'originale resta intatto.</li>
+</ol>
+<p>I pulsanti <strong>CARTELLA ORIGINALI</strong> e <strong>CARTELLA ANTEPRIME</strong> aprono le due cartelle.</p>
+<h3 id="53-copyright">5.3 Copyright</h3>
+<p>L'interruttore <strong>Aggiungi copyright/watermark</strong> è attivo di default. Il testo si imposta in <strong>AVANZATE → WATERMARK → Testo watermark</strong>. Se il campo è vuoto viene usato <code>© Franchetti &lt;anno&gt;</code>. Il nome del file originale viene scritto sempre.</p>
+<h3 id="54-spegnimento">5.4 Spegnimento</h3>
+<p>Sposta l'interruttore su <strong>OFF</strong> (o premi <strong>SPEGNI WI-FI FTP</strong>). Il server viene chiuso in modo sicuro e la porta <strong>2121</strong> torna libera.</p>
+<h3 id="55-quali-fotocamere-funzionano-davvero">5.5 Quali fotocamere funzionano davvero</h3>
+<ul>
+<li><strong>Funzionano direttamente</strong> i modelli con un client <strong>FTP integrato</strong> nel menu di rete: molti Nikon, Canon, Fujifilm e alcuni Sony.</li>
+<li><strong>Non funzionano da soli</strong> i modelli che non hanno FTP nella fotocamera. In quel caso usa l'app del produttore (EOS Utility, NX Tether, X Acquire, Imaging Edge, Lumix Tether…), la scheda di memoria o la cartella monitorata nella scheda <strong>Tethering &amp; Cloud</strong>.</li>
+<li><strong>Bluetooth:</strong> non esiste un trasferimento RAW universale e veloce via Bluetooth. Il programma non simula questa funzione.</li>
+</ul>
+<hr />
+<h2 id="6-scheda-tethering-cloud">6. Scheda Tethering &amp; Cloud</h2>
+<h3 id="61-tutte-le-marche-canon-nikon-fujifilm-panasonic-om-system-leica">6.1 Tutte le marche: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica</h3>
 <p>Il programma <strong>non pilota direttamente</strong> il corpo macchina di queste marche. Usa il software di tethering del produttore, che salva gli scatti in una cartella: il programma monitora quella cartella e applica automaticamente la pipeline completa.</p>
 <ol>
 <li>Apri il software di tethering della tua fotocamera:
@@ -711,7 +756,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <blockquote>
 <p>Per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica il flusso è quindi <strong>software del produttore + hot-folder</strong>. Non serve installare driver proprietari nel programma.</p>
 </blockquote>
-<h3 id="52-sony-wi-fi-smart-remote-control">5.2 Sony Wi-Fi — Smart Remote Control</h3>
+<h3 id="62-sony-wi-fi-smart-remote-control">6.2 Sony Wi-Fi — Smart Remote Control</h3>
 <p>Il programma può comandare una Sony A7S (o modello compatibile) via Wi-Fi. La fotocamera <strong>non invia da sola</strong> le foto: è il programma a comandarla.</p>
 <p><strong>Preparazione:</strong></p>
 <ol>
@@ -729,7 +774,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Se la fotocamera si spegne, riconnetti la rete Wi-Fi e premi di nuovo <strong>CONNETTI FOTOCAMERA</strong>.</li>
 <li>La distanza ideale è di pochi metri, senza muri spessi.</li>
 </ul>
-<h3 id="53-hot-folder-cartella-monitorata">5.3 Hot-folder (cartella monitorata)</h3>
+<h3 id="63-hot-folder-cartella-monitorata">6.3 Hot-folder (cartella monitorata)</h3>
 <p>È il modo più semplice per automatizzare l'arrivo delle foto.</p>
 <ol>
 <li><strong>Cartella fotocamera:</strong> la cartella da controllare (per esempio una cartella sincronizzata da Dropbox, Google Drive, Imaging Edge o una cartella di rete).</li>
@@ -738,7 +783,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </ol>
 <p>Quando arriva un file supportato, il programma aspetta che la scrittura sia finita (dimensione stabile), poi lo converte con le impostazioni correnti della scheda Batch. Ignora la cartella di output e i file già prodotti, quindi non entra in un ciclo infinito.</p>
 <p><strong>Consiglio:</strong> usa una cartella di appoggio dedicata solo all'arrivo delle foto. Non puntare il monitoraggio sulla cartella che contiene l'intero archivio: sarebbe inutile e lento.</p>
-<h3 id="54-credenziali-cloud">5.4 Credenziali Cloud</h3>
+<h3 id="64-credenziali-cloud">6.4 Credenziali Cloud</h3>
 <p><strong>Telegram (operativo):</strong></p>
 <ul>
 <li><strong>Telegram Bot Token:</strong> lo ottieni da <code>@BotFather</code> su Telegram.</li>
@@ -761,7 +806,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <p>Questi campi sono predisposti, ma l'invio viene saltato senza errori. Non perdere tempo a configurarli in questa versione.</p>
 <p><strong>Privacy:</strong> i token sono credenziali sensibili. Non condividerli, non metterli in screenshot e non salvarli in un file di configurazione che poi condividi.</p>
 <hr />
-<h2 id="6-scheda-log-messaggi-ed-errori">6. Scheda Log: messaggi ed errori</h2>
+<h2 id="7-scheda-log-messaggi-ed-errori">7. Scheda Log: messaggi ed errori</h2>
 <p>La scheda <strong>Log</strong> mostra in tempo reale:</p>
 <ul>
 <li>file avviati, completati, saltati o falliti;</li>
@@ -777,7 +822,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </ul>
 <p><strong>Consiglio:</strong> se un file non viene convertito, salva il log e controlla la riga con <strong>Errore</strong>. Spesso il problema è un file corrotto, un percorso non accessibile o un formato non supportato.</p>
 <hr />
-<h2 id="7-impostazioni-consigliate-per-tipo-di-foto">7. Impostazioni consigliate per tipo di foto</h2>
+<h2 id="8-impostazioni-consigliate-per-tipo-di-foto">8. Impostazioni consigliate per tipo di foto</h2>
 <h3 id="71-tabella-rapida">7.1 Tabella rapida</h3>
 <p>| Tipo di foto | Lato max | Qualità | Formato | PIÙ LUMINOSA | Rimuovi grana | Nitidezza | Watermark |
 |---|---|---:|---:|---|---|---|---|---|
@@ -873,7 +918,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Converti a 3000 px: il rumore è meno visibile, i dettagli restano e il file è più gestibile.</li>
 </ul>
 <hr />
-<h2 id="8-flussi-di-lavoro-pronti-alluso">8. Flussi di lavoro pronti all'uso</h2>
+<h2 id="9-flussi-di-lavoro-pronti-alluso">9. Flussi di lavoro pronti all'uso</h2>
 <h3 id="81-web-e-social-in-4-passi">8.1 Web e social in 4 passi</h3>
 <ol>
 <li>Seleziona la cartella RAW.</li>
@@ -925,7 +970,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Se necessario, attiva <strong>Telegram</strong> o <strong>Dropbox</strong> per l'invio immediato.</li>
 </ol>
 <hr />
-<h2 id="9-domande-frequenti-e-soluzione-problemi">9. Domande frequenti e soluzione problemi</h2>
+<h2 id="10-domande-frequenti-e-soluzione-problemi">10. Domande frequenti e soluzione problemi</h2>
 <h3 id="il-programma-e-lento-perche">Il programma è lento. Perché?</h3>
 <ul>
 <li>La prima conversione è più lenta: il programma carica le librerie.</li>
@@ -994,7 +1039,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <h3 id="perche-il-file-jpeg-e-piu-pesante-del-solito">Perché il file JPEG è più pesante del solito?</h3>
 <p>Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qualità <strong>90</strong> e <strong>2048 px</strong>; per la stampa è normale che il file sia grande. Con il profilo predefinito 3000 px / qualità 90 i JPEG restano in genere tra 0,6 e 1,3 MB.</p>
 <hr />
-<h2 id="10-glossario-semplice">10. Glossario semplice</h2>
+<h2 id="11-glossario-semplice">11. Glossario semplice</h2>
 <table>
 <thead>
 <tr>
@@ -1094,7 +1139,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tbody>
 </table>
 <hr />
-<h2 id="11-scheda-riassuntiva-da-stampare">11. Scheda riassuntiva da stampare</h2>
+<h2 id="12-scheda-riassuntiva-da-stampare">12. Scheda riassuntiva da stampare</h2>
 <h3 id="web-social">Web / social</h3>
 <ul>
 <li>Lato max: <strong>2048</strong></li>

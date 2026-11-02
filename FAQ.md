@@ -10,13 +10,13 @@
 **R:** Sì. Licenza **MIT** — uso libero personale e commerciale. Attribuzione apprezzata ma non obbligatoria oltre la licenza.
 
 ### D: Devo installarlo?
-**R:** No. È **portatile** — singolo `.exe` (~78 MB). Doppio clic e funziona. Nessun installer, nessun registro, nessuna cartella AppData.
+**R:** No. È **portatile** — singolo `.exe` (~92 MB). Doppio clic e funziona. Nessun installer, nessun registro, nessuna cartella AppData.
 
 ### D: Funziona su Mac / Linux?
 **R:** Solo Windows 10/11 x64 attualmente. Il codice sorgente è multipiattaforma; contributi per build native benvenuti.
 
-### D: Perché ~78 MB per un "semplice convertitore"?
-**R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Y/Cb/Cr e guided filter) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests**. Zero dipendenze esterne = funziona ovunque.
+### D: Perché ~92 MB per un "semplice convertitore"?
+**R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Y/Cb/Cr e guided filter) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests** + **pyftpdlib** (server FTP) + **OpenCV headless** (resize Lanczos e overlay delle anteprime). Zero dipendenze esterne = funziona ovunque.
 
 ### D: I miei file RAW originali vengono modificati?
 **R:** **Mai.** L'app li apre in **sola lettura**. Scrive solo i nuovi JPEG nella cartella di destinazione scelta.

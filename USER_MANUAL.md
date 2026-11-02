@@ -330,7 +330,7 @@ A: Never. Only reads them. Originals untouched.
 **Q: Can I use it on Mac/Linux?**  
 A: Windows only currently. Source code is cross-platform; PRs welcome for native builds.
 
-**Q: Why 78 MB for a simple tool?**  
+**Q: Why 92 MB for a simple tool?**  
 A: Bundles Python runtime + LibRaw + Pillow + NumPy + scikit-image + CustomTkinter for zero-dependency execution.
 
 ### Technical

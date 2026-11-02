@@ -24,6 +24,34 @@
 
 ---
 
+## 🔌 Interfaccia 2.57.0 — una sola finestra per convertire
+
+- La scheda **Sviluppo RAW** è stata rimossa: la schermata **Batch** contiene l'anteprima **PRIMA / DOPO** e le correzioni rapide.
+- **AVANZATE** apre una finestra separata con tutti gli slider, curva tonale, split toning, nomi file, watermark e preset.
+- L'anteprima decodifica il RAW una sola volta e riusa la base ridotta; l'originale non viene toccato.
+- **APRI ANTEPRIMA GRANDE** mostra il confronto a piena finestra, ridimensionabile.
+
+---
+
+## 📶 Wi-Fi FTP v2.57.0 — scatta, invia, ricevi l'anteprima
+
+La scheda **Wi-Fi FTP** accende un server FTP integrato (nessun software esterno):
+
+| Voce | Valore |
+|------|--------|
+| **IP** | IP locale del PC, rilevato automaticamente |
+| **Porta** | `2121` |
+| **Utente** | `camera` |
+| **Password** | `1234` |
+| **Cartella originale** | `Immagini\FranchettiRawConverterPro\Tethering\Originali` |
+| **Anteprime cliente** | `...\Tethering\Anteprime_Cliente` |
+
+Ogni file completo viene sviluppato con **WB e matrice camera**, Fujifilm con **AAHD 12** e gli altri marchi con **AHD 3**, ridotto a **2000 px** sul lato lungo con Lanczos, sovrapposto con **nome file** (sinistra) e **copyright/watermark** (destra) e salvato in **JPEG qualità 85**. Spegnendo l'interruttore il server viene chiuso e la porta liberata.
+
+> **Compatibilità:** Nikon, Canon, Fujifilm e molti modelli Sony con FTP integrato inviano direttamente. I modelli senza client FTP usano l'app del produttore, la scheda o la cartella monitorata. Il Bluetooth non trasferisce RAW di alta qualità in modo universale: non viene simulato.
+
+---
+
 ## 🎯 Caratteristiche Principali v2.57.0
 
 ### 🧠 **Nuova Pipeline Y/Cb/Cr e denoise ISO (Avanzata)**
@@ -111,8 +139,9 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 ### 🎨 **Enterprise Dark GUI (CustomTkinter)**
 | Tab | Contenuto |
 |-----|-----------|
-| **Batch** | Sorgente/destinazione, preset dimensioni, qualità, formato, nomi, watermark, EXIF, PIÙ LUMINOSA, multi-core, avvio/annullamento e progresso |
-| **Sviluppo RAW** | Slider completi (tono, colore, dettaglio, Lab, effetti), colore ombre/luci, logo, anteprima |
+| **Batch** | Sorgente/destinazione, anteprima PRIMA/DOPO, correzioni rapide, preset dimensioni, qualità, formato, EXIF, multi-core, avvio/annullamento e progresso |
+| **AVANZATE** | Finestra separata: slider completi (tono, colore, dettaglio, effetti), curva tonale, split toning, nomi, watermark, logo, preset |
+| **Wi-Fi FTP** | Interruttore server FTP, IP/porta/credenziali, cartelle Originali e Anteprime, copyright |
 | **Tethering & Cloud** | Cartella multi-marca, avvio monitoraggio, connessione Sony A7S, scatto e scarica, credenziali cloud |
 | **Log** | Console con timestamp, color-coding, svuota e salva log |
 
@@ -141,8 +170,9 @@ FranchettiRawConverterPro.exe
 2. **Tab Batch**: scegli sorgente e destinazione; il profilo predefinito è **3000 px, JPEG 90, denoise automatico** (puoi scegliere "Originale" per la stampa)
 3. **Opzioni**: prefisso/suffisso, watermark, EXIF, **PIÙ LUMINOSA**, **RIMUOVI GRANA (AUTO ISO)** e **USA TUTTI I CORE** (attivi di default)
 4. **AVVIA CONVERSIONE**: i file vengono elaborati in parallelo su tutti i core; la barra mostra OK, errori e saltati
-5. **Tab Sviluppo RAW**: regola tono, colore, dettaglio ed effetti con gli slider e applica i preset
-6. **Tab Tethering & Cloud**: monitora la cartella del software Canon/Nikon/Fujifilm/Panasonic/OM System/Leica oppure connetti la Sony A7S; Telegram/Dropbox inviano l'output
+5. **AVANZATE**: regola tono, colore, dettaglio ed effetti con gli slider, imposta nomi e watermark, applica i preset
+6. **Wi-Fi FTP**: accendi l'interruttore e inserisci nella fotocamera IP, porta `2121`, utente `camera`, password `1234`; le anteprime finiscono in `Anteprime_Cliente`
+7. **Tethering & Cloud**: monitora la cartella del software Canon/Nikon/Fujifilm/Panasonic/OM System/Leica oppure connetti la Sony A7S; Telegram/Dropbox inviano l'output
 
 ---
 
@@ -153,11 +183,12 @@ FranchettiRawConverterPro.exe
 | **OS** | Windows 10 1809+ | Windows 11 24H2+ |
 | **Architettura** | x64 | x64 |
 | **RAM** | 2 GB | 8 GB+ |
-| **Disco** | 100 MB liberi | 1 GB+ liberi (SSD per batch) |
+| **Disco** | 150 MB liberi | 1 GB+ liberi (SSD per batch) |
 | **CPU** | Qualsiasi x64 | Multi-core (i5/Ryzen 5+) |
 | **Display** | 1024×768 | 1920×1080+ |
+| **Rete** | Solo per Wi-Fi FTP e Cloud | LAN Wi-Fi/Ethernet per il tethering |
 
-*Singolo `.exe` ~78 MB. Nessun .NET Framework, VC++ Redistributables o diritti admin richiesti.*
+*Singolo `.exe` ~92 MB (include OpenCV headless per la ricezione FTP). Nessun .NET Framework, VC++ Redistributables o diritti admin richiesti.*
 
 ---
 
@@ -166,11 +197,12 @@ FranchettiRawConverterPro.exe
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │              FranchettiRawConverterPro.exe                  │
-│  (PyInstaller --onefile --windowed, ~78 MB)                 │
+│  (PyInstaller --onefile --windowed, ~92 MB)                 │
 ├─────────────────────────────────────────────────────────────┤
 │  GUI Layer (CustomTkinter - Dark Mode)                      │
-│  ├── Tab Batch: preset, formati, nomi, watermark, EXIF      │
-│  ├── Tab Sviluppo RAW: slider Y/Cb/Cr, colore, logo             │
+│  ├── Tab Batch: preset, formati, anteprima, correzioni      │
+│  ├── AVANZATE: slider completi, nomi, watermark, preset     │
+│  ├── Tab Wi-Fi FTP: server FTP, anteprime cliente           │
 │  ├── Tab Tethering & Cloud: multi-marca, Sony, cloud        │
 │  └── Tab Log: timestamp, color-coding, auto-scroll          │
 ├─────────────────────────────────────────────────────────────┤
@@ -236,11 +268,12 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 | **OS** | Windows 10 1809+ | Windows 11 24H2+ |
 | **Architettura** | x64 | x64 |
 | **RAM** | 2 GB | 8 GB+ |
-| **Disco** | 100 MB liberi | 1 GB+ liberi (SSD per batch) |
+| **Disco** | 150 MB liberi | 1 GB+ liberi (SSD per batch) |
 | **CPU** | Qualsiasi x64 | Multi-core (i5/Ryzen 5+) |
 | **Display** | 1024×768 | 1920×1080+ |
+| **Rete** | Solo per Wi-Fi FTP e Cloud | LAN Wi-Fi/Ethernet per il tethering |
 
-*Singolo `.exe` ~78 MB. Nessun .NET Framework, VC++ Redistributables o diritti admin richiesti.*
+*Singolo `.exe` ~92 MB (include OpenCV headless per la ricezione FTP). Nessun .NET Framework, VC++ Redistributables o diritti admin richiesti.*
 
 ---
 
@@ -275,7 +308,7 @@ pip install pyinstaller
 ### Build
 ```cmd
 python build_exe.py
-# Output: dist/FranchettiRawConverterPro.exe (~78 MB)
+# Output: dist/FranchettiRawConverterPro.exe (~92 MB)
 ```
 
 ### Sviluppo
@@ -339,7 +372,7 @@ in the Software without restriction...
 | Metrica | Valore |
 |---------|--------|
 | **Lines of Code** | ~3.000 (Python monolitico) |
-| **Dimensione Executable** | ~78 MB |
+| **Dimensione Executable** | ~92 MB |
 | **Avvio** | ~5–10 s (estrazione onefile) |
 | **Velocità Conversione** | ~2 MP/s per core; fino a 3× con multi-core |
 | **Memoria** | ~300 MB–1,5 GB per processo (RAW 24 MP) |
