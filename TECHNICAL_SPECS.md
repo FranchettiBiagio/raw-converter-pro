@@ -1,6 +1,6 @@
 # Technical Specifications
 
-**Franchetti Raw Converter Pro v2.56.0**
+**Franchetti Raw Converter Pro v2.57.0**
 
 ---
 
@@ -41,12 +41,14 @@ with rawpy.imread(str(raw_path)) as raw:
 - **Color**: camera WB + camera matrix, output sRGB
 - **Brands**: Sony, Canon, Nikon, Fujifilm, Panasonic, OM System, Leica and other LibRaw-supported cameras
 
-### Image Processing Pipeline (v2.56.0)
+### Image Processing Pipeline (v2.57.0)
 ```
-LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone/color -> hybrid denoise -> controlled sharpening -> watermark -> encode
+LibRaw decode -> BGR bridge -> RGB pipeline -> Lanczos resize -> tone (exposure/highlight shoulder) -> color -> hybrid denoise -> controlled sharpening -> watermark -> encode
 ```
 - **Resampling**: Lanczos-3 before the pipeline, so the denoise works at the final size
 - **Tone/color**: luminance-preserving exposure, sigmoid contrast, selective vibrance, HSL
+- **Highlight protection** (`proteggi_luci`): Möbius shoulder that compresses values above 0.68 while keeping white at 1.0 and leaving lower tones untouched
+- **Smart Batch**: optional per-file analysis (half-size decode, histogram/clipping/noise metrics) merged with global parameters at batch time
 - **Denoise**: guided filter + detail coring; non-local means only in flat areas (skipped for images < 8 px on a side)
 - **Sharpening**: luminance-only unsharp mask with a noise-derived threshold
 - **Watermark**: Text rendering with alpha compositing
@@ -101,7 +103,7 @@ Font: Arial/DejaVuSans fallback → default bitmap
 | Watermark | O(text_pixels) | Negligible |
 | JPEG encode | O(W×H) | libjpeg-turbo (SIMD) |
 
-### Benchmarks (v2.56.0, measured)
+### Benchmarks (v2.57.0, measured)
 | Source | Target | Result |
 |--------|--------|--------|
 | 4× RAW 24 MP | 3000px, denoise auto | **12,8 s** batch, 4/4 OK |
@@ -217,8 +219,8 @@ cmd = [
 
 | Field | Value |
 |-------|-------|
-| **FileVersion** | 2.56.0.0 |
-| **ProductVersion** | 2.56.0.0 |
+| **FileVersion** | 2.57.0.0 |
+| **ProductVersion** | 2.57.0.0 |
 | **CompanyName** | Franchetti |
 | **ProductName** | Franchetti Raw Converter Pro |
 | **InternalName** | FranchettiRawConverterPro |
@@ -242,7 +244,7 @@ cmd = [
 
 ---
 
-## Limiti noti (v2.56.0)
+## Limiti noti (v2.57.0)
 
 | Voce | Stato |
 |------|-------|
@@ -271,4 +273,4 @@ cmd = [
 
 ---
 
-*Technical specs v2.56.0 — 1 Novembre 2026*
+*Technical specs v2.57.0 — 2 Novembre 2026*

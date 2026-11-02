@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.57.0] - 2026-11-01
+
+### Added
+- **Smart Batch — ANALIZZA FILE**: analisi preventiva di tutti i RAW/JPEG della sorgente.
+  - decodifica RAW a mezza risoluzione, con la stessa resa auto-bright del batch;
+  - lettura del clipping direttamente dal sensore RAW, oltre all'istogramma dell'immagine;
+  - misura di mediana, percentili, contrasto, saturazione, incarnati, rumore e ISO;
+  - piano di correzione conservativo e diverso per ogni file;
+  - finestra con stato **OK / CORREGGI / CRITICO**, motivo e valori suggeriti;
+  - casella **Usa correzioni per file** per applicare o ignorare il piano.
+- **Correzioni rapide** nella scheda Sviluppo RAW:
+  - **CONTRASTO NATURALE**;
+  - **SALVA LUCI**;
+  - **COLORE PIÙ RICCO**;
+  - **SOVRAESPOSTA**;
+  - **SOTTOESPOSTA**;
+  - **ANNULLA CORREZIONI**.
+  - Le correzioni sono cumulative, aggiornano gli slider esistenti e sono reversibili in blocco.
+- **Protezione luci** (`proteggi_luci`): curva di spalla che comprime le alte luci senza perdere il punto bianco. Non è un semplice abbassamento dell'esposizione.
+- **Piano per file nel batch**: ogni file può usare i propri valori di esposizione, luci, ombre, bianchi, neri, contrasto, colore e denoise.
+- **Avviso luci bruciate**: se il RAW/JPEG è completamente clippato, il dettaglio non è recuperabile.
+
+### Changed
+- `esegui_batch` accetta un dizionario di analisi per percorso e unisce impostazioni globali e correzioni del singolo file.
+- La pipeline di tono applica `proteggi_luci` dopo luci/ombre/contrasto, prima della fase colore.
+- Analisi e conversione restano separate: **ANALIZZA FILE non modifica mai gli originali**.
+
+### Performance
+- Analisi di 4 RAW Sony reali: circa **1,3 s** in parallelo.
+- Analisi di 44 file misti (4 RAW + 40 JPEG): circa **3,7 s**.
+- Batch di 4 RAW con piano per-file a 600 px, 4 processi: circa **5,9 s**, 4/4 OK.
+
+### Documentation
+- README, guida completa Markdown/HTML, note di rilascio, metadati, installer e version info aggiornati alla **2.57.0**.
+
+---
+
 ## [2.56.0] - 2026-11-01
 
 ### Added

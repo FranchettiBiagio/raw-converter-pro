@@ -1,6 +1,6 @@
-# Franchetti Raw Converter Pro v2.56.0
+# Franchetti Raw Converter Pro v2.57.0
 
-[![Version](https://img.shields.io/badge/version-2.56.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.57.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
@@ -13,7 +13,17 @@
 
 ---
 
-## 🎯 Caratteristiche Principali v2.56.0
+## 🧠 Smart Batch v2.57.0 — analisi e correzioni rapide
+
+- **ANALIZZA FILE**: legge tutti i RAW/JPEG, misura esposizione, clipping, contrasto, colore, incarnati, rumore e ISO, poi propone un piano **diverso per ogni foto**.
+- **Correzioni per file**: il batch unisce le impostazioni globali con i suggerimenti del singolo file; la casella **Usa correzioni per file** rende il piano opzionale.
+- **Correzioni rapide**: **CONTRASTO NATURALE**, **SALVA LUCI**, **COLORE PIÙ RICCO**, **SOVRAESPOSTA**, **SOTTOESPOSTA** e **ANNULLA CORREZIONI**. Aggiornano gli slider esistenti e sono reversibili in blocco.
+- **Protezione luci**: curva di spalla che comprime le alte luci senza perdere il punto bianco. Non è un semplice abbassamento dell'esposizione.
+- **Limite dichiarato**: se il RAW/JPEG è completamente bruciato, il dettaglio non esiste e non può essere recuperato.
+
+---
+
+## 🎯 Caratteristiche Principali v2.57.0
 
 ### 🧠 **Nuova Pipeline Y/Cb/Cr e denoise ISO (Avanzata)**
 | Fase | Descrizione | Controllo |
@@ -26,20 +36,20 @@
 | **Nitidezza controllata** | Solo canale Y, con maschera e soglia sul rumore: niente grana amplificata | `raggio` 0.5–4.0, `quantità` 0.5–5.0 |
 | **Output** | uint8 + profilo ICC sRGB embedded; default 3000 px / qualità 90 | `qualita_jpeg` 50–100 |
 
-> **Novita' v2.56.0**: nuovo ponte RAW **rawpy/LibRaw** con **WB e matrice colore della fotocamera**, **AHD** per i sensori Bayer e **AAHD 12** per Fujifilm X-Trans. L'array esce in **BGR pronto per OpenCV** e viene riallineato a RGB per la pipeline fotografica. Testato con RAW reali Sony, Canon, Nikon e Fujifilm.
+> **Novita' v2.57.0**: **Smart Batch** con analisi per file, piano di correzione opzionale, correzioni rapide reversibili e **protezione luci** con curva di spalla. Il ponte RAW **rawpy/LibRaw** resta alla base: WB e matrice colore della fotocamera, **AHD** per Bayer e **AAHD 12** per Fujifilm X-Trans.
 >
 > **Profilo predefinito (dalla 2.55.0)**: **3000 px / JPEG 90 / denoise automatico**, denoise ibrido (guided filter + non-local means solo nelle zone piatte), nitidezza protetta dal rumore. I file restano leggeri (in genere 0,6–1,3 MB) anche a 3000 px.
 
 > **Perche' Y/Cb/Cr?** Lavorare sulla luminanza permette nitidezza e denoise senza aloni colorati; la crominanza, piu' sporca di rumore, viene pulita separatamente e a meta' risoluzione.
 
-### 🚀 **Elaborazione Multi-Core (v2.56.0)**
+### 🚀 **Elaborazione Multi-Core (v2.57.0)**
 - **Tutti i core logici**: `ProcessPoolExecutor` con un processo per core disponibile
 - **Limite di sicurezza**: il numero di processi si riduce automaticamente se la RAM libera non basta
 - **Isolamento errori**: un file corrotto non blocca gli altri; ogni output viene scritto su file temporaneo e pubblicato solo a conversione completata
 - **Annullamento immediato**: i processi in corso vengono terminati e i file parziali rimossi
 - **Misura indicativa**: 4 RAW Sony A7S da 24 MP a **3000 px** con denoise automatico in **12,8 s** totali; JPEG da 0,6–0,9 MB. I preset a risoluzione originale (Stampa Fine Art / Archivio) richiedono circa 40-45 s per foto perché il denoise non-locale lavora anche a 24 MP.
 
-### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.56.0)**
+### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.57.0)**
 - **Tutte le marche**: Canon, Nikon, Fujifilm, Panasonic, OM System, Leica e altre. Usa il software di tethering del produttore e monitora la sua cartella di destinazione.
 - **Sony**: oltre all'hot-folder è disponibile il controllo Wi-Fi diretto (Smart Remote Control).
 - **Watchdog Observer** monitora cartella in tempo reale (`watchdog` library)
@@ -109,12 +119,12 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 
 ## 🚀 Quick Start
 
-### Download v2.56.0
+### Download v2.57.0
 | Metodo | Link |
 |--------|------|
-| **GitHub Releases** | [Download v2.56.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.56.0) |
+| **GitHub Releases** | [Download v2.57.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.57.0) |
 | **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
-| **Installer Windows** | [Setup v2.56.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.56.0.exe) |
+| **Installer Windows** | [Setup v2.57.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.57.0.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
@@ -135,7 +145,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 📋 Requisiti di Sistema v2.56.0
+## 📋 Requisiti di Sistema v2.57.0
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -150,7 +160,7 @@ FranchettiRawConverterPro.exe
 
 ---
 
-## 🏗️ Architettura v2.56.0
+## 🏗️ Architettura v2.57.0
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -204,7 +214,7 @@ FranchettiRawConverterPro.exe
 
 ## 🔒 Privacy & Sicurezza (by design)
 
-| Caratteristica | Franchetti Raw Converter Pro v2.56.0 |
+| Caratteristica | Franchetti Raw Converter Pro v2.57.0 |
 |----------------|--------------------------------------|
 | **Rete** | Solo se attivi Cloud Dispatch (opzionale, esplicito) |
 | **Telemetria** | ❌ Nessuna |
@@ -243,10 +253,10 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 | [Specifiche Tecniche](TECHNICAL_SPECS.md) | Architettura, algoritmi, formati |
 | [Guida Installazione](INSTALLATION_GUIDE.md) | Deployment enterprise (GPO, Intune) |
 | [FAQ](FAQ.md) | Domande frequenti & troubleshooting |
-| [Changelog](CHANGELOG.md) | Storico versioni (v2.56.0) |
+| [Changelog](CHANGELOG.md) | Storico versioni (v2.57.0) |
 | [Privacy Policy](PRIVACY.md) | Zero data collection |
 | [Security Policy](SECURITY.md) | Responsible disclosure |
-| [Release Notes](RELEASE_NOTES.md) | Note complete v2.56.0 |
+| [Release Notes](RELEASE_NOTES.md) | Note complete v2.57.0 |
 
 ---
 
@@ -313,7 +323,7 @@ in the Software without restriction...
 
 ---
 
-## 📞 Supporto v2.56.0
+## 📞 Supporto v2.57.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -323,7 +333,7 @@ in the Software without restriction...
 
 ---
 
-## 📊 Statistiche v2.56.0
+## 📊 Statistiche v2.57.0
 
 | Metrica | Valore |
 |---------|--------|
@@ -339,10 +349,10 @@ in the Software without restriction...
 
 **Made with ❤️ per fotografi professionisti da Franchetti**
 
-**v2.56.0 - 1 Novembre 2026**
+**v2.57.0 - 2 Novembre 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-FranchettiBiagio%2Fraw--converter--pro-181717?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro)
-[![Download](https://img.shields.io/badge/Download-v2.56.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.56.0)
+[![Download](https://img.shields.io/badge/Download-v2.57.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.57.0)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>

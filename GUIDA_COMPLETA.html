@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guida completa - Franchetti Raw Converter Pro v2.56.0</title>
+<title>Guida completa - Franchetti Raw Converter Pro v2.57.0</title>
 <meta name="description" content="Guida elementare a tutte le funzioni di Franchetti Raw Converter Pro: batch, sviluppo RAW, denoise ISO, tethering, cloud, preset e impostazioni consigliate.">
 <style>
 :root{--blue:#0066cc;--dark:#17212b;--muted:#5f6b76;--line:#dfe5eb;--bg:#f5f7fa;--card:#fff}
@@ -44,13 +44,13 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </head>
 <body>
 <header class="top"><div class="inner">
-<div class="kicker">Franchetti Raw Converter Pro &middot; v2.56.0</div>
+<div class="kicker">Franchetti Raw Converter Pro &middot; v2.57.0</div>
 <h1>Guida completa</h1>
 <p>Ogni funzione spiegata in modo semplice, con le impostazioni migliori per web, stampa, archivio, ritratti e foto notturne.</p>
 </div></header>
 <main class="wrap"><article>
 <h1 id="guida-completa-a-franchetti-raw-converter-pro">Guida completa a Franchetti Raw Converter Pro</h1>
-<p><strong>Versione 2.56.0 — Windows 10/11 — Italiano</strong></p>
+<p><strong>Versione 2.57.0 — Windows 10/11 — Italiano</strong></p>
 <p>Questa guida spiega, in modo semplice, <strong>tutte le funzioni</strong> del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.</p>
 <blockquote>
 <p><strong>Regola d'oro:</strong> il programma <strong>non modifica mai i file originali</strong>. Lavora sempre su una copia e scrive i risultati nella cartella di destinazione. Tieni comunque un backup delle foto importanti.</p>
@@ -196,7 +196,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <blockquote>
 <p>Il programma <strong>non ingrandisce</strong> mai una foto oltre la sua risoluzione originale: se scrivi un valore più grande, l'immagine resta alla dimensione nativa.</p>
 </blockquote>
-<p><strong>Profilo predefinito v2.56.0:</strong> <strong>3000 px</strong>, <strong>JPEG qualità 90</strong>, <strong>RIMUOVI GRANA (AUTO ISO) attivo</strong>, riduzione rumore <strong>88/92</strong> e nitidezza <strong>0,9 / 0,9</strong>. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.</p>
+<p><strong>Profilo predefinito v2.57.0:</strong> <strong>3000 px</strong>, <strong>JPEG qualità 90</strong>, <strong>RIMUOVI GRANA (AUTO ISO) attivo</strong>, riduzione rumore <strong>88/92</strong> e nitidezza <strong>0,9 / 0,9</strong>. È il compromesso scelto per avere ingrandimenti puliti e dettagliati con JPEG intorno a 0,6–1,3 MB. Se ti servono file ancora più piccoli, scegli 1920–2048 px; per la stampa usa Originale e TIFF.</p>
 <h4 id="qualita">Qualità</h4>
 <ul>
 <li>Valore da <strong>1 a 100</strong>.</li>
@@ -332,7 +332,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 </tbody>
 </table>
 <blockquote>
-<p>I preset <strong>non</strong> sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.56.0 attivano <strong>RIMUOVI GRANA (AUTO ISO)</strong> e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.</p>
+<p>I preset <strong>non</strong> sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.57.0 attivano <strong>RIMUOVI GRANA (AUTO ISO)</strong> e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.</p>
 </blockquote>
 <p><strong>Salva config</strong> e <strong>Carica config</strong> salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.</p>
 <blockquote>
@@ -342,14 +342,47 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <ul>
 <li><strong>AVVIA CONVERSIONE BATCH:</strong> avvia il lavoro con le impostazioni correnti.</li>
 <li><strong>ANNULLA:</strong> interrompe il batch e rimuove i file parziali. I file già completati restano.</li>
+<li><strong>ANALIZZA FILE:</strong> legge tutti i file e prepara un piano di correzione per ogni foto, senza modificare gli originali.</li>
+<li><strong>Usa correzioni per file:</strong> applica i suggerimenti dell'analisi al posto delle sole impostazioni globali. Se è disattivata, il batch si comporta come nelle versioni precedenti.</li>
 <li><strong>RIMUOVI GRANA (AUTO ISO):</strong> attiva o disattiva il preset intelligente di riduzione rumore. È <strong>attivo di default</strong> e si trova subito sotto <strong>PIÙ LUMINOSA</strong>. Quando è attivo diventa verde e mostra <strong>GRANA RIMOSSA (AUTO ISO)</strong>.</li>
 <li><strong>Barra di avanzamento:</strong> mostra quanti file sono stati elaborati, quanti sono riusciti, quanti hanno avuto errori e quanti sono stati saltati.</li>
 <li><strong>Apri cartella output:</strong> apre la destinazione.</li>
 </ul>
 <p>Se un file è corrotto o non supportato, il programma lo segnala e <strong>continua con gli altri</strong>. Un errore non blocca l'intero batch.</p>
+<h3 id="38-analizza-file-smart-batch">3.8 ANALIZZA FILE: Smart Batch</h3>
+<p><strong>ANALIZZA FILE</strong> è il flusso consigliato per batch misti: matrimoni, reportage, eventi, viaggi e cartelle con foto scattate in condizioni diverse.</p>
+<ol>
+<li>Seleziona la cartella o i file.</li>
+<li>Premi <strong>ANALIZZA FILE</strong>. Il programma non converte e non modifica nulla.</li>
+<li>Attendi la finestra con la tabella: ogni file ha stato <strong>OK</strong>, <strong>CORREGGI</strong>, <strong>CRITICO</strong> o <strong>ERRORE</strong>.</li>
+<li>Controlla il motivo e i valori suggeriti: esposizione, luci, ombre, contrasto, colore e denoise.</li>
+<li>Se sei d'accordo, lascia attiva <strong>Usa correzioni per file</strong> e premi <strong>AVVIA CONVERSIONE BATCH</strong>.</li>
+<li>Se vuoi usare solo le impostazioni globali, deseleziona <strong>Usa correzioni per file</strong>.</li>
+</ol>
+<p>L'analisi usa una decodifica RAW a mezza risoluzione e legge il clipping direttamente dal sensore quando disponibile. Le correzioni sono conservative: meglio un intervento piccolo e naturale che un'immagine artificiale.</p>
+<blockquote>
+<p><strong>Limite importante:</strong> se il RAW o il JPEG è completamente bruciato, il dettaglio non esiste più. La protezione luci comprime le alte luci ancora presenti, ma non può ricostruire pixel già saturi.</p>
+</blockquote>
 <hr />
 <h2 id="4-scheda-sviluppo-raw-regolazioni-fotografiche">4. Scheda Sviluppo RAW: regolazioni fotografiche</h2>
 <p>Queste regolazioni si applicano a tutte le foto del batch. Sono pensate per un risultato naturale: meglio poco e buono che troppo e artificiale.</p>
+<h3 id="correzioni-rapide-smart-batch">Correzioni rapide Smart Batch</h3>
+<p>La scheda <strong>CORREZIONI RAPIDE</strong> è in cima alla scheda <strong>Sviluppo RAW</strong>. I pulsanti non creano impostazioni nascoste: spostano gli slider che vedi qui sotto, così puoi controllare e modificare ogni valore.</p>
+<table>
+<thead>
+<tr><th>Pulsante</th><th>Cosa cambia</th><th>Quando usarlo</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>CONTRASTO NATURALE</strong></td><td>Contrasto, chiarezza, neri e bianchi</td><td>Foto piatte, nuvolose, senza profondità</td></tr>
+<tr><td><strong>SALVA LUCI</strong></td><td>Attiva la protezione luci e riduce luci/bianchi</td><td>Cielo bianco, finestre, vestiti chiari, controluce</td></tr>
+<tr><td><strong>COLORE PIÙ RICCO</strong></td><td>Vivacità, saturazione e canali HSL</td><td>Colori spenti, autunno, tramonti, mare</td></tr>
+<tr><td><strong>SOVRAESPOSTA</strong></td><td>Esposizione e luci più basse</td><td>Foto troppo chiare o con alte luci critiche</td></tr>
+<tr><td><strong>SOTTOESPOSTA</strong></td><td>Esposizione, ombre e neri più alti</td><td>Foto scure, interni, notturni</td></tr>
+<tr><td><strong>ANNULLA CORREZIONI</strong></td><td>Ripristina i valori precedenti</td><td>Dopo una o più correzioni rapide</td></tr>
+</tbody>
+</table>
+<p>Le correzioni sono <strong>cumulative</strong>: puoi premere più pulsanti di seguito. <strong>ANNULLA CORREZIONI</strong> riporta tutti i valori a prima della prima correzione rapida.</p>
+<p><strong>Protezione luci:</strong> quando <strong>SALVA LUCI</strong> è attivo, il pulsante diventa verde e la voce <strong>Proteggi luci attivo</strong> è selezionata. La curva comprime la spalla delle alte luci e mantiene il bianco pieno; non è un semplice abbassamento dell'esposizione.</p>
 <h3 id="41-piu-luminosa-beta">4.1 PIÙ LUMINOSA (BETA)</h3>
 <p>Lo stesso interruttore della scheda Batch. È un'elaborazione automatica dell'esposizione e della vividezza. Attivalo qui o nella scheda Batch: è condiviso.</p>
 <h3 id="42-esposizione-e-bilanciamento">4.2 Esposizione e bilanciamento</h3>
@@ -1111,7 +1144,7 @@ hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 <li>Watermark: <strong>no</strong></li>
 </ul>
 <hr />
-<p><strong>Franchetti Raw Converter Pro v2.56.0</strong> — Guida completa. 1 Novembre 2026.
+<p><strong>Franchetti Raw Converter Pro v2.57.0</strong> — Guida completa. 2 Novembre 2026.
 Per assistenza, salva il <strong>Log</strong> e descrivi il passaggio che ha causato il problema.</p>
 </article></main>
 </body>

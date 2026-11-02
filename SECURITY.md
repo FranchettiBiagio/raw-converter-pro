@@ -162,7 +162,7 @@ python build_exe.py
     <Conditions>
       <FilePublisherCondition PublisherName="O=Franchetti, L=City, S=State, C=IT"
         ProductName="Franchetti Raw Converter Pro" BinaryName="FranchettiRawConverterPro.exe">
-        <BinaryVersionRange LowSection="2.56.0.0" HighSection="2.9999.9999.9999" />
+        <BinaryVersionRange LowSection="2.57.0.0" HighSection="2.9999.9999.9999" />
       </FilePublisherCondition>
     </Conditions>
   </FilePublisherRule>

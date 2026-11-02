@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.56.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.57.0 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
@@ -14,6 +14,7 @@ Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
 
 import os
 import sys
+import io
 import json
 import math
 import time
@@ -23,7 +24,13 @@ import threading
 import traceback
 import multiprocessing
 from datetime import datetime
-from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from concurrent.futures import (
+    FIRST_COMPLETED,
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+    as_completed,
+    wait,
+)
 from tkinter import filedialog, messagebox
 
 try:
@@ -44,7 +51,7 @@ except ImportError as e:  # pragma: no cover
     sys.exit(1)
 
 
-APP_VERSION = "2.56.0"
+APP_VERSION = "2.57.0"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -119,6 +126,9 @@ def parametri_default():
         "bianchi": 0.0,
         "neri": 0.0,
         "contrasto": 0.35,
+        # Protezione luci: comprime la spalla delle alte luci senza
+        # schiacciare il bianco. Attivabile dai pulsanti rapidi.
+        "proteggi_luci": False,
         "vivacita": 0.35,
         "saturazione": 1.0,
         "chiarezza": 0.0,
@@ -266,7 +276,7 @@ def normalizza_parametri(parametri):
 
     for chiave in (
         "usa_multicore", "auto_luminosita", "rimuovi_grana_auto", "preserva_exif", "mantieni_nomi",
-        "ricorsivo", "watermark_attivo", "use_camera_wb", "cloud_telegram",
+        "ricorsivo", "watermark_attivo", "use_camera_wb", "proteggi_luci", "cloud_telegram",
         "cloud_gdrive", "cloud_meta", "cloud_dropbox", "cloud_swiss",
     ):
         p[chiave] = bool(p.get(chiave))
@@ -415,6 +425,314 @@ def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
     return sorted(files)
 
 
+# ================================================================================
+# 1c. SMART BATCH: ANALISI PER FILE
+# ================================================================================
+def _ridimensiona_per_analisi(rgb, lato=1200):
+    """Riduce l'immagine per misurare istogramma e rumore in pochi ms."""
+    array = np.asarray(rgb)
+    if array.dtype != np.uint8:
+        array = np.clip(array, 0, 255).astype(np.uint8)
+    if array.ndim == 2:
+        array = np.stack((array, array, array), axis=-1)
+    if array.shape[2] > 3:
+        array = array[:, :, :3]
+    pil = Image.fromarray(array, "RGB")
+    if max(pil.size) > lato:
+        pil.thumbnail((lato, lato), Image.Resampling.BILINEAR)
+    return np.asarray(pil, dtype=np.uint8)
+
+
+def _metriche_immagine(rgb, iso=0.0, clip_raw_alto=0.0, clip_raw_basso=0.0, origine=""):
+    """Misura i dati oggettivi che servono alle correzioni Smart Batch."""
+    arr = _ridimensiona_per_analisi(rgb)
+    base = arr.astype(np.float32) / 255.0
+    lum = (
+        0.2126 * base[:, :, 0]
+        + 0.7152 * base[:, :, 1]
+        + 0.0722 * base[:, :, 2]
+    )
+    p1, p5, p50, p95, p99 = (
+        float(valore) for valore in np.percentile(lum, [1, 5, 50, 95, 99])
+    )
+    clip_alto = max(float(np.mean(lum >= 0.985)), float(clip_raw_alto or 0.0))
+    clip_basso = max(float(np.mean(lum <= 0.015)), float(clip_raw_basso or 0.0))
+    saturazione = float(np.mean(base.max(axis=2) - base.min(axis=2)))
+
+    dettaglio = lum - filters.gaussian(lum, sigma=1.0, preserve_range=True)
+    mediana_dettaglio = float(np.median(dettaglio))
+    rumore = float(
+        1.4826 * np.median(np.abs(dettaglio - mediana_dettaglio))
+    )
+
+    try:
+        hsv = color.rgb2hsv(np.clip(base, 0.0, 1.0))
+        incarnati = float(
+            np.mean(
+                (hsv[:, :, 0] <= 0.12)
+                & (hsv[:, :, 1] >= 0.12)
+                & (hsv[:, :, 2] >= 0.20)
+            )
+        )
+    except Exception:
+        incarnati = 0.0
+
+    return {
+        "p1": round(p1, 4),
+        "p5": round(p5, 4),
+        "mediana": round(p50, 4),
+        "p95": round(p95, 4),
+        "p99": round(p99, 4),
+        "contrasto": round(p95 - p5, 4),
+        "clip_alto": round(clip_alto, 5),
+        "clip_basso": round(clip_basso, 5),
+        "saturazione": round(saturazione, 4),
+        "rumore": round(rumore, 5),
+        "incarnati": round(incarnati, 4),
+        "iso": int(round(float(iso or 0.0))),
+        "origine": origine,
+    }
+
+
+def _suggerimenti_da_metriche(metriche):
+    """Regole conservative: correggono solo quello che l'istogramma giustifica."""
+    p5 = float(metriche.get("p5", 0.0))
+    p50 = float(metriche.get("mediana", 0.45))
+    p95 = float(metriche.get("p95", 0.8))
+    p99 = float(metriche.get("p99", 0.95))
+    clip_alto = float(metriche.get("clip_alto", 0.0))
+    clip_basso = float(metriche.get("clip_basso", 0.0))
+    contrasto = float(metriche.get("contrasto", p95 - p5))
+    saturazione = float(metriche.get("saturazione", 0.2))
+    rumore = float(metriche.get("rumore", 0.0))
+    iso = float(metriche.get("iso", 0.0))
+    incarnati = float(metriche.get("incarnati", 0.0))
+
+    suggerimenti = {}
+    motivi = []
+    ev = 0.0
+
+    # Esposizione: la mediana e' l'indicatore piu' stabile, ma le alte luci
+    # hanno sempre la precedenza per non bruciare il cielo o il vestito bianco.
+    if p50 < 0.30:
+        ev = min(0.65, max(0.20, math.log2(0.45 / max(p50, 0.05)) * 0.55))
+        if clip_alto > 0.006 or p99 > 0.975:
+            ev = min(ev, 0.15)
+        suggerimenti["esposizione"] = round(ev, 2)
+        suggerimenti["ombre"] = int(min(35, max(8, (0.32 - p50) * 110)))
+        motivi.append("sottoesposta")
+    elif p50 > 0.56:
+        ev = -min(0.65, max(0.15, math.log2(max(p50, 0.05) / 0.45) * 0.55))
+        suggerimenti["esposizione"] = round(ev, 2)
+        suggerimenti["luci"] = -12
+        motivi.append("sovraesposta")
+
+    # Spalla delle alte luci: qui il recupero e' reale, non un semplice
+    # abbassamento globale dell'esposizione.
+    if p99 >= 0.975 or clip_alto >= 0.003:
+        suggerimenti["luci"] = min(int(suggerimenti.get("luci", 0)), -18)
+        suggerimenti["bianchi"] = min(int(suggerimenti.get("bianchi", 0)), -10)
+        suggerimenti["proteggi_luci"] = True
+        if ev > 0.15:
+            suggerimenti["esposizione"] = 0.15
+        motivi.append("luci da proteggere")
+
+    # Ombre chiuse: alziamo le ombre, non l'esposizione globale.
+    if p5 <= 0.025 or clip_basso >= 0.02:
+        suggerimenti["ombre"] = max(int(suggerimenti.get("ombre", 0)), 18)
+        suggerimenti["neri"] = max(int(suggerimenti.get("neri", 0)), 5)
+        motivi.append("ombre chiuse")
+
+    # Contrasto misurato sull'ampiezza reale dell'istogramma.
+    if contrasto < 0.34:
+        suggerimenti["contrasto"] = 0.46
+        suggerimenti["chiarezza"] = max(float(suggerimenti.get("chiarezza", 0.0)), 0.07)
+        motivi.append("contrasto basso")
+    elif contrasto > 0.86:
+        suggerimenti["contrasto"] = 0.28
+        motivi.append("contrasto alto")
+
+    # Colore spento: vivacita' selettiva, saturazione contenuta. Sui ritratti
+    # con molti incarnati la saturazione globale resta piu' prudente.
+    if saturazione < 0.14:
+        suggerimenti["vivacita"] = max(float(suggerimenti.get("vivacita", 0.0)), 0.48)
+        suggerimenti["saturazione"] = max(float(suggerimenti.get("saturazione", 1.0)), 1.05)
+        motivi.append("colore spento")
+    elif saturazione < 0.20 and incarnati < 0.08:
+        suggerimenti["vivacita"] = max(float(suggerimenti.get("vivacita", 0.0)), 0.42)
+        suggerimenti["saturazione"] = max(float(suggerimenti.get("saturazione", 1.0)), 1.03)
+        motivi.append("colore migliorabile")
+
+    # Rumore: il denoise automatico esiste gia'; qui alziamo solo il minimo
+    # necessario per file molto rumorosi.
+    if iso >= 1600 or rumore >= 0.020:
+        nrl = 88.0 + min(10.0, max(0.0, (iso - 800.0) / 800.0) * 2.0)
+        suggerimenti["nr_luminanza"] = round(min(98.0, max(88.0, nrl)), 0)
+        suggerimenti["nr_colore"] = 94.0
+        if iso >= 3200:
+            suggerimenti["nitidezza_quantita"] = 0.80
+        motivi.append("rumore alto")
+
+    if not suggerimenti:
+        return {}, "OK", "Già bilanciata"
+
+    critico = (
+        clip_alto >= 0.02
+        or clip_basso >= 0.05
+        or abs(ev) >= 0.45
+        or p50 < 0.18
+        or p50 > 0.72
+    )
+    stato = "CRITICO" if critico else "CORREGGI"
+    return suggerimenti, stato, ", ".join(dict.fromkeys(motivi))
+
+
+def analizza_file(percorso):
+    """Analizza un singolo RAW/JPEG senza modificarlo.
+
+    Usa una decodifica RAW a mezza risoluzione (veloce ma rappresentativa)
+    e legge il clipping direttamente dal sensore quando disponibile.
+    """
+    nome = os.path.basename(percorso)
+    iso = 0.0
+    clip_alto = 0.0
+    clip_basso = 0.0
+    origine = "RAW" if percorso.lower().endswith(RAW_ESTENSIONI) else "IMMAGINE"
+    try:
+        if origine == "RAW":
+            with rawpy.imread(percorso) as raw:
+                try:
+                    iso = float(raw.other.iso_speed or 0.0)
+                except Exception:
+                    iso = 0.0
+
+                try:
+                    sensore = raw.raw_image_visible[::4, ::4]
+                    livelli_bianchi = raw.camera_white_level_per_channel
+                    if not livelli_bianchi:
+                        livelli_bianchi = [raw.white_level] * 4
+                    bianco = max(float(v) for v in livelli_bianchi if v)
+                    clip_alto = float(np.mean(sensore >= bianco * 0.985))
+                    livelli_neri = raw.black_level_per_channel or [0, 0, 0, 0]
+                    nero = max(float(v) for v in livelli_neri)
+                    clip_basso = float(np.mean(sensore <= nero + 32.0))
+                except Exception:
+                    clip_alto = 0.0
+                    clip_basso = 0.0
+
+                try:
+                    # Stessa resa del batch: rawpy applica il suo auto-bright
+                    # anche in conversione, quindi l'analisi deve vederla.
+                    rgb = raw.postprocess(
+                        half_size=True,
+                        use_camera_wb=True,
+                        no_auto_bright=False,
+                        output_bps=8,
+                        output_color=rawpy.ColorSpace.sRGB,
+                    )
+                except Exception:
+                    thumb = raw.extract_thumb()
+                    if thumb.format == rawpy.ThumbFormat.JPEG:
+                        with Image.open(io.BytesIO(thumb.data)) as im:
+                            rgb = np.asarray(
+                                ImageOps.exif_transpose(im).convert("RGB")
+                            )
+                    else:
+                        rgb = np.asarray(thumb.data)
+        else:
+            with Image.open(percorso) as im:
+                try:
+                    iso = float(im.getexif().get(34855, 0) or 0.0)
+                except Exception:
+                    iso = 0.0
+                rgb = np.asarray(ImageOps.exif_transpose(im).convert("RGB"))
+
+        metriche = _metriche_immagine(
+            rgb, iso=iso, clip_raw_alto=clip_alto, clip_raw_basso=clip_basso,
+            origine=origine,
+        )
+        suggerimenti, stato, motivo = _suggerimenti_da_metriche(metriche)
+        return {
+            "percorso": percorso,
+            "nome": nome,
+            "ok": True,
+            "errore": "",
+            "metriche": metriche,
+            "suggerimenti": suggerimenti,
+            "stato": stato,
+            "motivo": motivo,
+        }
+    except Exception as errore:
+        return {
+            "percorso": percorso,
+            "nome": nome,
+            "ok": False,
+            "errore": f"{type(errore).__name__}: {errore}",
+            "metriche": {},
+            "suggerimenti": {},
+            "stato": "ERRORE",
+            "motivo": "Analisi non disponibile",
+        }
+
+
+def analizza_batch(files, log=None, progresso=None, cancel_event=None, max_workers=None):
+    """Analizza tutti i file in parallelo e restituisce un piano per percorso."""
+    totale = len(files)
+    risultati = {}
+    if totale == 0:
+        return risultati
+
+    def nota(messaggio):
+        if log:
+            try:
+                log(messaggio)
+            except Exception:
+                pass
+
+    if max_workers is None:
+        max_workers = max(1, min(6, os.cpu_count() or 1, totale))
+
+    ok = errori = 0
+    esecutore = ThreadPoolExecutor(max_workers=max_workers)
+    futuri = {esecutore.submit(analizza_file, percorso): percorso for percorso in files}
+    try:
+        for indice, futuro in enumerate(as_completed(futuri), start=1):
+            if cancel_event is not None and cancel_event.is_set():
+                for altro in futuri:
+                    altro.cancel()
+                break
+            percorso = futuri[futuro]
+            try:
+                risultato = futuro.result()
+            except Exception as errore:
+                risultato = {
+                    "percorso": percorso,
+                    "nome": os.path.basename(percorso),
+                    "ok": False,
+                    "errore": f"{type(errore).__name__}: {errore}",
+                    "metriche": {},
+                    "suggerimenti": {},
+                    "stato": "ERRORE",
+                    "motivo": "Analisi non disponibile",
+                }
+            if risultato.get("ok"):
+                ok += 1
+            else:
+                errori += 1
+                nota(f"Analisi non riuscita su {os.path.basename(percorso)}: {risultato.get('errore', '')}")
+            risultati[percorso] = risultato
+            if progresso:
+                try:
+                    progresso(indice, totale, ok, errori)
+                except Exception:
+                    pass
+    finally:
+        # Attende i pochi file gia' in corso: evita che l'analisi continui
+        # in background mentre parte la conversione batch.
+        esecutore.shutdown(wait=True, cancel_futures=True)
+    return risultati
+
+
 def _converti_file_worker(compito):
     """Converte un singolo file. Funzione di modulo: necessaria al multiprocessing.
 
@@ -501,9 +819,14 @@ def _pulisci_temporanei(compiti):
                     time.sleep(0.2)
 
 
-def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_event=None):
+def esegui_batch(
+    files, params, destinazione, log=None, progresso=None, cancel_event=None,
+    analisi=None,
+):
     """Converte tutti i file, in parallelo su tutti i core quando possibile.
 
+    analisi: dizionario percorso -> risultato di analizza_file(). Se presente,
+    ogni file usa il proprio piano di correzione Smart Batch.
     log(messaggio), progresso(indice, totale, ok, errori, saltati).
     """
     def nota(messaggio):
@@ -533,6 +856,14 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
 
     totale = len(files)
     params = normalizza_parametri(params)
+    analisi_per_percorso = {}
+    for percorso_analisi, risultato in (analisi or {}).items():
+        try:
+            chiave_analisi = os.path.normcase(os.path.abspath(percorso_analisi))
+            analisi_per_percorso[chiave_analisi] = risultato
+        except Exception:
+            continue
+    parametri_per_file = {}
     formato = str(params.get("formato", "JPEG")).upper()
     if formato == "JPG":
         formato = "JPEG"
@@ -583,8 +914,30 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                     break
                 contatore += 1
 
+        params_file = params
+        try:
+            chiave_file = os.path.normcase(os.path.abspath(percorso))
+            risultato_analisi = analisi_per_percorso.get(chiave_file)
+        except Exception:
+            risultato_analisi = None
+        if isinstance(risultato_analisi, dict) and risultato_analisi.get("ok"):
+            suggerimenti = risultato_analisi.get("suggerimenti") or {}
+            if suggerimenti:
+                params_file = dict(params)
+                params_file.update(suggerimenti)
+                params_file["_analisi_applicata"] = True
+        parametri_per_file[percorso] = params_file
+
         nomi_prenotati.add(chiave)
         compiti.append((indice, percorso, output, nome))
+
+    if analisi_per_percorso:
+        quanti = sum(
+            1 for percorso in parametri_per_file
+            if parametri_per_file[percorso] is not params
+        )
+        if quanti:
+            nota(f"Smart Batch: correzioni per-file applicate a {quanti} file.")
 
     if compiti and (cancel_event is None or not cancel_event.is_set()):
         processi = 1
@@ -607,7 +960,9 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
             for indice, percorso, output, nome in compiti:
                 if cancel_event is not None and cancel_event.is_set():
                     break
-                esito = _converti_file_worker((percorso, output, params))
+                esito = _converti_file_worker(
+                    (percorso, output, parametri_per_file.get(percorso, params))
+                )
                 if esito["ok"]:
                     ok += 1
                     nota(f"OK: {nome}")
@@ -633,7 +988,10 @@ def esegui_batch(files, params, destinazione, log=None, progresso=None, cancel_e
                     if cancel_event is not None and cancel_event.is_set():
                         annullato_durante = True
                         break
-                    futuro = esecutore.submit(_converti_file_worker, (percorso, output, params))
+                    futuro = esecutore.submit(
+                        _converti_file_worker,
+                        (percorso, output, parametri_per_file.get(percorso, params)),
+                    )
                     futuro_mappa[futuro] = (indice, percorso, output, nome)
 
                 pendenti = set(futuro_mappa)
@@ -737,6 +1095,22 @@ class ImageEngine:
         fattore = np.clip(nuova_lum, 0.0, 1.0) / lum
         return np.clip(img * fattore[:, :, None], 0.0, 1.0)
 
+    @classmethod
+    def _proteggi_luci(cls, img, soglia=0.68, morbidezza=1.40):
+        """Comprime la spalla delle alte luci senza perdere il punto bianco.
+
+        Sotto la soglia l'immagine resta identica; sopra, la curva di
+        shoulder riduce la distanza tra i toni chiari e il bianco. Non e' un
+        semplice abbassamento delle luci: il bianco pieno resta bianco e la
+        separazione locale viene conservata molto piu' a lungo.
+        """
+        lum = np.clip(cls._luma(img), 0.0, 1.0)
+        t = np.clip((lum - soglia) / max(1.0 - soglia, 1e-6), 0.0, 1.0)
+        denominatore = morbidezza + (1.0 - morbidezza) * t
+        spalla = soglia + (1.0 - soglia) * (t / np.maximum(denominatore, 1e-6))
+        nuova = np.where(lum > soglia, spalla, lum)
+        return cls._applica_luminanza(img, np.clip(nuova, 0.0, 1.0))
+
     @staticmethod
     def _hex_to_rgb(valore):
         valore = (valore or "#808080").lstrip("#")
@@ -801,6 +1175,9 @@ class ImageEngine:
             nuova = lum * (1.0 - forza) + curva * forza
             nuova = np.clip(0.5 + (nuova - 0.5) * (1.0 + forza * 0.35), 0.0, 1.0)
             img = cls._applica_luminanza(img, nuova)
+
+        if p.get("proteggi_luci"):
+            img = cls._proteggi_luci(img)
 
         return img
 
@@ -2061,6 +2438,12 @@ class FranchettiApp(ctk.CTk):
         self._batch_files = []
         self._batch_attivo = False
         self._slider_widgets = {}
+        self._snapshot_rapido = {}
+        self._snapshot_luci = None
+        self._analisi = {}
+        self._analisi_files = []
+        self._analisi_in_corso = False
+        self._finestra_analisi = None
         self._grana_precedente = (0.0, 0.0, 0.9, 0.9)
         self._ultima_cartella = os.path.expanduser("~")
         self._coda = queue.Queue()
@@ -2177,6 +2560,10 @@ class FranchettiApp(ctk.CTk):
                     self.scrivi_log(messaggio[1])
                 elif tipo == "progress":
                     self._aggiorna_progresso(*messaggio[1:])
+                elif tipo == "analisi_progress":
+                    self._aggiorna_progresso_analisi(*messaggio[1:])
+                elif tipo == "analisi_done":
+                    self._fine_analisi(*messaggio[1:])
                 elif tipo == "done":
                     self._fine_batch(*messaggio[1:])
         except queue.Empty:
@@ -2465,15 +2852,28 @@ class FranchettiApp(ctk.CTk):
         )
         self.btn_annulla.grid(row=0, column=1, padx=4, pady=6)
 
+        self.btn_analizza = ctk.CTkButton(
+            azioni, text="ANALIZZA FILE", height=42, width=170,
+            fg_color="#2f6f9f", hover_color="#3b83b8",
+            font=ctk.CTkFont(size=13, weight="bold"), command=self.avvia_analisi,
+        )
+        self.btn_analizza.grid(row=0, column=2, padx=4, pady=6)
+
+        self.chk_usa_analisi = ctk.CTkCheckBox(
+            azioni, text="Usa correzioni per file",
+            font=ctk.CTkFont(size=11),
+        )
+        self.chk_usa_analisi.grid(row=0, column=3, padx=(4, 8), pady=6, sticky="w")
+
         self.progress = ctk.CTkProgressBar(azioni)
-        self.progress.grid(row=1, column=0, columnspan=3, padx=4, pady=(2, 4), sticky="ew")
+        self.progress.grid(row=1, column=0, columnspan=4, padx=4, pady=(2, 4), sticky="ew")
         self.progress.set(0)
 
         self.lbl_progresso = ctk.CTkLabel(azioni, text="In attesa", font=ctk.CTkFont(size=12))
-        self.lbl_progresso.grid(row=2, column=0, columnspan=2, padx=4, pady=(0, 4), sticky="w")
+        self.lbl_progresso.grid(row=2, column=0, columnspan=3, padx=4, pady=(0, 4), sticky="w")
 
         ctk.CTkButton(azioni, text="Apri cartella output", width=170, command=self.apri_cartella_output).grid(
-            row=2, column=2, padx=4, pady=(0, 4), sticky="e"
+            row=2, column=3, padx=4, pady=(0, 4), sticky="e"
         )
 
     # -------------------------------------------------------- tab SVILUPPO
@@ -2508,6 +2908,64 @@ class FranchettiApp(ctk.CTk):
             command=self.toggle_rimuovi_grana,
         )
         self.btn_rimuovi_grana_sviluppo.pack(padx=10, pady=(0, 10), anchor="w")
+
+        # ---- Correzioni rapide (Smart Batch): modificano gli slider
+        # esistenti, restano visibili e si possono annullare in blocco.
+        card_rapide = ctk.CTkFrame(scroll)
+        card_rapide.pack(fill="x", padx=6, pady=(2, 6))
+        card_rapide.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(
+            card_rapide,
+            text="CORREZIONI RAPIDE",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).grid(row=0, column=0, padx=10, pady=(8, 2), sticky="w")
+        ctk.CTkLabel(
+            card_rapide,
+            text="Correzioni cumulative e reversibili: agiscono sugli slider qui sotto.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+        ).grid(row=1, column=0, padx=10, pady=(0, 6), sticky="w")
+
+        griglia_rapide = ctk.CTkFrame(card_rapide, fg_color="transparent")
+        griglia_rapide.grid(row=2, column=0, padx=6, pady=(0, 4), sticky="ew")
+        for colonna in range(3):
+            griglia_rapide.grid_columnconfigure(colonna, weight=1, uniform="rapide")
+
+        pulsanti_rapidi = [
+            ("CONTRASTO NATURALE", "contrasto", "#2f6f9f", "#3b83b8"),
+            ("SALVA LUCI", "luci", "#8a5a1f", "#a56d26"),
+            ("COLORE PIÙ RICCO", "colore", "#7b3f8f", "#9250a8"),
+            ("SOVRAESPOSTA", "sovra", "#8a3f2f", "#a54d39"),
+            ("SOTTOESPOSTA", "sotto", "#2f6f5f", "#3b8a75"),
+            ("ANNULLA CORREZIONI", "annulla", "#4a5158", "#5d666e"),
+        ]
+        self._bottoni_rapidi = {}
+        for indice, (testo, chiave, colore, hover) in enumerate(pulsanti_rapidi):
+            bottone = ctk.CTkButton(
+                griglia_rapide,
+                text=testo,
+                height=32,
+                font=ctk.CTkFont(size=11, weight="bold"),
+                fg_color=colore,
+                hover_color=hover,
+                command=lambda k=chiave: self._correzione_rapida(k),
+            )
+            bottone.grid(
+                row=indice // 3,
+                column=indice % 3,
+                padx=4,
+                pady=3,
+                sticky="ew",
+            )
+            self._bottoni_rapidi[chiave] = bottone
+
+        self.sw_proteggi_luci = ctk.CTkSwitch(
+            card_rapide,
+            text="Proteggi luci attivo",
+            font=ctk.CTkFont(size=11),
+            command=lambda: self._toggle_proteggi_luci(self.sw_proteggi_luci.get()),
+        )
+        self.sw_proteggi_luci.grid(row=3, column=0, padx=10, pady=(2, 8), sticky="w")
 
         sezioni = [
             ("ESPOSIZIONE E BILANCIAMENTO", [
@@ -2621,6 +3079,167 @@ class FranchettiApp(ctk.CTk):
             slider.set(valore)
             label.configure(text=fmt.format(valore))
 
+    # ------------------------------------------------- correzioni rapide
+    _CHIAVI_RAPIDE = (
+        "esposizione", "luci", "ombre", "bianchi", "neri", "contrasto",
+        "chiarezza", "dehaze", "vivacita", "saturazione", "hsl_rosso",
+        "hsl_verde", "hsl_blu", "nr_luminanza", "nr_colore",
+        "nitidezza_quantita", "nitidezza_raggio", "proteggi_luci",
+    )
+
+    def _salva_snapshot_rapido(self):
+        if self._snapshot_rapido:
+            return
+        self._snapshot_rapido = {
+            chiave: self.parametri.get(chiave) for chiave in self._CHIAVI_RAPIDE
+        }
+
+    def _ripristina_snapshot_rapido(self):
+        if not self._snapshot_rapido:
+            return False
+        for chiave, valore in self._snapshot_rapido.items():
+            if chiave == "proteggi_luci":
+                self.parametri[chiave] = bool(valore)
+            elif chiave in self._slider_widgets:
+                self._imposta_parametro_slider(chiave, float(valore))
+            else:
+                self.parametri[chiave] = valore
+        self._snapshot_rapido = {}
+        self._snapshot_luci = None
+        self._aggiorna_stato_proteggi_luci()
+        return True
+
+    def _correzione_rapida(self, nome):
+        """Applica una correzione fotografica rapida agli slider esistenti."""
+        if nome == "annulla":
+            if self._ripristina_snapshot_rapido():
+                self.scrivi_log("Correzioni rapide annullate: parametri ripristinati.")
+            else:
+                self.scrivi_log("Nessuna correzione rapida da annullare.")
+            return
+
+        self._salva_snapshot_rapido()
+
+        if nome == "contrasto":
+            self._imposta_parametro_slider(
+                "contrasto", min(0.95, float(self.parametri.get("contrasto", 0.35)) + 0.14)
+            )
+            self._imposta_parametro_slider(
+                "chiarezza", min(0.60, float(self.parametri.get("chiarezza", 0.0)) + 0.06)
+            )
+            self._imposta_parametro_slider(
+                "neri", max(-100.0, float(self.parametri.get("neri", 0.0)) - 5.0)
+            )
+            self._imposta_parametro_slider(
+                "bianchi", min(100.0, float(self.parametri.get("bianchi", 0.0)) + 4.0)
+            )
+            messaggio = "Contrasto naturale applicato."
+
+        elif nome == "colore":
+            self._imposta_parametro_slider(
+                "vivacita", min(0.90, float(self.parametri.get("vivacita", 0.35)) + 0.18)
+            )
+            self._imposta_parametro_slider(
+                "saturazione", min(1.30, float(self.parametri.get("saturazione", 1.0)) + 0.08)
+            )
+            for chiave in ("hsl_rosso", "hsl_verde", "hsl_blu"):
+                self._imposta_parametro_slider(
+                    chiave, min(25.0, float(self.parametri.get(chiave, 0.0)) + 3.0)
+                )
+            messaggio = "Colore più ricco applicato."
+
+        elif nome == "sovra":
+            if self._snapshot_luci is None:
+                self._snapshot_luci = (
+                    float(self.parametri.get("luci", 0.0)),
+                    float(self.parametri.get("bianchi", 0.0)),
+                )
+            self._imposta_parametro_slider(
+                "esposizione", max(-3.0, float(self.parametri.get("esposizione", 0.0)) - 0.35)
+            )
+            self._imposta_parametro_slider(
+                "luci", max(-100.0, float(self.parametri.get("luci", 0.0)) - 18.0)
+            )
+            self._imposta_parametro_slider(
+                "bianchi", max(-100.0, float(self.parametri.get("bianchi", 0.0)) - 12.0)
+            )
+            self.parametri["proteggi_luci"] = True
+            self._aggiorna_stato_proteggi_luci()
+            messaggio = "Correzione per foto sovraesposta applicata."
+
+        elif nome == "sotto":
+            self._imposta_parametro_slider(
+                "esposizione", min(3.0, float(self.parametri.get("esposizione", 0.0)) + 0.35)
+            )
+            self._imposta_parametro_slider(
+                "ombre", min(100.0, float(self.parametri.get("ombre", 0.0)) + 18.0)
+            )
+            self._imposta_parametro_slider(
+                "neri", min(100.0, float(self.parametri.get("neri", 0.0)) + 5.0)
+            )
+            messaggio = "Correzione per foto sottoesposta applicata."
+
+        elif nome == "luci":
+            attivo = not bool(self.parametri.get("proteggi_luci", False))
+            if attivo:
+                self._snapshot_luci = (
+                    float(self.parametri.get("luci", 0.0)),
+                    float(self.parametri.get("bianchi", 0.0)),
+                )
+                self._imposta_parametro_slider(
+                    "luci", min(float(self.parametri.get("luci", 0.0)), -12.0)
+                )
+                self._imposta_parametro_slider(
+                    "bianchi", min(float(self.parametri.get("bianchi", 0.0)), -6.0)
+                )
+            elif self._snapshot_luci is not None:
+                luci, bianchi = self._snapshot_luci
+                self._imposta_parametro_slider("luci", luci)
+                self._imposta_parametro_slider("bianchi", bianchi)
+                self._snapshot_luci = None
+            self.parametri["proteggi_luci"] = attivo
+            self._aggiorna_stato_proteggi_luci()
+            messaggio = (
+                "Protezione luci attivata: le alte luci vengono compresse."
+                if attivo
+                else "Protezione luci disattivata."
+            )
+        else:
+            return
+
+        self.scrivi_log(messaggio)
+
+    def _toggle_proteggi_luci(self, attivo):
+        """Allinea interruttore e parametro di protezione luci."""
+        attivo = bool(attivo)
+        self.parametri["proteggi_luci"] = attivo
+        self._aggiorna_stato_proteggi_luci()
+        self.scrivi_log(
+            "Protezione luci attiva." if attivo else "Protezione luci disattivata."
+        )
+
+    def _aggiorna_stato_proteggi_luci(self):
+        attivo = bool(self.parametri.get("proteggi_luci", False))
+        switch = getattr(self, "sw_proteggi_luci", None)
+        if switch is not None:
+            try:
+                if attivo and not switch.get():
+                    switch.select()
+                elif not attivo and switch.get():
+                    switch.deselect()
+            except Exception:
+                pass
+        bottone = getattr(self, "_bottoni_rapidi", {}).get("luci")
+        if bottone is not None:
+            try:
+                bottone.configure(
+                    text="LUCI PROTETTE ✓" if attivo else "SALVA LUCI",
+                    fg_color="#1f7a3d" if attivo else "#8a5a1f",
+                    hover_color="#258c47" if attivo else "#a56d26",
+                )
+            except Exception:
+                pass
+
     def toggle_rimuovi_grana(self):
         """Preset intelligente: denoise ISO con dettaglio, contrasto e nitidezza."""
         attivo = bool(self.parametri.get("rimuovi_grana_auto", False))
@@ -2666,8 +3285,12 @@ class FranchettiApp(ctk.CTk):
             label.configure(text=fmt.format(default))
             self.parametri[chiave] = default
         self.parametri["rimuovi_grana_auto"] = True
+        self.parametri["proteggi_luci"] = False
+        self._snapshot_rapido = {}
+        self._snapshot_luci = None
         self._grana_precedente = (0.0, 0.0, 0.9, 0.9)
         self._aggiorna_stato_grana()
+        self._aggiorna_stato_proteggi_luci()
         self.combo_curva.set("Lineare")
         self.parametri["curva_tonale"] = "Lineare"
         self.scrivi_log("Parametri di sviluppo ripristinati ai valori di default.")
@@ -2884,12 +3507,24 @@ class FranchettiApp(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Errore", f"Impossibile salvare il log:\n{e}")
 
+    def _invalida_analisi(self):
+        """Evita di riusare un piano per-file dopo un cambio di sorgente."""
+        if self._analisi_in_corso:
+            return
+        self._analisi = {}
+        self._analisi_files = []
+        try:
+            self.chk_usa_analisi.deselect()
+        except Exception:
+            pass
+
     def seleziona_cartella_sorgente(self):
         cartella = filedialog.askdirectory(initialdir=self._ultima_cartella)
         if cartella:
             self._ultima_cartella = cartella
             self.entry_sorgente.delete(0, "end")
             self.entry_sorgente.insert(0, cartella)
+            self._invalida_analisi()
             self.scrivi_log(f"Sorgente: {cartella}")
 
     def seleziona_file_sorgente(self):
@@ -2906,6 +3541,7 @@ class FranchettiApp(ctk.CTk):
             self._ultima_cartella = os.path.dirname(files[0])
             self.entry_sorgente.delete(0, "end")
             self.entry_sorgente.insert(0, "; ".join(files))
+            self._invalida_analisi()
             self.scrivi_log(f"Selezionati {len(files)} file.")
 
     def seleziona_cartella_destinazione(self):
@@ -2996,6 +3632,8 @@ class FranchettiApp(ctk.CTk):
         if not preset:
             return
 
+        self._snapshot_rapido = {}
+        self._snapshot_luci = None
         for chiave, valore in preset.items():
             self.parametri[chiave] = valore
             if chiave in self._slider_widgets:
@@ -3020,6 +3658,7 @@ class FranchettiApp(ctk.CTk):
 
         self.parametri["rimuovi_grana_auto"] = bool(preset.get("rimuovi_grana_auto", False))
         self._aggiorna_stato_grana()
+        self._aggiorna_stato_proteggi_luci()
         self.scrivi_log(f"Preset applicato: {nome}")
 
     # ============================================================ CONFIG
@@ -3134,8 +3773,11 @@ class FranchettiApp(ctk.CTk):
         except Exception:
             pass
 
+        self._snapshot_rapido = {}
+        self._snapshot_luci = None
         self._toggle_auto_luminosita(bool(self.parametri.get("auto_luminosita", False)))
         self._aggiorna_stato_grana()
+        self._aggiorna_stato_proteggi_luci()
 
     # ============================================================ CAMPI
     def _toggle_auto_luminosita(self, attivo):
@@ -3201,6 +3843,7 @@ class FranchettiApp(ctk.CTk):
         self.parametri["ricorsivo"] = bool(self.chk_ricorsivo.get())
         self.parametri["mantieni_nomi"] = bool(self.chk_mantieni_nomi.get())
         self.parametri["auto_luminosita"] = bool(self.sw_auto_luminosita.get())
+        self.parametri["proteggi_luci"] = bool(self.sw_proteggi_luci.get())
         self.parametri["usa_multicore"] = bool(self.chk_multicore.get())
         self.parametri["prefisso"] = self.entry_prefisso.get().strip()
         self.parametri["suffisso"] = self.entry_suffisso.get().strip()
@@ -3233,9 +3876,261 @@ class FranchettiApp(ctk.CTk):
     def _raccogli_file_sorgente(self, sorgente, ricorsivo, escludi=None):
         return raccogli_file_sorgente(sorgente, ricorsivo, escludi)
 
+    # ---------------------------------------------------- Smart Batch: analisi
+    def avvia_analisi(self):
+        """Analizza tutti i file e prepara un piano di correzione per ciascuno."""
+        if self._batch_attivo:
+            messagebox.showinfo("Analisi", "Attendi la fine della conversione in corso.")
+            return
+        if self._analisi_in_corso:
+            messagebox.showinfo("Analisi", "L'analisi dei file è già in corso.")
+            return
+
+        sorgente = self.entry_sorgente.get().strip()
+        if not sorgente:
+            messagebox.showwarning(
+                "Sorgente mancante", "Seleziona una cartella o dei file RAW da analizzare."
+            )
+            return
+
+        self._raccogli_campi()
+        destinazione = self.entry_destinazione.get().strip()
+        files = self._raccogli_file_sorgente(
+            sorgente, self.parametri.get("ricorsivo", True), escludi=destinazione or None
+        )
+        if not files:
+            messagebox.showwarning(
+                "Nessun file", "Nessun file RAW o immagine trovato nella sorgente selezionata."
+            )
+            return
+
+        self._analisi = {}
+        self._analisi_files = list(files)
+        self._analisi_in_corso = True
+        self._cancel_event.clear()
+        self.btn_analizza.configure(state="disabled")
+        self.btn_avvia.configure(state="disabled")
+        self.btn_annulla.configure(state="normal")
+        self.chk_usa_analisi.deselect()
+        self.progress.set(0)
+        self.lbl_progresso.configure(text=f"Analisi 0 / {len(files)}")
+        self.lbl_stato.configure(text="Analisi file in corso...")
+        self.scrivi_log(
+            f"Analisi Smart Batch avviata: {len(files)} file. Nessun file verrà modificato."
+        )
+
+        threading.Thread(
+            target=self._analisi_worker, args=(list(files),), daemon=True
+        ).start()
+
+    def _analisi_worker(self, files):
+        def log(messaggio):
+            self._log_threadsafe(messaggio)
+
+        def progresso(indice, totale, ok, errori):
+            self._coda.put(("analisi_progress", indice, totale, ok, errori))
+
+        try:
+            risultati = analizza_batch(
+                files, log=log, progresso=progresso, cancel_event=self._cancel_event
+            )
+        except Exception as errore:
+            log(f"Analisi Smart Batch non riuscita: {errore}")
+            risultati = {}
+        finally:
+            self._coda.put(("analisi_done", risultati, list(files)))
+
+    def _aggiorna_progresso_analisi(self, indice, totale, ok, errori):
+        self.progress.set(min(1.0, indice / max(totale, 1)))
+        self.lbl_progresso.configure(
+            text=f"Analisi {indice} / {totale}  -  OK: {ok}  Errori: {errori}"
+        )
+
+    def _fine_analisi(self, risultati, files):
+        annullato = self._cancel_event.is_set()
+        self._cancel_event.clear()
+        self._analisi_in_corso = False
+        self._analisi = risultati or {}
+        self._analisi_files = list(files or [])
+
+        self.btn_analizza.configure(state="normal")
+        self.btn_avvia.configure(state="normal")
+        self.btn_annulla.configure(state="disabled")
+
+        risultati = self._analisi
+        ok = sum(1 for r in risultati.values() if r.get("ok"))
+        errori = sum(1 for r in risultati.values() if not r.get("ok"))
+        da_correggere = sum(
+            1 for r in risultati.values()
+            if r.get("ok") and r.get("stato") in ("CORREGGI", "CRITICO")
+        )
+        critici = sum(
+            1 for r in risultati.values()
+            if r.get("ok") and r.get("stato") == "CRITICO"
+        )
+        puliti = sum(
+            1 for r in risultati.values()
+            if r.get("ok") and r.get("stato") == "OK"
+        )
+
+        if da_correggere:
+            self.chk_usa_analisi.select()
+        else:
+            self.chk_usa_analisi.deselect()
+
+        if annullato:
+            testo = f"Analisi annullata - file letti: {ok}, errori: {errori}"
+            self.lbl_stato.configure(text=testo)
+            self.scrivi_log(testo)
+        else:
+            self.progress.set(1.0)
+            testo = (
+                f"Analisi completata: {ok} file, {da_correggere} da correggere, "
+                f"{puliti} già corrette, {critici} critici"
+            )
+            if errori:
+                testo += f", {errori} errori"
+            self.lbl_stato.configure(text=testo)
+            self.lbl_progresso.configure(text=testo)
+            self.scrivi_log(testo)
+            if critici:
+                self.scrivi_log(
+                    "Attenzione: le alte luci già completamente bruciate non "
+                    "contengono dettaglio e non possono essere recuperate."
+                )
+
+        if risultati:
+            self._mostra_finestra_analisi(risultati, files)
+        else:
+            messagebox.showinfo(
+                "Analisi",
+                "Nessun file analizzato. Controlla la sorgente e riprova.",
+            )
+
+    def _mostra_finestra_analisi(self, risultati, files):
+        """Mostra il piano per file in una tabella leggibile e compatta."""
+        if self._finestra_analisi is not None:
+            try:
+                self._finestra_analisi.destroy()
+            except Exception:
+                pass
+            self._finestra_analisi = None
+
+        finestra = ctk.CTkToplevel(self)
+        finestra.title("Analisi file - Smart Batch")
+        finestra.geometry("1000x620")
+        finestra.minsize(820, 420)
+        finestra.transient(self)
+        finestra.grid_columnconfigure(0, weight=1)
+        finestra.grid_rowconfigure(2, weight=1)
+        self._finestra_analisi = finestra
+
+        def chiudi():
+            self._finestra_analisi = None
+            try:
+                finestra.destroy()
+            except Exception:
+                pass
+
+        finestra.protocol("WM_DELETE_WINDOW", chiudi)
+
+        da_correggere = sum(
+            1 for r in risultati.values()
+            if r.get("ok") and r.get("stato") in ("CORREGGI", "CRITICO")
+        )
+        ctk.CTkLabel(
+            finestra,
+            text=(
+                f"Piano Smart Batch: {len(risultati)} file analizzati, "
+                f"{da_correggere} con correzioni suggerite"
+            ),
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).grid(row=0, column=0, padx=12, pady=(10, 4), sticky="w")
+        ctk.CTkLabel(
+            finestra,
+            text=(
+                "Le correzioni sono conservative e per-file. I dettagli già "
+                "completamente bruciati non sono recuperabili. Deseleziona "
+                "«Usa correzioni per file» nel tab Batch per ignorarle."
+            ),
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+        ).grid(row=1, column=0, padx=12, pady=(0, 4), sticky="w")
+
+        contenitore = ctk.CTkScrollableFrame(finestra)
+        contenitore.grid(row=2, column=0, padx=10, pady=4, sticky="nsew")
+        colonne = (
+            ("File", 220), ("Stato", 78), ("Motivo", 250), ("EV", 58),
+            ("Luci", 52), ("Ombre", 58), ("Contr.", 58), ("Colore", 62),
+            ("Rumore", 62),
+        )
+        for indice, (titolo, larghezza) in enumerate(colonne):
+            contenitore.grid_columnconfigure(indice, weight=1 if indice in (0, 2) else 0)
+            ctk.CTkLabel(
+                contenitore, text=titolo, width=larghezza,
+                font=ctk.CTkFont(size=10, weight="bold"), anchor="w",
+            ).grid(row=0, column=indice, padx=3, pady=(2, 4), sticky="w")
+
+        def valore(suggerimenti, chiave, formato="{:.0f}", default=""):
+            if chiave not in suggerimenti:
+                return "-"
+            try:
+                return formato.format(float(suggerimenti[chiave]))
+            except (TypeError, ValueError):
+                return str(suggerimenti[chiave])
+
+        riga = 1
+        for percorso in files:
+            risultato = risultati.get(percorso)
+            if not risultato:
+                continue
+            stato = str(risultato.get("stato", "ERRORE"))
+            colori = {
+                "OK": "#66bb6a",
+                "CORREGGI": "#ffb74d",
+                "CRITICO": "#ff7043",
+                "ERRORE": "#ef5350",
+            }
+            suggerimenti = risultato.get("suggerimenti") or {}
+            valori = (
+                risultato.get("nome", os.path.basename(percorso)),
+                stato,
+                risultato.get("motivo", ""),
+                valore(suggerimenti, "esposizione", "{:+.2f}"),
+                valore(suggerimenti, "luci"),
+                valore(suggerimenti, "ombre", "{:+.0f}"),
+                valore(suggerimenti, "contrasto", "{:.2f}"),
+                valore(suggerimenti, "vivacita", "{:.2f}"),
+                valore(suggerimenti, "nr_luminanza", "{:.0f}"),
+            )
+            for indice, testo in enumerate(valori):
+                ctk.CTkLabel(
+                    contenitore,
+                    text=str(testo),
+                    width=colonne[indice][1],
+                    anchor="w",
+                    justify="left",
+                    wraplength=colonne[indice][1] if indice in (0, 2) else 0,
+                    font=ctk.CTkFont(size=10),
+                    text_color=colori.get(stato, "#dce1e6") if indice == 1 else "#dce1e6",
+                ).grid(row=riga, column=indice, padx=3, pady=2, sticky="w")
+            riga += 1
+
+        ctk.CTkButton(finestra, text="Chiudi", width=140, command=chiudi).grid(
+            row=3, column=0, padx=12, pady=(4, 10), sticky="e"
+        )
+        try:
+            finestra.after(120, finestra.lift)
+            finestra.after(160, finestra.focus_force)
+        except Exception:
+            pass
+
     def avvia_batch(self):
         if self._batch_attivo:
             messagebox.showinfo("Batch", "Una conversione è già in corso.")
+            return
+        if self._analisi_in_corso:
+            messagebox.showinfo("Batch", "Attendi la fine dell'analisi dei file.")
             return
 
         sorgente = self.entry_sorgente.get().strip()
@@ -3267,6 +4162,7 @@ class FranchettiApp(ctk.CTk):
         self._batch_attivo = True
 
         self.btn_avvia.configure(state="disabled")
+        self.btn_analizza.configure(state="disabled")
         self.btn_annulla.configure(state="normal")
         self.progress.set(0)
         self.lbl_progresso.configure(text=f"0 / {len(files)}")
@@ -3274,12 +4170,31 @@ class FranchettiApp(ctk.CTk):
         self.scrivi_log(f"Batch avviato: {len(files)} file -> {destinazione}")
 
         params = normalizza_parametri(self.parametri)
+        analisi = None
+        if self.chk_usa_analisi.get():
+            analisi = {
+                percorso: self._analisi[percorso]
+                for percorso in files
+                if percorso in self._analisi
+            }
+            if analisi:
+                self.scrivi_log(
+                    f"Smart Batch: uso il piano per-file su {len(analisi)} file."
+                )
+            else:
+                self.scrivi_log(
+                    "Smart Batch: nessuna analisi valida per i file selezionati; "
+                    "uso le impostazioni globali."
+                )
+                analisi = None
         thread = threading.Thread(
-            target=self._batch_worker, args=(list(files), params, destinazione), daemon=True
+            target=self._batch_worker,
+            args=(list(files), params, destinazione, analisi),
+            daemon=True,
         )
         thread.start()
 
-    def _batch_worker(self, files, params, destinazione):
+    def _batch_worker(self, files, params, destinazione, analisi=None):
         def log(messaggio):
             self._log_threadsafe(messaggio)
 
@@ -3289,6 +4204,7 @@ class FranchettiApp(ctk.CTk):
         esito = esegui_batch(
             files, params, destinazione,
             log=log, progresso=progresso, cancel_event=self._cancel_event,
+            analisi=analisi,
         )
         self._coda.put((
             "done", esito["ok"], esito["errori"], esito["saltati"], esito["annullato"]
@@ -3304,6 +4220,7 @@ class FranchettiApp(ctk.CTk):
     def _fine_batch(self, ok, errori, saltati=0, annullato=False):
         self._batch_attivo = False
         self.btn_avvia.configure(state="normal")
+        self.btn_analizza.configure(state="normal")
         self.btn_annulla.configure(state="disabled")
         if annullato:
             testo = f"Annullato - OK: {ok}, Errori: {errori}"
@@ -3316,6 +4233,11 @@ class FranchettiApp(ctk.CTk):
         self.scrivi_log(f"Batch terminato: OK {ok}, errori {errori}, saltati {saltati}.")
 
     def annulla_batch(self):
+        if self._analisi_in_corso:
+            self._cancel_event.set()
+            self.lbl_stato.configure(text="Annullamento analisi in corso...")
+            self.scrivi_log("Richiesto annullamento dell'analisi...")
+            return
         if not self._batch_attivo:
             return
         self._cancel_event.set()

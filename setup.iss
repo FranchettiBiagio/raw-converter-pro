@@ -1,15 +1,15 @@
-; Inno Setup Script for Franchetti Raw Converter Pro v2.56.0
+; Inno Setup Script for Franchetti Raw Converter Pro v2.57.0
 ; Build: iscc setup.iss
-; Output: Output/Franchetti_Raw_Converter_Setup_v2.56.0.exe
+; Output: Output/Franchetti_Raw_Converter_Setup_v2.57.0.exe
 
 #define AppName "Franchetti Raw Converter Pro"
-#define AppVersion "2.56.0"
-#define AppVersionTuple "2.56.0.0"
+#define AppVersion "2.57.0"
+#define AppVersionTuple "2.57.0.0"
 #define AppPublisher "Franchetti"
 #define AppWebsite "https://github.com/FranchettiBiagio/raw-converter-pro"
 #define AppExeName "FranchettiRawConverterPro.exe"
 #define SourceExe "dist\FranchettiRawConverterPro.exe"
-#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.56.0"
+#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.57.0"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}

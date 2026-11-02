@@ -238,8 +238,8 @@ python build_exe.py
 ```
 
 ### Publish
-1. Create Git tag: `git tag -a v2.56.0 -m "Release v2.56.0"`
-2. Push tag: `git push origin v2.56.0`
+1. Create Git tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+2. Push tag: `git push origin vX.Y.Z`
 3. GitHub Actions builds and creates Release
 4. Verify Release artifacts
 5. Update uptodown.dev listing

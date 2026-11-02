@@ -1,6 +1,6 @@
 # Domande Frequenti (FAQ)
 
-**Franchetti Raw Converter Pro v2.56.0**
+**Franchetti Raw Converter Pro v2.57.0**
 
 ---
 
@@ -149,7 +149,7 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-## 📞 Supporto v2.56.0
+## 📞 Supporto v2.57.0
 
 | Canale | Scopo |
 |--------|-------|
@@ -159,4 +159,4 @@ I formati dipendono da **LibRaw** (upstream). Aggiorna `rawpy`/`LibRaw` alla ver
 
 ---
 
-*FAQ v2.56.0 - 1 Novembre 2026 - Aggiornata ad ogni release*
+*FAQ v2.57.0 - 2 Novembre 2026 - Aggiornata ad ogni release*

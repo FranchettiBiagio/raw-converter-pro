@@ -1,6 +1,6 @@
 # User Manual
 
-**Franchetti Raw Converter Pro v2.56.0**  
+**Franchetti Raw Converter Pro v2.57.0**  
 > **Guida in italiano, semplice e completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - tutte le funzioni e le impostazioni consigliate. Versione HTML: [GUIDA_COMPLETA.html](GUIDA_COMPLETA.html).
 
 *Complete guide for photographers — Enterprise Edition*
@@ -51,7 +51,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Franchetti Raw Converter Pro v2.56.0                    [×] [−] [□] │
+│  Franchetti Raw Converter Pro v2.57.0                    [×] [−] [□] │
 ├─────────────────────────────────────────────────────────────────┤
 │  Franchetti Raw Converter Pro                                   │
 │  Converti RAW → JPG ridotto + watermark copyright               │
@@ -220,7 +220,7 @@ Franchetti Studio • All Rights Reserved
 | 8 core | ~20–30 file/min |
 | 20 core (i9-12900H) | ~30–50 file/min |
 
-> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale v2.56.0: 4 RAW da 24 MP a 3000 px con denoise automatico in **12,8 s** totali. I preset a risoluzione originale richiedono circa 40-45 s per foto perché il denoise non-locale lavora a 24 MP.
+> **Nota**: ogni file viene decodificato in un processo separato; il batch usa tutti i core logici disponibili, con un limite basato sulla RAM libera. Misura reale v2.57.0: 4 RAW da 24 MP a 3000 px con denoise automatico in **12,8 s** totali. I preset a risoluzione originale richiedono circa 40-45 s per foto perché il denoise non-locale lavora a 24 MP.
 
 ### Memory Management
 
@@ -377,4 +377,4 @@ When reporting issues, include:
 
 ---
 
-*Manual v2.56.0 — 1 Novembre 2026*
+*Manual v2.57.0 - 2 Novembre 2026*
