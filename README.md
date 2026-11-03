@@ -9,6 +9,8 @@
 
 > **Guida completa:** [GUIDA_COMPLETA.md](GUIDA_COMPLETA.md) - ogni funzione spiegata in modo elementare, con le impostazioni consigliate per web, stampa, ritratto, paesaggio e foto notturne. Versione HTML: [docs/guida.html](docs/guida.html).
 
+> **Guida illustrata 2.58.0:** [HTML](docs/guida_illustrata/guida.html) - ogni schermata reale spiegata campo per campo, con procedure numerate. Versione stampabile: [PDF A4](docs/guida_illustrata/Guida_Illustrata_2.58.0.pdf).
+
 > **Enterprise RAW Suite** — Pipeline Y/Cb/Cr e denoise ISO, Tethering automatico multi-marca, Cloud Dispatch multi-canale, Watermark professionale, EXIF preservation. Portable, Open Source (MIT), Zero telemetria.
 
 ---
@@ -373,6 +375,8 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 |-----------|-------------|
 | [Guida Completa Illustrata](GUIDA_COMPLETA.md) | **Tutte le funzioni spiegate in modo elementare + impostazioni consigliate** |
 | [Guida Completa in HTML](docs/guida.html) | Versione web della guida, stampabile |
+| [Guida Illustrata 2.58.0](docs/guida_illustrata/guida.html) | **Ogni schermata reale, campo per campo, con 18 figure e procedure numerate** |
+| [Guida Illustrata in PDF](docs/guida_illustrata/Guida_Illustrata_2.58.0.pdf) | Versione A4 pronta da stampare e condividere |
 | [Manuale Utente](USER_MANUAL.md) | Guida completa con screenshot |
 | [Specifiche Tecniche](TECHNICAL_SPECS.md) | Architettura, algoritmi, formati |
 | [Guida Installazione](INSTALLATION_GUIDE.md) | Deployment enterprise (GPO, Intune) |

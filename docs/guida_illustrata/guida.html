@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guida illustrata - Franchetti Raw Converter Pro 2.58.0</title>
+<style>
+  :root{
+    --ink:#1c2530; --muted:#5c6874; --accent:#1f6f9f; --accent-scuro:#164e70;
+    --line:#d6dee6; --soft:#eef4f8; --green:#1f7a3d; --amber:#9a6414; --red:#a33a2c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{margin:0;background:#e9edf1;color:var(--ink);
+       font-family:"Segoe UI",Arial,sans-serif;font-size:10.6pt;line-height:1.52}
+  .sheet{background:#fff;max-width:210mm;margin:18px auto;padding:16mm 15mm 18mm;
+         box-shadow:0 6px 28px rgba(20,35,50,.16)}
+  h1,h2,h3,h4{line-height:1.22;margin:0}
+  h1{font-size:20pt;color:var(--accent-scuro);margin:0 0 4mm;padding-bottom:2.6mm;
+     border-bottom:1.2mm solid var(--accent)}
+  h1 .num{display:inline-block;min-width:13mm;color:var(--accent)}
+  h2{font-size:13.4pt;color:var(--accent-scuro);margin:8mm 0 2.4mm}
+  h3{font-size:11.4pt;margin:5.5mm 0 1.6mm}
+  p{margin:0 0 3mm}
+  ul,ol{margin:0 0 3.5mm;padding-left:5.5mm}
+  li{margin:0 0 1.4mm}
+  strong{color:#12202c}
+  a{color:var(--accent-scuro);text-decoration:none}
+  small{font-size:8.6pt;color:var(--muted)}
+  .lead{font-size:11.4pt;color:#33414e;margin-bottom:5mm}
+  .muted{color:var(--muted)}
+  .chapter{break-before:page}
+  .cover{break-after:page;min-height:245mm;display:flex;flex-direction:column;
+         justify-content:space-between;background:#11181f;color:#edf2f7;
+         padding:18mm 15mm;border-radius:3mm;position:relative;overflow:hidden}
+  .cover:after{content:"";position:absolute;right:-40mm;top:-40mm;width:130mm;height:130mm;
+               border-radius:50%;background:radial-gradient(circle,#1f6f9f55,#1f6f9f00 70%)}
+  .cover .marchio{font-size:10pt;letter-spacing:.32em;color:#8ab4f8;text-transform:uppercase}
+  .cover h1{border:0;color:#fff;font-size:31pt;margin:25mm 0 2mm;padding:0}
+  .cover .sotto{font-size:16pt;color:#c9d8e6;margin:0 0 8mm}
+  .cover .riga{width:32mm;height:1.4mm;background:#2f8fce;margin:0 0 8mm}
+  .cover p{color:#b7c6d5;font-size:10.5pt;max-width:130mm}
+  .cover .piede{font-size:9pt;color:#93a6b8;border-top:.3mm solid #33414e;padding-top:4mm}
+  .cover .versioni{display:flex;gap:4mm;flex-wrap:wrap;margin-top:6mm}
+  .cover .versioni span{border:.3mm solid #3d5568;border-radius:20mm;padding:1.6mm 4mm;
+                        font-size:9pt;color:#cfe1ef}
+  .indice ol{list-style:none;padding:0;margin:0;counter-reset:ind}
+  .indice li{counter-increment:ind;display:flex;align-items:baseline;gap:3mm;
+             padding:1.6mm 0;border-bottom:.25mm dotted #c9d4de}
+  .indice li:before{content:counter(ind,decimal-leading-zero);color:var(--accent);
+                    font-weight:700;font-size:9.5pt;min-width:8mm}
+  .indice .sottoindice{display:block;color:var(--muted);font-size:8.8pt;margin-left:0}
+  .indice a{flex:1}
+  .indice .pag{color:var(--muted);font-size:9pt}
+  figure{margin:6mm 0 6mm;break-inside:avoid}
+  figure img{display:block;width:100%;height:auto;border:.3mm solid #b9c6d2;border-radius:1.6mm;
+             background:#11181f}
+  figure.naturale img{width:auto;max-width:100%}
+  figcaption{font-size:8.7pt;color:var(--muted);margin-top:2mm;line-height:1.4}
+  figcaption b{color:#33414e}
+  table{width:100%;border-collapse:collapse;font-size:9.1pt;margin:3mm 0 5mm;break-inside:auto}
+  thead{display:table-header-group}
+  tr{break-inside:avoid}
+  th{background:var(--soft);color:#173a52;text-align:left;font-weight:700;
+     padding:2mm 2.2mm;border:.25mm solid var(--line);vertical-align:top}
+  td{padding:1.9mm 2.2mm;border:.25mm solid var(--line);vertical-align:top}
+  tbody tr:nth-child(even) td{background:#fafcfd}
+  td.k{font-weight:600;color:#173a52;white-space:nowrap}
+  .nota,.attenzione,.limite,.regola{border-left:1.2mm solid var(--accent);background:#f2f8fc;
+        padding:3mm 4mm;margin:4mm 0;font-size:9.6pt;break-inside:avoid;border-radius:0 1.6mm 1.6mm 0}
+  .attenzione{border-color:#b07a1e;background:#fdf7ea}
+  .limite{border-color:var(--red);background:#fbefec}
+  .regola{border-color:var(--green);background:#eff8f1}
+  .nota b,.attenzione b,.limite b,.regola b{display:block;margin-bottom:.8mm;font-size:9.4pt;
+        text-transform:uppercase;letter-spacing:.05em}
+  .nota b{color:var(--accent-scuro)} .attenzione b{color:var(--amber)}
+  .limite b{color:var(--red)} .regola b{color:var(--green)}
+  ol.steps{list-style:none;counter-reset:step;padding:0;margin:3mm 0 5mm}
+  ol.steps>li{counter-increment:step;position:relative;padding-left:12mm;margin:0 0 3.2mm;
+              break-inside:avoid;min-height:8mm}
+  ol.steps>li:before{content:counter(step);position:absolute;left:0;top:-.3mm;width:7.6mm;height:7.6mm;
+        border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:9pt;
+        display:flex;align-items:center;justify-content:center}
+  .due-colonne{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+  .due-colonne>div{min-width:0}
+  .scheda{border:.3mm solid var(--line);border-radius:2mm;padding:4mm;margin:3mm 0;break-inside:avoid}
+  .scheda h3{margin-top:0}
+  .etichetta{display:inline-block;background:var(--soft);border:.25mm solid #c8d8e4;color:#173a52;
+             border-radius:10mm;padding:.6mm 2.6mm;font-size:8.2pt;font-weight:700;margin:0 1mm 1.4mm 0}
+  .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin:4mm 0}
+  .kpi div{border:.3mm solid var(--line);border-radius:1.6mm;padding:3mm;background:#fbfdfe}
+  .kpi b{display:block;font-size:13pt;color:var(--accent-scuro)}
+  .kpi span{font-size:8.4pt;color:var(--muted)}
+  .mini-toc{background:#f7fafc;border:.25mm solid var(--line);border-radius:2mm;padding:3mm 4mm;
+            font-size:9pt;margin:4mm 0 6mm;break-inside:avoid}
+  .mini-toc b{color:var(--accent-scuro)}
+  .firma{margin-top:10mm;padding-top:3mm;border-top:.25mm solid var(--line);
+         font-size:8.6pt;color:var(--muted)}
+  .pagina-rapida{break-before:page}
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding-left:8mm;position:relative;margin-bottom:2mm}
+  .checklist li:before{content:"";position:absolute;left:0;top:1mm;width:4mm;height:4mm;
+        border:.35mm solid var(--accent);border-radius:.8mm;background:#fff}
+  @media print{
+    body{background:#fff;font-size:10.2pt}
+    .sheet{max-width:none;margin:0;padding:0;box-shadow:none}
+    .cover{min-height:255mm;border-radius:0}
+    a{color:inherit}
+  }
+  @page{size:A4;margin:16mm 15mm 17mm}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<!-- ============================== COPERTINA ============================== -->
+<section class="cover">
+  <div>
+    <div class="marchio">Franchetti Raw Converter Pro</div>
+    <h1>Guida illustrata</h1>
+    <div class="riga"></div>
+    <p class="sotto">Ogni schermata, ogni passaggio, ogni comando.</p>
+    <p>Questa guida mostra l'applicazione reale, così com'è: le figure sono state catturate dalla versione 2.58.0 in esecuzione. Ogni finestra è spiegata campo per campo, con procedure numerate per la conversione, l'anteprima, il Wi-Fi FTP, la galleria cliente e il tethering.</p>
+    <div class="versioni">
+      <span>Versione 2.58.0</span><span>Windows 10 / 11</span>
+      <span>Italiano</span><span>18 figure</span><span>Formato A4</span>
+    </div>
+  </div>
+  <div class="piede">
+    Documento stampabile in PDF • Le foto di esempio provengono da una sessione di test<br>
+    Gli originali non vengono mai modificati • Novembre 2026
+  </div>
+</section>
+
+<!-- ============================== INDICE ============================== -->
+<section>
+<h1>Indice</h1>
+<div class="indice">
+<ol>
+  <li><a href="#cap1">Prima di iniziare</a><span class="pag">3</span></li>
+  <li><a href="#cap2">La finestra principale, zona per zona</a><span class="pag">5</span></li>
+  <li><a href="#cap3">Scheda Batch: tutte le impostazioni</a><span class="pag">8</span></li>
+  <li><a href="#cap4">La prima conversione, passo passo</a><span class="pag">13</span></li>
+  <li><a href="#cap5">L'anteprima grande PRIMA / DOPO</a><span class="pag">14</span></li>
+  <li><a href="#cap6">Regolazioni avanzate: slider, nomi, watermark, preset</a><span class="pag">16</span></li>
+  <li><a href="#cap7">Analisi Smart Batch, file per file</a><span class="pag">23</span></li>
+  <li><a href="#cap8">Prestazioni: profili, processi e benchmark</a><span class="pag">25</span></li>
+  <li><a href="#cap9">Wi-Fi FTP: la fotocamera invia, il PC prepara</a><span class="pag">27</span></li>
+  <li><a href="#cap10">Galleria cliente: selezione e consegna</a><span class="pag">30</span></li>
+  <li><a href="#cap11">Tethering e Cloud</a><span class="pag">32</span></li>
+  <li><a href="#cap12">Log: leggere cosa è successo</a><span class="pag">35</span></li>
+  <li><a href="#cap13">Flussi di lavoro pronti all'uso</a><span class="pag">37</span></li>
+  <li><a href="#cap14">Soluzione problemi</a><span class="pag">39</span></li>
+  <li><a href="#cap15">Scheda rapida da stampare</a><span class="pag">40</span></li>
+  <li><a href="#appA">Appendice A — Glossario</a><span class="pag">41</span></li>
+  <li><a href="#appB">Appendice B — Note tecniche</a><span class="pag">42</span></li>
+</ol>
+</div>
+<div class="mini-toc">
+<b>Come è organizzata la guida.</b> I capitoli 1–2 presentano l'interfaccia; i capitoli 3–8 spiegano la conversione e lo sviluppo; i capitoli 9–12 coprono fotocamera, galleria, cloud e diagnostica; i capitoli 13–15 sono operativi e stampabili. Ogni schermata ha una tabella <i>Struttura</i> con la funzione di ogni elemento e una procedura numerata.
+</div>
+</section>
+
+<!-- ============================== CAP 1 ============================== -->
+<h1 class="chapter" id="cap1"><span class="num">1</span>Prima di iniziare</h1>
+<p class="lead">Franchetti Raw Converter Pro trasforma RAW e immagini in file pronti per web, clienti e stampa. Lavora su una copia sviluppata in memoria e scrive soltanto nella cartella di destinazione: i file originali restano intatti.</p>
+
+<h2>1.1 Cosa serve</h2>
+<table>
+<thead><tr><th style="width:32%">Requisito</th><th>Dettaglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Sistema</td><td>Windows 10 o Windows 11, 64 bit.</td></tr>
+<tr><td class="k">Memoria</td><td>8 GB consigliati; 16 GB o più per batch grandi e RAW da 40–60 MP. Il programma riduce i processi se la RAM libera scende.</td></tr>
+<tr><td class="k">Spazio disco</td><td>Almeno 1 GB libero per il programma e lo spazio necessario per i file convertiti.</td></tr>
+<tr><td class="k">Formati in ingresso</td><td>RAW: <code>.arw .cr2 .cr3 .nef .nrw .raf .dng .orf .rw2 .pef .srw .x3f .3fr .fff .raw .rwl .dcr .k25 .kdc .mos .mrw .erf .mef .iiq .cap .braw .gpr</code>. Immagini: <code>.jpg .jpeg .png .tif .tiff .bmp .webp</code>.</td></tr>
+<tr><td class="k">Formati in uscita</td><td>JPEG, PNG, TIFF e WebP.</td></tr>
+<tr><td class="k">Internet</td><td>Non necessario per convertire. Serve solo per Telegram/Dropbox e per la galleria condivisa online.</td></tr>
+</tbody>
+</table>
+
+<h2>1.2 Installazione e primo avvio</h2>
+<ol class="steps">
+<li><b>Installa il programma.</b> Esegui <code>Franchetti_Raw_Converter_Setup_v2.58.0.exe</code> e segui la procedura. In alternativa usa la versione portabile <code>FranchettiRawConverterPro.exe</code>.</li>
+<li><b>Avvia l'app.</b> Se Windows mostra SmartScreen, scegli <i>Ulteriori informazioni → Esegui comunque</i>: il file non è firmato digitalmente.</li>
+<li><b>Controlla la versione.</b> La barra del titolo mostra <i>Franchetti Raw Converter Pro v2.58.0 - Enterprise Suite</i>.</li>
+<li><b>Scegli una cartella di prova.</b> Per le prime prove usa 5–10 foto in una cartella dedicata, non l'intero archivio.</li>
+</ol>
+
+<h2>1.3 Le quattro schede</h2>
+<table>
+<thead><tr><th style="width:23%">Scheda</th><th>Cosa contiene</th><th style="width:28%">Quando usarla</th></tr></thead>
+<tbody>
+<tr><td class="k">Batch</td><td>Sorgente, destinazione, dimensioni, formato, anteprima PRIMA/DOPO, correzioni rapide, pulsante AVANZATE, analisi, avvio e avanzamento.</td><td>Conversione di una o centinaia di foto. È la schermata principale.</td></tr>
+<tr><td class="k">Wi-Fi FTP</td><td>Server FTP integrato, dati per la fotocamera, copyright, galleria cliente, cartelle di sessione.</td><td>Scatto in studio o evento con invio diretto delle anteprime al PC.</td></tr>
+<tr><td class="k">Tethering &amp; Cloud</td><td>Sony Wi-Fi diretto, hot-folder per le altre marche, credenziali Telegram e Dropbox.</td><td>Fotocamera collegata e invio automatico dei risultati.</td></tr>
+<tr><td class="k">Log</td><td>Registro in tempo reale di file, errori, processi, FTP e cloud.</td><td>Controllo, assistenza e salvataggio del registro.</td></tr>
+</tbody>
+</table>
+
+<div class="regola"><b>La regola d'oro</b>Il programma non sovrascrive mai gli originali. Scegli sempre una <b>cartella di destinazione diversa</b> da quella della sorgente: è più sicuro e vedi subito quali file sono nuovi. Tieni comunque un backup delle foto importanti.</div>
+
+<h2>1.4 Come leggere i simboli</h2>
+<table>
+<thead><tr><th style="width:22%">Elemento</th><th>Significato</th></tr></thead>
+<tbody>
+<tr><td class="k">Passo numerato</td><td>Una procedura da seguire nell'ordine indicato. Il numero blu è il passo.</td></tr>
+<tr><td class="k">Tabella Struttura</td><td>Elenca ogni zona o comando della schermata: a cosa serve e come si usa.</td></tr>
+<tr><td class="k">Nota blu</td><td>Un chiarimento o un consiglio che non cambia il risultato.</td></tr>
+<tr><td class="k">Attenzione ambra</td><td>Un'impostazione che può peggiorare la resa se usata male.</td></tr>
+<tr><td class="k">Limite rosso</td><td>Un confine reale del programma: meglio conoscerlo prima.</td></tr>
+<tr><td class="k">Regola verde</td><td>La buona pratica consigliata nella maggior parte dei casi.</td></tr>
+</tbody>
+</table>
+
+<h2>1.5 Il percorso di una foto</h2>
+<p>Ogni conversione segue lo stesso percorso, che vale per un singolo file o per un batch di centinaia. Conoscerlo aiuta a capire dove intervenire quando qualcosa non torna.</p>
+<ol class="steps">
+<li><b>Scegli la sorgente.</b> Il programma elenca i file supportati e apre il primo per l'anteprima.</li>
+<li><b>Decidi la destinazione.</b> I risultati vengono scritti lì; gli originali restano dove sono.</li>
+<li><b>Imposta dimensione e formato.</b> Lato massimo, qualità, JPEG/PNG/TIFF/WebP.</li>
+<li><b>Controlla il DOPO.</b> Usa l'anteprima, le correzioni rapide e, se serve, AVANZATE.</li>
+<li><b>Avvia il batch.</b> Ogni file viene sviluppato, ridimensionato, corretto e salvato.</li>
+<li><b>Verifica l'esito.</b> Leggi OK, errori e saltati, poi apri la cartella di output.</li>
+</ol>
+
+<h2>1.6 Cosa trovi nella cartella di output</h2>
+<p>Solo i file prodotti, con il nome e il formato scelti. Non ci sono copie nascoste dei RAW, non ci sono file temporanei e non viene toccata la cartella di partenza. Se la destinazione è dentro la sorgente, il programma la esclude dalla lettura per non rielaborare i propri output.</p>
+<div class="nota"><b>Prima prova</b>Esegui la prima conversione su 5–10 foto e apri qualche file alla dimensione reale. Se il risultato convince, lancia il gruppo completo: è il modo più sicuro per tarare dimensione, qualità e correzioni.</div>
+
+<!-- ============================== CAP 2 ============================== -->
+<h1 class="chapter" id="cap2"><span class="num">2</span>La finestra principale, zona per zona</h1>
+<p class="lead">All'avvio si apre la scheda <b>Batch</b>. La finestra si adatta all'area di lavoro di Windows e mantiene tutte le impostazioni visibili su due colonne, anche a 1366×768.</p>
+
+<figure>
+<img src="img/01_batch.jpg" alt="Finestra principale con la scheda Batch, sorgente caricata e anteprima PRIMA/DOPO">
+<figcaption><b>Figura 1 — La finestra principale.</b> Sorgente e impostazioni a sinistra, anteprima e correzioni rapide a destra, azioni in basso. La foto di esempio è un RAW Sony caricato dalla cartella di test.</figcaption>
+</figure>
+
+<h2>2.1 Barra del titolo e testata</h2>
+<figure class="naturale">
+<img src="img/01_header.jpg" alt="Testata dell'applicazione con titolo, sottotitolo e badge delle tecnologie">
+<figcaption><b>Figura 2 — Testata.</b> A sinistra il nome del programma; al centro il messaggio di supporto; a destra versione e tecnologie attive.</figcaption>
+</figure>
+<table>
+<thead><tr><th style="width:24%">Elemento</th><th>Cosa mostra</th><th style="width:34%">A cosa serve</th></tr></thead>
+<tbody>
+<tr><td class="k">Barra del titolo</td><td><i>Franchetti Raw Converter Pro v2.58.0 - Enterprise Suite</i>, con i pulsanti Riduci a icona, Ingrandisci, Chiudi.</td><td>Identifica versione e finestra. Chiudere la finestra interrompe il batch in corso e ferma il server FTP: salva prima il lavoro.</td></tr>
+<tr><td class="k">Nome programma</td><td><b>FRANCHETTI RAW CONVERTER PRO</b>.</td><td>Riferimento visivo; resta fisso in tutte le schede.</td></tr>
+<tr><td class="k">Messaggio centrale</td><td><i>Ogni recensione positiva aiuta lo sviluppo del programma - grazie!</i></td><td>Messaggio informativo, non interattivo.</td></tr>
+<tr><td class="k">Badge tecnici</td><td><i>v2.58.0 | LibRaw | Multi-core | Wi-Fi FTP e tethering</i>.</td><td>Conferma la versione e le funzioni incluse. <b>LibRaw</b> è il motore che decodifica i RAW.</td></tr>
+</tbody>
+</table>
+
+<h2>2.2 Le schede</h2>
+<table>
+<thead><tr><th style="width:23%">Scheda</th><th>Contenuto</th><th style="width:30%">Nota d'uso</th></tr></thead>
+<tbody>
+<tr><td class="k">Batch</td><td>Impostazioni di conversione, anteprima, correzioni rapide, analisi, avanzamento.</td><td>La scheda attiva è evidenziata in blu.</td></tr>
+<tr><td class="k">Wi-Fi FTP</td><td>Interruttore del server, dati per la fotocamera, opzioni copyright, galleria.</td><td>La configurazione resta memorizzata tra un avvio e l'altro.</td></tr>
+<tr><td class="k">Tethering &amp; Cloud</td><td>Sony Wi-Fi, hot-folder, credenziali cloud.</td><td>Per le altre marche serve il software del produttore.</td></tr>
+<tr><td class="k">Log</td><td>Testo scorrevole con orario e messaggi.</td><td>Utile per capire un errore o salvare una diagnostica.</td></tr>
+</tbody>
+</table>
+
+<h2>2.3 Le due colonne del Batch</h2>
+<figure class="naturale">
+<img src="img/01_sinistra.jpg" alt="Colonna sinistra della scheda Batch con sorgente, destinazione, dimensioni e automatismi">
+<figcaption><b>Figura 3 — Colonna sinistra.</b> Dall'alto: SORGENTE, DESTINAZIONE, DIMENSIONI E FORMATO, automatismi e pulsante PRESTAZIONI. Il riquadro del formato è affiancato a qualità e lato massimo.</figcaption>
+</figure>
+<table>
+<thead><tr><th style="width:25%">Zona</th><th>Contenuto</th><th style="width:33%">Quando la usi</th></tr></thead>
+<tbody>
+<tr><td class="k">SORGENTE</td><td>Campo percorso, <i>Seleziona cartella</i>, <i>Seleziona file RAW</i>, casella <i>Sottocartelle</i>.</td><td>All'inizio di ogni lavoro, per dire al programma quali foto leggere.</td></tr>
+<tr><td class="k">DESTINAZIONE</td><td>Campo <i>Cartella output</i> e pulsante <i>Sfoglia</i>.</td><td>Subito dopo la sorgente: è la cartella in cui verranno scritti i risultati.</td></tr>
+<tr><td class="k">DIMENSIONI E FORMATO</td><td>Lato massimo, misure pronte, qualità, formato, spazio colore, WB fotocamera, EXIF.</td><td>Per decidere peso e destinazione d'uso dei file.</td></tr>
+<tr><td class="k">Automatismi</td><td>PIÙ LUMINOSA, RIMUOVI GRANA, USA TUTTI I CORE, PRESTAZIONI.</td><td>Per migliorare le foto e gestire la velocità senza toccare gli slider.</td></tr>
+</tbody>
+</table>
+
+<h2>2.4 La colonna destra</h2>
+<p>La colonna destra contiene l'<b>anteprima PRIMA / DOPO</b>, il pulsante per aprirla in grande, la scheda <b>CORREZIONI RAPIDE</b> e il grande pulsante <b>AVANZATE</b>. È il posto in cui controlli il risultato mentre cambi le impostazioni: ogni modifica aggiorna l'anteprima senza rileggere il RAW da disco.</p>
+
+<h2>2.5 Barra delle azioni e barra di stato</h2>
+<table>
+<thead><tr><th style="width:26%">Elemento</th><th>Cosa fa</th></tr></thead>
+<tbody>
+<tr><td class="k">AVVIA CONVERSIONE BATCH</td><td>Avvia il lavoro con le impostazioni correnti. Diventa non disponibile durante l'elaborazione.</td></tr>
+<tr><td class="k">ANNULLA</td><td>Interrompe il batch. I file già completati restano; quelli parziali vengono rimossi.</td></tr>
+<tr><td class="k">ANALIZZA FILE</td><td>Analizza i file e prepara un piano di correzione per ciascuno, senza convertire nulla.</td></tr>
+<tr><td class="k">Usa correzioni per file</td><td>Applica i suggerimenti dell'analisi invece delle sole impostazioni globali.</td></tr>
+<tr><td class="k">Barra di avanzamento</td><td>Mostra l'avanzamento; durante il lavoro visualizza anche file/min ed ETA.</td></tr>
+<tr><td class="k">Apri cartella output</td><td>Apre Esplora file nella destinazione scelta.</td></tr>
+<tr><td class="k">Barra di stato</td><td>A sinistra il messaggio corrente (Pronto, Analisi, Completato…); a destra il percorso della cartella di output quando è impostata.</td></tr>
+</tbody>
+</table>
+
+<h2>2.6 Comportamenti utili da conoscere</h2>
+<ul>
+<li><b>La finestra si adatta</b> all'area di lavoro e resta utilizzabile anche a 1366×768; le due colonne non si sovrappongono.</li>
+<li><b>Le impostazioni restano</b> quando cambi scheda: puoi passare a Wi-Fi FTP o al Log e tornare al Batch senza perdere i valori.</li>
+<li><b>L'anteprima si aggiorna</b> dopo una correzione, una modifica in AVANZATE o un cambio di file; non serve riavviare.</li>
+<li><b>La cartella di output è esclusa</b> dalla lettura quando si trova dentro la sorgente, per evitare di riconvertire i risultati.</li>
+<li><b>Il batch non si blocca per un file</b>: un errore viene contato e il lavoro continua con gli altri.</li>
+<li><b>Chiudere l'app ferma tutto</b>: batch, server FTP e monitoraggio cartella vengono interrotti. Salva prima il lavoro e chiudi la galleria.</li>
+</ul>
+
+<!-- ============================== CAP 3 ============================== -->
+<h1 class="chapter" id="cap3"><span class="num">3</span>Scheda Batch: tutte le impostazioni</h1>
+<p class="lead">Questa è la schermata in cui passi la maggior parte del tempo. Ogni blocco ha un compito preciso; qui sotto trovi la spiegazione di ogni campo, con i valori consigliati.</p>
+
+<h2>3.1 SORGENTE: cosa convertire</h2>
+<table>
+<thead><tr><th style="width:24%">Elemento</th><th>Cosa fa</th><th style="width:36%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">File / Cartella</td><td>Mostra il percorso scelto. Può contenere <b>più percorsi separati da punto e virgola</b>.</td><td>Scrivi o incolla un percorso; premi <b>Invio</b> per aggiornare l'anteprima.</td></tr>
+<tr><td class="k">Seleziona cartella</td><td>Apre la finestra di Windows per scegliere una cartella.</td><td>Converte tutti i file supportati presenti nella cartella.</td></tr>
+<tr><td class="k">Seleziona file RAW</td><td>Apre la selezione file multipla.</td><td>Tieni premuto <b>Ctrl</b> o <b>Maiusc</b> per scegliere più file; converte solo quelli.</td></tr>
+<tr><td class="k">Sottocartelle</td><td>Se attiva, entra anche nelle sottocartelle.</td><td>Utile per archivi organizzati per giorno o per evento. La cartella di output viene esclusa automaticamente.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Formati misti</b>Se nella cartella ci sono anche JPEG, PNG o TIFF, vengono trattati come immagini normali e riconvertiti. Per un batch di soli RAW, seleziona i file RAW oppure usa una cartella dedicata.</div>
+
+<h2>3.2 DESTINAZIONE: dove salvare</h2>
+<p>Il campo <b>Cartella output</b> indica dove vengono scritti i file finiti. <b>Sfoglia</b> apre la scelta della cartella. La destinazione viene ricordata e mostrata anche nella barra di stato in basso a destra.</p>
+<div class="regola"><b>Sempre una cartella diversa</b>Non usare la stessa cartella della sorgente. Oltre a essere più sicuro, evita confusione tra originali e risultati. Se la destinazione è dentro la sorgente, il programma la esclude dalla lettura per non rielaborare i propri output.</div>
+
+<h2>3.3 DIMENSIONI E FORMATO</h2>
+<h3>Lato max (px)</h3>
+<p>Il valore è il lato lungo massimo dell'immagine finale. Puoi scriverlo nel campo oppure premere uno dei pulsanti pronti; il pulsante attivo diventa verde. <b>0</b> e <b>Originale</b> significano nessun ridimensionamento.</p>
+<table>
+<thead><tr><th style="width:18%">Misura</th><th>Uso tipico</th></tr></thead>
+<tbody>
+<tr><td class="k">640 / 800</td><td>Miniature, anteprime molto leggere, blog.</td></tr>
+<tr><td class="k">1024 / 1200</td><td>Web veloce, documenti, gallery leggere.</td></tr>
+<tr><td class="k">1600 / 1920</td><td>Web di qualità, Full HD, social.</td></tr>
+<tr><td class="k">2048 / 2560</td><td>Social definiti, schermi 2K/4K, stampe piccole.</td></tr>
+<tr><td class="k">3000 <small>(predefinito)</small></td><td>Dettaglio, ingrandimenti, ritratti, stampe 20×30 cm.</td></tr>
+<tr><td class="k">4000 / 6000</td><td>Stampe grandi e archival.</td></tr>
+<tr><td class="k">Originale</td><td>Nessuna riduzione: risoluzione nativa del RAW.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Nessun ingrandimento</b>Se scrivi un valore più grande della risoluzione originale, l'immagine resta alla dimensione nativa. Il ridimensionamento avviene <b>prima</b> di contrasto, colore, nitidezza e denoise: è più veloce e ottimizza il risultato per la dimensione finale.</div>
+
+<h3>Qualità</h3>
+<p>Valore da <b>1 a 100</b>. Per JPEG e WebP è il compromesso tra peso e dettaglio. <b>90</b> è il valore predefinito e va bene per la maggior parte dei lavori; 85 per file più leggeri, 95 per stampe e consegne, 100 per il massimo (file molto più grandi). Per PNG e TIFF la qualità non si applica: sono formati senza perdita.</p>
+
+<h3>Formato</h3>
+<table>
+<thead><tr><th style="width:16%">Formato</th><th>Quando usarlo</th><th style="width:34%">Attenzione</th></tr></thead>
+<tbody>
+<tr><td class="k">JPEG</td><td>Web, social, consegna al cliente, condivisione.</td><td>Perdita leggera: non riaprire e risalvare molte volte.</td></tr>
+<tr><td class="k">PNG</td><td>Grafica, schermate, immagini con testi.</td><td>File molto grandi; non serve per normali foto RAW.</td></tr>
+<tr><td class="k">TIFF</td><td>Archiviazione, stampa professionale, post-produzione.</td><td>File molto grandi; compressione LZW senza perdita.</td></tr>
+<tr><td class="k">WEBP</td><td>Siti web moderni, immagini leggere.</td><td>Meno compatibile con programmi molto vecchi.</td></tr>
+</tbody>
+</table>
+
+<h3>Spazio colore, WB fotocamera, Preserva EXIF</h3>
+<table>
+<thead><tr><th style="width:24%">Controllo</th><th>Cosa fa</th><th style="width:30%">Consiglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Spazio colore</td><td>Fissato a <b>sRGB</b>, lo standard più compatibile con web, social, Windows e laboratori.</td><td>Non è un'impostazione da cambiare.</td></tr>
+<tr><td class="k">WB fotocamera</td><td>Usa il bilanciamento del bianco impostato nella fotocamera al momento dello scatto.</td><td>Attivo nella maggior parte dei casi: colori fedeli allo scatto.</td></tr>
+<tr><td class="k">Preserva EXIF</td><td>Salva data, fotocamera, obiettivo, ISO, tempi, diaframma, GPS e orientamento.</td><td>Attivo. L'EXIF viene inserito nei JPEG; PNG, TIFF e WebP non ricevono gli stessi metadati in questa versione.</td></tr>
+</tbody>
+</table>
+
+<h2>3.4 Gli automatismi</h2>
+<table>
+<thead><tr><th style="width:26%">Comando</th><th>Cosa fa</th><th style="width:30%">Quando usarlo</th></tr></thead>
+<tbody>
+<tr><td class="k">PIÙ LUMINOSA (BETA)</td><td>Intervento automatico e conservativo su esposizione, alte luci e vividezza. Non trasforma la notte in giorno.</td><td>Foto scure, controluce, interni, giornate nuvolose. Evitalo su still life delicati e notturni d'atmosfera.</td></tr>
+<tr><td class="k">RIMUOVI GRANA (AUTO ISO)</td><td>Preset intelligente di denoise: imposta riduzione rumore 88/92 e nitidezza 0,9/0,9, con forza calibrata sull'ISO del RAW. Se attivo diventa verde e mostra <b>GRANA RIMOSSA (AUTO ISO) ✓</b>.</td><td>ISO 800+, interni, sera, concerti, sport. È attivo di default. Premilo di nuovo per ripristinare i valori precedenti.</td></tr>
+<tr><td class="k">USA TUTTI I CORE</td><td>Abilita l'elaborazione multi-processo. Il numero tra parentesi indica i core fisici e logici rilevati sul PC.</td><td>Attivo. Se hai poca RAM o file enormi, il programma riduce da solo i processi.</td></tr>
+<tr><td class="k">PRESTAZIONI</td><td>Apre il pannello con profilo, numero processi, benchmark e stima. L'etichetta riassume lo stato, per esempio <i>Bilanciato - automatico (max 14)</i>.</td><td>Prima di un batch importante o quando vuoi capire quanto tempo servirà.</td></tr>
+</tbody>
+</table>
+
+<h2>3.5 ANTEPRIMA PRIMA / DOPO</h2>
+<figure class="naturale">
+<img src="img/01_anteprima.jpg" alt="Riquadro anteprima PRIMA e DOPO con il pulsante per aprire l'anteprima grande">
+<figcaption><b>Figura 4 — Anteprima nella scheda Batch.</b> La riga sopra le immagini indica il file e la dimensione dell'anteprima rapida; sotto ci sono le etichette PRIMA e DOPO e il pulsante per la finestra grande.</figcaption>
+</figure>
+<table>
+<thead><tr><th style="width:24%">Elemento</th><th>Cosa mostra</th></tr></thead>
+<tbody>
+<tr><td class="k">Riga informativa</td><td>Nome del file, dimensione dell'anteprima (per esempio 900×600 px) e la frase <i>l'originale non viene modificato</i>.</td></tr>
+<tr><td class="k">PRIMA</td><td>L'immagine di partenza, decodificata dal RAW o letta dal file.</td></tr>
+<tr><td class="k">DOPO</td><td>Il risultato con le impostazioni correnti: profilo, correzioni rapide, slider e resa finale.</td></tr>
+<tr><td class="k">APRI ANTEPRIMA GRANDE</td><td>Apre la finestra dedicata con le due immagini affiancate (capitolo 5).</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Una sola decodifica</b>L'anteprima decodifica il RAW una volta e poi riesegue la pipeline sull'immagine ridotta già in memoria. Per questo gli slider rispondono subito senza rileggere il file originale.</div>
+
+<h2>3.6 CORREZIONI RAPIDE</h2>
+<figure class="naturale">
+<img src="img/01_rapide.jpg" alt="Pulsanti delle correzioni rapide e interruttore Proteggi luci">
+<figcaption><b>Figura 5 — Correzioni rapide.</b> Sei pulsanti cumulative e un interruttore. Non creano impostazioni nascoste: spostano gli slider della finestra AVANZATE, che puoi controllare e modificare.</figcaption>
+</figure>
+<table>
+<thead><tr><th style="width:25%">Pulsante</th><th>Cosa modifica davvero</th><th style="width:28%">Quando usarlo</th></tr></thead>
+<tbody>
+<tr><td class="k">CONTRASTO NATURALE</td><td>Contrasto +0,14 (fino a 0,95), chiarezza +0,06, neri −5, bianchi +4.</td><td>Foto piatte, nuvolose, senza profondità.</td></tr>
+<tr><td class="k">SALVA LUCI</td><td>Attiva la protezione luci e riduce luci/bianchi. Il pulsante diventa verde e l'interruttore <i>Proteggi luci attivo</i> si seleziona.</td><td>Cielo bianco, finestre, vestiti chiari, controluce.</td></tr>
+<tr><td class="k">COLORE PIÙ RICCO</td><td>Vivacità +0,14, saturazione +0,06, saturazione rossi/verdi/blu +2.</td><td>Colori spenti, autunno, tramonti, mare.</td></tr>
+<tr><td class="k">SOVRAESPOSTA</td><td>Esposizione più bassa e luci ridotte.</td><td>Foto troppo chiare o con alte luci critiche.</td></tr>
+<tr><td class="k">SOTTOESPOSTA</td><td>Esposizione +0,35 EV, ombre +18, neri +5.</td><td>Foto scure, interni, notturni.</td></tr>
+<tr><td class="k">ANNULLA CORREZIONI</td><td>Ripristina i valori di prima della prima correzione rapida.</td><td>Dopo una o più correzioni, se il risultato non convince.</td></tr>
+<tr><td class="k">Proteggi luci attivo</td><td>Interruttore della compressione delle alte luci.</td><td>Resta attivo finché non lo spegni o non annulli le correzioni.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Cumulative e reversibili</b>Puoi premere più pulsanti di seguito: gli effetti si sommano. <b>ANNULLA CORREZIONI</b> riporta tutti i valori allo stato precedente alla prima pressione, come un unico «indietro».</div>
+
+<h2>3.7 AVANZATE</h2>
+<p>Il pulsante blu <b>AVANZATE ▸ slider completi, nomi, watermark, preset</b> apre una finestra separata con tutti i controlli di sviluppo e di output. È spiegata nel capitolo 6. Le modifiche si riflettono subito sull'anteprima della scheda Batch.</p>
+
+<h2>3.8 La barra delle azioni</h2>
+<figure class="naturale">
+<img src="img/01_azioni.jpg" alt="Barra delle azioni con avvio, annulla, analizza, avanzamento e apertura cartella output">
+<figcaption><b>Figura 6 — Barra delle azioni.</b> Da sinistra: avvio, annullamento, analisi, casella delle correzioni per file, barra di avanzamento, messaggio e apertura della cartella di output.</figcaption>
+</figure>
+
+<h2>3.9 Durante e dopo la conversione</h2>
+<div class="due-colonne">
+<div>
+<figure>
+<img src="img/13_batch_corso.jpg" alt="Batch in corso con avanzamento 3 su 4, file al minuto ed ETA">
+<figcaption><b>Figura 7 — Batch in corso.</b> La barra avanza, il messaggio mostra <i>3 / 4 - OK: 2 - 13,5 file/min - ETA 0:04</i> e il pulsante ANNULLA è attivo.</figcaption>
+</figure>
+</div>
+<div>
+<figure>
+<img src="img/14_batch_fine.jpg" alt="Batch completato con esito OK 4, durata e velocità">
+<figcaption><b>Figura 8 — Batch completato.</b> L'esito definitivo è nella riga <i>Completato - OK: 4, Errori: 0, 0:14 (16,7 file/min)</i>, ripetuta nella barra di stato.</figcaption>
+</figure>
+</div>
+</div>
+<table>
+<thead><tr><th style="width:28%">Indicazione</th><th>Significato</th></tr></thead>
+<tbody>
+<tr><td class="k">3 / 4</td><td>File completati sul totale. Il conteggio include OK, errori e saltati.</td></tr>
+<tr><td class="k">OK / Errori / Saltati</td><td>Esito per file. Un errore non blocca il batch: il programma continua con gli altri.</td></tr>
+<tr><td class="k">file/min</td><td>Velocità calcolata sul lavoro già completato.</td></tr>
+<tr><td class="k">ETA</td><td>Tempo rimanente stimato, aggiornato durante il lavoro.</td></tr>
+<tr><td class="k">Suffisso _1</td><td>Con l'opzione <i>Se esiste: Rinomina</i>, un nome già presente diventa <code>FOTO_1.jpg</code>, poi <code>_2</code>, e così via.</td></tr>
+</tbody>
+</table>
+<div class="attenzione"><b>La barra non è l'unico riferimento</b>L'esito autorevole è la riga di testo con <i>Completato</i>, <i>Annullato</i> o <i>Errori</i>. La barra riceve gli aggiornamenti dai processi e, su batch molto veloci, può essere meno precisa del conteggio finale.</div>
+
+<h2>3.10 Nomi, conflitti e sottocartelle</h2>
+<ul>
+<li><b>Mantieni nome originale:</b> <code>FOTO (12).ARW</code> diventa <code>FOTO (12).jpg</code>.</li>
+<li><b>Prefisso e suffisso:</b> per esempio <code>FRC_</code> e <code>_web</code>.</li>
+<li><b>Se esiste:</b> <i>Rinomina</i> aggiunge un progressivo, <i>Sovrascrivi</i> sostituisce, <i>Salta</i> non converte e conta il file tra i saltati.</li>
+<li><b>Omonimi in sottocartelle diverse:</b> il programma li rinomina per evitare collisioni. Non ci sono due processi che scrivono lo stesso file.</li>
+</ul>
+
+<!-- ============================== CAP 4 ============================== -->
+<h1 class="chapter" id="cap4"><span class="num">4</span>La prima conversione, passo passo</h1>
+<p class="lead">Questa procedura porta da una cartella di RAW a un gruppo di JPEG pronti, con le impostazioni consigliate. Richiede pochi minuti.</p>
+<ol class="steps">
+<li><b>Apri la scheda Batch.</b> Se l'app è appena partita, è già selezionata.</li>
+<li><b>Scegli la sorgente.</b> Premi <b>Seleziona cartella</b> e indica la cartella con le foto. Per pochi file usa <b>Seleziona file RAW</b>. Lascia <b>Sottocartelle</b> attivo solo se vuoi includere le sottocartelle.</li>
+<li><b>Controlla l'anteprima.</b> La riga sopra le immagini deve mostrare il nome del primo file e la scritta <i>anteprima rapida</i>. Se resta il segnaposto, premi Invio nel campo del percorso o riprova con un file RAW valido.</li>
+<li><b>Scegli la destinazione.</b> Premi <b>Sfoglia</b> accanto a <i>Cartella output</i> e indica una cartella <b>diversa</b> dalla sorgente.</li>
+<li><b>Imposta il lato massimo.</b> Lascia <b>3000</b> per un uso generale, scegli <b>2048</b> per il web, <b>Originale</b> per la stampa.</li>
+<li><b>Imposta qualità e formato.</b> JPEG con qualità <b>90</b> è il default. Per la stampa usa TIFF e qualità 100; per il web moderno WebP 80–90.</li>
+<li><b>Controlla gli automatismi.</b> <b>WB fotocamera</b> e <b>Preserva EXIF</b> devono restare attivi. <b>RIMUOVI GRANA (AUTO ISO)</b> è già attivo: lascialo così per ISO alti, spegnilo per luce buona se vuoi più texture.</li>
+<li><b>Guarda il DOPO.</b> Se la foto è scura, premi <b>SOTTOESPOSTA</b>; se il cielo è bianco, <b>SALVA LUCI</b>; se i colori sono spenti, <b>COLORE PIÙ RICCO</b>. Per un controllo più grande apri <b>APRI ANTEPRIMA GRANDE</b>.</li>
+<li><b>Se serve, affina.</b> Apri <b>AVANZATE</b> e regola esposizione, ombre, nitidezza o denoise. Chiudi la finestra: i valori restano.</li>
+<li><b>Avvia.</b> Premi <b>AVVIA CONVERSIONE BATCH</b>. Durante il lavoro leggi <i>file/min</i> ed <i>ETA</i>; puoi annullare con <b>ANNULLA</b>.</li>
+<li><b>Controlla l'esito.</b> Alla fine leggi la riga <i>Completato - OK: …</i>. Se ci sono errori, apri la scheda <b>Log</b> e cerca la riga <i>Errore</i>.</li>
+<li><b>Apri il risultato.</b> Premi <b>Apri cartella output</b> e controlla alcune foto alla dimensione reale, non solo nell'anteprima.</li>
+</ol>
+<div class="regola"><b>Prima di un batch importante</b>Esegui una prova su 5–10 foto, controlla ingrandimento, colore e peso dei file, poi lancia il gruppo completo. Se le foto sono tante e diverse tra loro, usa <b>ANALIZZA FILE</b> (capitolo 7).</div>
+<table>
+<thead><tr><th style="width:38%">Controllo finale</th><th>Cosa verificare</th></tr></thead>
+<tbody>
+<tr><td class="k">File prodotti</td><td>Il numero corrisponde a quello atteso? Ci sono <i>Saltati</i> o <i>Errori</i>?</td></tr>
+<tr><td class="k">Dimensione</td><td>Il lato lungo è quello scelto? Il file non è stato ingrandito oltre il nativo?</td></tr>
+<tr><td class="k">Colore</td><td>La pelle non è arancione, il cielo non è violetta, i bianchi non sono bruciati.</td></tr>
+<tr><td class="k">Dettaglio</td><td>Gli ingrandimenti al 100% non mostrano aloni o grana eccessiva.</td></tr>
+<tr><td class="k">Metadati</td><td>Data, fotocamera e copyright sono presenti nel JPEG (se Preserva EXIF e copyright sono attivi).</td></tr>
+</tbody>
+</table>
+
+<!-- ============================== CAP 5 ============================== -->
+<h1 class="chapter" id="cap5"><span class="num">5</span>L'anteprima grande PRIMA / DOPO</h1>
+<p class="lead">La finestra grande serve a giudicare il risultato senza affaticare la vista sulle miniature. Non contiene controlli: è uno strumento di lettura, e le modifiche si fanno nella scheda Batch o in AVANZATE.</p>
+
+<figure>
+<img src="img/02_anteprima_grande.jpg" alt="Finestra Anteprima Prima Dopo con due immagini affiancate">
+<figcaption><b>Figura 9 — Anteprima grande.</b> A sinistra PRIMA, a destra DOPO. Le due immagini usano la stessa inquadratura e la stessa dimensione, così il confronto è immediato.</figcaption>
+</figure>
+
+<table>
+<thead><tr><th style="width:25%">Elemento</th><th>Cosa mostra</th><th style="width:32%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">Barra del titolo</td><td><i>Anteprima Prima / Dopo - Franchetti Raw Converter Pro</i> con Chiudi.</td><td>La finestra è separata: puoi spostarla su un secondo monitor.</td></tr>
+<tr><td class="k">PRIMA</td><td>Lo scatto di partenza.</td><td>Serve a ricordare com'era la foto, non a confrontare due elaborazioni diverse.</td></tr>
+<tr><td class="k">DOPO</td><td>Il risultato con tutte le impostazioni correnti.</td><td>È ciò che verrà scritto nel file.</td></tr>
+<tr><td class="k">Dimensioni</td><td>La finestra si adatta e mantiene le due immagini affiancate.</td><td>Ingrandisci la finestra per vedere più dettaglio.</td></tr>
+</tbody>
+</table>
+
+<h2>5.1 Cosa rappresentano davvero PRIMA e DOPO</h2>
+<p><b>PRIMA</b> è l'immagine di partenza decodificata: per un RAW è la resa di base, non un file già sviluppato. <b>DOPO</b> è la pipeline completa con profilo prestazioni, WB, correzioni, curva, nitidezza e denoise. Per questo il DOPO può essere più scuro o più chiaro del PRIMA: non è un errore, è lo sviluppo.</p>
+<div class="nota"><b>L'anteprima non è il file finale</b>La finestra lavora su un'immagine ridotta (circa 900 px di lato) per restare veloce. Il file esportato viene elaborato alla dimensione scelta e con la stessa pipeline, ma i dettagli fini e la grana possono apparire leggermente diversi. Controlla sempre qualche file esportato al 100%.</div>
+
+<h2>5.2 Quando aprirla</h2>
+<ul>
+<li>Prima di applicare una correzione rapida su un gruppo di foto.</li>
+<li>Dopo aver spostato esposizione, ombre o luci in AVANZATE.</li>
+<li>Per confrontare un ritratto: pelle, colore degli occhi, dettaglio dei capelli.</li>
+<li>Per un notturno: rumore nelle ombre e protezione delle luci.</li>
+</ul>
+<p>Per chiuderla usa la <b>X</b> della barra del titolo. La finestra non modifica nulla e non chiede conferma.</p>
+
+<h2>5.3 Cosa guardare in un confronto corretto</h2>
+<table>
+<thead><tr><th style="width:26%">Zona</th><th>Cosa controllare</th><th style="width:32%">Segnale d'allarme</th></tr></thead>
+<tbody>
+<tr><td class="k">Pelle</td><td>Colore naturale, texture visibile, nessuna macchia.</td><td>Pelle arancione, plastica o con chiazze verdi.</td></tr>
+<tr><td class="k">Alte luci</td><td>Cielo, finestre e vestiti bianchi conservano dettaglio.</td><td>Bianco uniforme senza sfumature: il dettaglio non c'è.</td></tr>
+<tr><td class="k">Ombre</td><td>Dettaglio nelle zone scure senza rumore evidente.</td><td>Ombre grigie e rumorose, aloni intorno ai contorni.</td></tr>
+<tr><td class="k">Colore</td><td>Rossi, verdi e blu distinti e credibili.</td><td>Blu del cielo viola, verdi fluorescenti, dominante generale.</td></tr>
+<tr><td class="k">Dettaglio</td><td>Capelli, tessuti e pietre restano definiti senza effetto cartoon.</td><td>Aloni chiari sui bordi o grana eccessiva.</td></tr>
+</tbody>
+</table>
+
+<h2>5.4 Procedura: usare l'anteprima grande</h2>
+<ol class="steps">
+<li><b>Apri la finestra</b> con <b>APRI ANTEPRIMA GRANDE</b> dalla scheda Batch.</li>
+<li><b>Ingrandisci la finestra</b> trascinando i bordi, se hai spazio sullo schermo.</li>
+<li><b>Confronta la stessa zona</b> nelle due immagini: non giudicare PRIMA e DOPO in punti diversi.</li>
+<li><b>Torna alla scheda Batch</b> o ad AVANZATE per correggere; l'anteprima grande si aggiorna.</li>
+<li><b>Chiudi con la X</b> quando il risultato convince, poi avvia il batch.</li>
+</ol>
+
+<!-- ============================== CAP 6 ============================== -->
+<h1 class="chapter" id="cap6"><span class="num">6</span>Regolazioni avanzate: slider, nomi, watermark, preset</h1>
+<p class="lead">La finestra <b>REGOLAZIONI AVANZATE</b> contiene tutti i controlli di sviluppo e di output. Si apre dal pulsante blu della scheda Batch e resta separata dalla finestra principale: puoi tenerla aperta su un secondo monitor mentre lavori. Ogni modifica si riflette subito sull'anteprima PRIMA/DOPO.</p>
+
+<figure>
+<img src="img/03_avanzate_top.jpg" alt="Finestra Regolazioni avanzate, parte alta: anteprima e controlli esposizione e toni">
+<figcaption><b>Figura 10 — Avanzate, parte alta.</b> In cima l'anteprima PRIMA/DOPO, poi <i>ESPOSIZIONE E BILANCIAMENTO</i> e <i>TONI</i>. Il pulsante <b>Chiudi</b> in alto a destra salva i valori e chiude la finestra.</figcaption>
+</figure>
+
+<h2>6.1 Come è fatta la finestra</h2>
+<table>
+<thead><tr><th style="width:24%">Zona</th><th>Contenuto</th><th style="width:30%">A cosa serve</th></tr></thead>
+<tbody>
+<tr><td class="k">Testata</td><td>Titolo <b>REGOLAZIONI AVANZATE</b>, sottotitolo e pulsante <b>Chiudi</b>.</td><td>Chiudere la finestra applica i valori correnti all'anteprima e al batch.</td></tr>
+<tr><td class="k">Anteprima PRIMA / DOPO</td><td>Le stesse due immagini della scheda Batch, in formato più grande.</td><td>Controllare l'effetto di ogni slider senza tornare indietro.</td></tr>
+<tr><td class="k">ESPOSIZIONE E BILANCIAMENTO</td><td>Esposizione, temperatura, tinta.</td><td>Correggere luce e colore di base.</td></tr>
+<tr><td class="k">TONI</td><td>Luci, ombre, bianchi, neri.</td><td>Recuperare dettaglio nelle zone chiare e scure.</td></tr>
+<tr><td class="k">COLORE</td><td>Vivacità selettiva, saturazione, saturazione rossi/verdi/blu.</td><td>Dare carattere ai colori senza virarli.</td></tr>
+<tr><td class="k">DETTAGLIO E NITIDEZZA</td><td>Chiarezza, dehaze, nitidezza, riduzione rumore.</td><td>Migliorare micro-contrasto e pulizia.</td></tr>
+<tr><td class="k">EFFETTI</td><td>Vignettatura e grana.</td><td>Finitura creativa o look analogico.</td></tr>
+<tr><td class="k">CURVA TONALE E SPLIT TONING</td><td>Curva, colori e intensità di ombre e luci.</td><td>Contrasto e look cinematografico.</td></tr>
+<tr><td class="k">NOMI FILE E SOVRASCRITTURA</td><td>Nome originale, prefisso, suffisso, comportamento se il file esiste.</td><td>Decidere come si chiamano i file esportati.</td></tr>
+<tr><td class="k">WATERMARK</td><td>Testo, font, posizione, logo PNG, autore EXIF.</td><td>Firma visibile e copyright nei metadati.</td></tr>
+<tr><td class="k">PRESET E CONFIGURAZIONE</td><td>Preset pronti, salva/carica configurazione, ripristino.</td><td>Riutilizzare le stesse impostazioni su più lavori.</td></tr>
+</tbody>
+</table>
+
+<h2>6.2 Esposizione e bilanciamento</h2>
+<table>
+<thead><tr><th style="width:24%">Controllo</th><th>Effetto</th><th style="width:36%">Consiglio pratico</th></tr></thead>
+<tbody>
+<tr><td class="k">Esposizione (EV)</td><td>Rende l'immagine più chiara o più scura. Il valore mostrato è in stop (per esempio <b>+0,70</b>).</td><td>Correzioni entro ±0,7 EV sono quasi sempre naturali. Oltre ±1,5 EV controlla il rumore nelle ombre o le alte luci.</td></tr>
+<tr><td class="k">Temperatura</td><td>Sposta il bianco verso il blu (valori negativi) o verso l'ambra (positivi).</td><td>Con <b>WB fotocamera</b> attivo parti da 0. Usa la temperatura solo per correggere una dominante reale.</td></tr>
+<tr><td class="k">Tinta (verde/magenta)</td><td>Corregge le dominanti verdi o magenta.</td><td>Piccoli passi: ±5–10. Una tinta forte su tutta la scena è spesso una scelta creativa.</td></tr>
+</tbody>
+</table>
+
+<h2>6.3 Toni: luci, ombre, bianchi, neri</h2>
+<p>I quattro cursori lavorano su intervalli diversi della luminosità. Sono lo strumento principale per recuperare una foto difficile senza cambiare l'esposizione globale.</p>
+<table>
+<thead><tr><th style="width:16%">Cursore</th><th>Zona che governa</th><th style="width:42%">Quando intervenire</th></tr></thead>
+<tbody>
+<tr><td class="k">Luci</td><td>Le zone più chiare, come cielo, finestre e vestiti bianchi.</td><td>Valori negativi recuperano dettaglio. Con <b>Proteggi luci</b> attivo la compressione è più morbida.</td></tr>
+<tr><td class="k">Ombre</td><td>Le zone scure, come interni, capelli e foglie.</td><td>Valori positivi aprono le ombre, ma alzano anche il rumore: usa 10–25, non 80.</td></tr>
+<tr><td class="k">Bianchi</td><td>Il punto più luminoso dell'immagine.</td><td>Alza se la foto è spenta; abbassa se i bianchi sono bruciati.</td></tr>
+<tr><td class="k">Neri</td><td>Il punto più scuro e la profondità delle ombre.</td><td>Valori negativi danno corpo e contrasto; valori positivi schiariscono le ombre profonde.</td></tr>
+</tbody>
+</table>
+<div class="attenzione"><b>Alte luci già bruciate</b>Se un'area è completamente bianca nel RAW, non contiene più dettaglio: nessun cursore può recuperarlo. Il programma lo segnala anche nell'analisi. Esponi correttamente in scatto, oppure accetta un bianco pulito.</div>
+
+<figure>
+<img src="img/04_avanzate_mid.jpg" alt="Finestra Regolazioni avanzate, parte centrale: colore, dettaglio, nitidezza, effetti">
+<figcaption><b>Figura 11 — Avanzate, parte centrale.</b> <i>COLORE</i>, <i>DETTAGLIO E NITIDEZZA</i>, <i>EFFETTI</i> e l'inizio di <i>CURVA TONALE E SPLIT TONING</i>. I valori a destra di ogni slider sono modificabili solo con il cursore, non a tastiera.</figcaption>
+</figure>
+
+<h2>6.4 Colore</h2>
+<table>
+<thead><tr><th style="width:24%">Controllo</th><th>Cosa fa</th><th style="width:34%">Consiglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Vivacità selettiva</td><td>Aumenta i colori spenti senza esaltare quelli già intensi. Il valore 0,35 è un buon punto di partenza.</td><td>Per ritratti resta sotto 0,5: la pelle non diventa arancione.</td></tr>
+<tr><td class="k">Saturazione</td><td>Aumenta o riduce tutti i colori in modo uniforme. Il valore 1,00 è neutro.</td><td>Preferisci la vivacità selettiva; usa la saturazione per correzioni globali decise.</td></tr>
+<tr><td class="k">Saturazione rossi</td><td>Agisce solo sul canale rosso (labbra, tessuti, tramonti).</td><td>+5…+15 per colori più pieni; negativo per spegnere un rosso troppo acceso.</td></tr>
+<tr><td class="k">Saturazione verdi</td><td>Agisce su prati, foglie e vegetazione.</td><td>Negativo per verdi più naturali, positivo per un look più vivo.</td></tr>
+<tr><td class="k">Saturazione blu</td><td>Agisce su cielo e acqua.</td><td>Un blu troppo saturo diventa artificiale: controlla sempre il cielo nell'anteprima.</td></tr>
+</tbody>
+</table>
+
+<h2>6.5 Dettaglio e nitidezza</h2>
+<table>
+<thead><tr><th style="width:26%">Controllo</th><th>Cosa fa</th><th style="width:34%">Consiglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Chiarezza (micro-contrasto)</td><td>Aumenta il contrasto locale nei dettagli medi. Effetto <i>punch</i> su pietre, tessuti e capelli.</td><td>0,10–0,30 per un risultato naturale. Oltre 0,5 compaiono aloni.</td></tr>
+<tr><td class="k">Dehaze (rimozione velo)</td><td>Riduce la foschia e il velo atmosferico, aumentando contrasto e saturazione sulle distanze.</td><td>5–20 per paesaggi. Attenzione ai cieli: il dehaze può crearne il bordo.</td></tr>
+<tr><td class="k">Nitidezza (quantità)</td><td>Controlla quanto viene applicata la nitidezza finale.</td><td>0,8–1,0 è il range tipico. Con <b>RIMUOVI GRANA</b> attivo il valore viene impostato a 0,90.</td></tr>
+<tr><td class="k">Nitidezza (raggio)</td><td>Controlla lo spessore del dettaglio esaltato.</td><td>Raggio piccolo per dettagli fini, più grande per immagini morbide o ridimensionate.</td></tr>
+<tr><td class="k">Riduzione rumore luminanza</td><td>Elimina la grana nei toni chiari e medi. Valore 88 nel profilo Bilanciato.</td><td>Alzala per ISO alti; abbassala per conservare la texture della pelle.</td></tr>
+<tr><td class="k">Riduzione rumore colore</td><td>Elimina le macchie colorate (verdi/magenta) nelle ombre. Valore 92 nel profilo Bilanciato.</td><td>Puoi tenerla alta quasi sempre: il dettaglio di luminanza resta.</td></tr>
+</tbody>
+</table>
+
+<h2>6.6 Effetti</h2>
+<table>
+<thead><tr><th style="width:24%">Controllo</th><th>Effetto</th><th style="width:36%">Consiglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Vignettatura</td><td>Valori negativi scuriscono gli angoli, positivi li schiariscono.</td><td>−10…−25 per concentrare l'attenzione sul soggetto. Oltre −40 è un effetto evidente.</td></tr>
+<tr><td class="k">Grana</td><td>Aggiunge una texture analogica uniforme.</td><td>5–15 per un look pellicola discreto; 30+ per un effetto dichiarato.</td></tr>
+</tbody>
+</table>
+
+<h2>6.7 Curva tonale e split toning</h2>
+<p>La <b>curva tonale</b> applica un contrasto predefinito ai toni. Lo <b>split toning</b> colora separatamente ombre e luci: è il modo più semplice per ottenere un look caldo/freddo senza cambiare il bilanciamento del bianco.</p>
+<table>
+<thead><tr><th style="width:24%">Voce</th><th>Effetto</th></tr></thead>
+<tbody>
+<tr><td class="k">Lineare</td><td>Nessuna curva: massimo controllo naturale.</td></tr>
+<tr><td class="k">Media</td><td>Contrasto leggero.</td></tr>
+<tr><td class="k">Forte</td><td>Contrasto deciso.</td></tr>
+<tr><td class="k">Contrasto Alto</td><td>Contrasto molto marcato.</td></tr>
+<tr><td class="k">Schiarisci</td><td>Immagine più luminosa e aperta.</td></tr>
+<tr><td class="k">Scurisci</td><td>Immagine più scura e densa.</td></tr>
+<tr><td class="k">Split toning ombre</td><td>Intensità 0–100 e colore esadecimale (predefinito <code>#2b4c7e</code>, blu).</td></tr>
+<tr><td class="k">Split toning luci</td><td>Intensità 0–100 e colore esadecimale (predefinito <code>#e0b070</code>, caldo).</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Look cinema</b>Ombre blu e luci calde, entrambe a intensità 10–15, danno un risultato elegante. Oltre 30 l'effetto diventa stilizzato e va usato con consapevolezza.</div>
+
+<figure>
+<img src="img/05_avanzate_bottom.jpg" alt="Finestra Regolazioni avanzate, parte bassa: split toning, nomi file, watermark e preset">
+<figcaption><b>Figura 12 — Avanzate, parte bassa.</b> Split toning, <i>NOMI FILE E SOVRASCRITTURA</i>, <i>WATERMARK</i> e <i>PRESET E CONFIGURAZIONE</i>. Il pulsante finale riporta tutti i parametri di sviluppo ai valori predefiniti.</figcaption>
+</figure>
+
+<h2>6.8 Nomi file e sovrascrittura</h2>
+<table>
+<thead><tr><th style="width:28%">Elemento</th><th>Cosa fa</th><th style="width:34%">Esempio</th></tr></thead>
+<tbody>
+<tr><td class="k">Mantieni nome originale</td><td>Conserva il nome del file di partenza e cambia solo l'estensione.</td><td><code>FOTO (12).ARW</code> → <code>FOTO (12).jpg</code>.</td></tr>
+<tr><td class="k">Prefisso</td><td>Testo aggiunto prima del nome.</td><td><code>FRC_</code> → <code>FRC_FOTO (12).jpg</code>.</td></tr>
+<tr><td class="k">Suffisso</td><td>Testo aggiunto dopo il nome, prima dell'estensione.</td><td><code>_web</code> → <code>FOTO (12)_web.jpg</code>.</td></tr>
+<tr><td class="k">Se esiste: Rinomina</td><td>Non sovrascrive: aggiunge un progressivo.</td><td><code>FOTO_1.jpg</code>, <code>FOTO_2.jpg</code>.</td></tr>
+<tr><td class="k">Se esiste: Sovrascrivi</td><td>Sostituisce il file già presente.</td><td>Utile per rigenerare una consegna, rischioso se la cartella contiene altro.</td></tr>
+<tr><td class="k">Se esiste: Salta</td><td>Non converte il file e lo conta tra i saltati.</td><td>Per riprendere un batch interrotto senza duplicare.</td></tr>
+</tbody>
+</table>
+<div class="regola"><b>Regola pratica</b>Per il web usa <b>Rinomina</b> o <b>Salta</b>. Per una consegna definitiva, svuota la cartella di output e usa <b>Sovrascrivi</b> consapevolmente. Non puntare mai la destinazione sulla cartella degli originali.</div>
+
+<h2>6.9 Watermark e copyright</h2>
+<table>
+<thead><tr><th style="width:24%">Elemento</th><th>Cosa fa</th><th style="width:34%">Consiglio</th></tr></thead>
+<tbody>
+<tr><td class="k">Applica testo</td><td>Attiva o disattiva il watermark testuale sulle immagini esportate.</td><td>Attivo per anteprime cliente, spento per i file finali.</td></tr>
+<tr><td class="k">Testo</td><td>Il testo mostrato, per esempio <code>© Franchetti 2026</code>.</td><td>Usa il simbolo © e l'anno; evita testi lunghi che coprono il soggetto.</td></tr>
+<tr><td class="k">Font (px)</td><td>Dimensione del testo in pixel.</td><td>14–24 su file web; su stampe grandi aumenta in proporzione.</td></tr>
+<tr><td class="k">Posizione</td><td>Dove appare il testo: <i>Basso a destra</i>, <i>Basso a sinistra</i>, <i>Alto a destra</i>, <i>Alto a sinistra</i>, <i>Centro</i>.</td><td>Basso a destra è la posizione più discreta e leggibile.</td></tr>
+<tr><td class="k">Logo PNG</td><td>Carica un'immagine PNG da sovrapporre al watermark testuale.</td><td>Usa un PNG con trasparenza e dimensioni contenute.</td></tr>
+<tr><td class="k">Autore (EXIF)</td><td>Nome scritto nel campo Autore dei metadati.</td><td>Compila sempre: è la base del copyright nelle consegne.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Copyright nei metadati</b>Il copyright EXIF/IPTC viene scritto nel batch e nelle anteprime FTP quando l'opzione è attiva nella scheda <b>Wi-Fi FTP</b>. Il watermark visibile e il copyright nei metadati sono due cose diverse: il primo si vede, il secondo viaggia dentro il file.</div>
+
+<h2>6.10 Preset e configurazione</h2>
+<table>
+<thead><tr><th style="width:26%">Preset</th><th>Impostazioni tipiche</th><th style="width:30%">Uso</th></tr></thead>
+<tbody>
+<tr><td class="k">Personalizzato</td><td>I valori correnti, senza modifiche automatiche.</td><td>Quando hai già messo a punto tutto a mano.</td></tr>
+<tr><td class="k">Web / Social</td><td>Lato 2048 px, JPEG qualità 85–90, profilo Veloce o Bilanciato.</td><td>Pubblicazione rapida, peso contenuto.</td></tr>
+<tr><td class="k">Stampa Fine Art</td><td>Lato originale o 6000 px, qualità alta, profilo Massima qualità.</td><td>Stampe grandi e file definitivi.</td></tr>
+<tr><td class="k">Archivio JPEG</td><td>Qualità alta, metadati preservati, nessun watermark.</td><td>Archiviazione ordinata e consultabile.</td></tr>
+<tr><td class="k">Ritratto</td><td>Denoise moderato, nitidezza controllata, colori naturali.</td><td>Pelle pulita senza effetto plastica.</td></tr>
+<tr><td class="k">Paesaggio</td><td>Chiarezza e dehaze più presenti, colori pieni.</td><td>Cielo, vegetazione, dettaglio sulle distanze.</td></tr>
+<tr><td class="k">Bianco e Nero</td><td>Saturazione azzerata e contrasto più deciso.</td><td>Conversione monocromatica rapida.</td></tr>
+</tbody>
+</table>
+<p><b>Salva config</b> scrive un file <code>.json</code> con tutte le impostazioni; <b>Carica config</b> lo rilegge. <b>Ripristina tutti i parametri di sviluppo</b> riporta slider e curva ai valori iniziali, senza toccare sorgente, destinazione e nomi file.</p>
+
+<h2>6.11 Procedura: mettere a punto una foto</h2>
+<ol class="steps">
+<li><b>Apri AVANZATE</b> dalla scheda Batch. L'anteprima in cima mostra già il file corrente.</li>
+<li><b>Sistema l'esposizione.</b> Muovi <i>Esposizione</i> finché il soggetto è leggibile, senza bruciare i bianchi.</li>
+<li><b>Recupera le luci.</b> Abbassa <i>Luci</i> se il cielo o le finestre sono bianchi; alza <i>Ombre</i> solo quanto basta.</li>
+<li><b>Controlla i bianchi.</b> Se la foto è spenta, alza <i>Bianchi</i>; se è già brillante, lasciali a 0.</li>
+<li><b>Dai colore.</b> Parti da <i>Vivacità selettiva</i>; intervieni sui singoli canali solo se un colore è davvero fuori posto.</li>
+<li><b>Regola il dettaglio.</b> Chiarezza 0,10–0,20; nitidezza intorno a 0,9; denoise secondo l'ISO.</li>
+<li><b>Scegli la curva.</b> <i>Lineare</i> per il massimo controllo, <i>Media</i> o <i>Forte</i> per più contrasto.</li>
+<li><b>Aggiungi il tocco.</b> Vignettatura −10…−20 e split toning 10–15, se servono.</li>
+<li><b>Imposta nomi e watermark.</b> Decidi prefisso, suffisso e comportamento se il file esiste.</li>
+<li><b>Salva la configurazione</b> se vuoi riutilizzarla, poi premi <b>Chiudi</b>. I valori restano attivi nel batch.</li>
+</ol>
+
+<!-- ============================== CAP 7 ============================== -->
+<h1 class="chapter" id="cap7"><span class="num">7</span>Analisi Smart Batch, file per file</h1>
+<p class="lead">L'analisi legge i file, misura esposizione, luci, ombre, contrasto, colore e rumore, e propone una correzione conservativa per ciascuno. Non converte e non modifica nulla: serve a capire cosa fare prima di avviare il batch.</p>
+
+<figure>
+<img src="img/07_analisi.jpg" alt="Finestra Analisi file con tabella dei file, stato, motivo e valori suggeriti">
+<figcaption><b>Figura 13 — Analisi file.</b> Ogni riga è un file; le colonne mostrano stato, motivo e valori suggeriti. In basso il pulsante <b>Chiudi</b>.</figcaption>
+</figure>
+
+<h2>7.1 La tabella dell'analisi</h2>
+<table>
+<thead><tr><th style="width:18%">Colonna</th><th>Cosa contiene</th><th style="width:34%">Come leggerla</th></tr></thead>
+<tbody>
+<tr><td class="k">File</td><td>Nome del file analizzato.</td><td>Ordina mentalmente per nome o per stato; il numero di righe è il numero di file letti.</td></tr>
+<tr><td class="k">Stato</td><td><b>CORREGGI</b> (arancione) o <b>CRITICO</b> (rosso). Può comparire anche <b>OK</b> per file già equilibrati.</td><td><i>Correggi</i> significa che il piano propone ritocchi; <i>critico</i> segnala un problema forte, spesso alte luci irrecuperabili.</td></tr>
+<tr><td class="k">Motivo</td><td>La diagnosi in parole: sottoesposta, sovraesposta, contrasto basso, colore spento, rumore alto, luci da proteggere.</td><td>È la spiegazione del perché il piano propone quei valori.</td></tr>
+<tr><td class="k">EV</td><td>Correzione di esposizione suggerita.</td><td>Applicata solo se attivi <b>Usa correzioni per file</b>.</td></tr>
+<tr><td class="k">Luci</td><td>Correzione delle alte luci.</td><td>Valori negativi proteggono i bianchi.</td></tr>
+<tr><td class="k">Ombre</td><td>Apertura delle zone scure.</td><td>Valori positivi schiariscono le ombre.</td></tr>
+<tr><td class="k">Contr.</td><td>Contrasto suggerito.</td><td>Utile per foto piatte o nuvolose.</td></tr>
+<tr><td class="k">Colore</td><td>Intervento su vivacità/saturazione.</td><td>Per soggetti spenti o dominanti.</td></tr>
+<tr><td class="k">Rumore</td><td>Forza del denoise suggerito.</td><td>Più alto per ISO elevati.</td></tr>
+</tbody>
+</table>
+
+<h2>7.2 Cosa significa «critico»</h2>
+<div class="limite"><b>Dettaglio non recuperabile</b>Un file critico ha aree completamente bruciate o completamente nere. In quei pixel non c'è informazione: il programma può rendere l'immagine più gradevole, ma non può inventare il dettaglio perduto. La scritta <i>Attenzione: le alte luci già completamente bruciate non contengono dettaglio</i> nel Log è la stessa cosa, detta in modo esplicito.</div>
+
+<h2>7.3 Applicare i suggerimenti</h2>
+<ol class="steps">
+<li><b>Seleziona la sorgente</b> nella scheda Batch, come per una conversione normale.</li>
+<li><b>Premi ANALIZZA FILE.</b> Il pulsante resta occupato finché l'analisi non termina; il Log riporta l'avanzamento.</li>
+<li><b>Leggi la tabella.</b> Parti dai <b>CRITICO</b>: sono i file che richiedono una decisione umana.</li>
+<li><b>Chiudi la finestra</b> con <b>Chiudi</b>. L'analisi resta disponibile per il batch.</li>
+<li><b>Attiva «Usa correzioni per file»</b> nella barra delle azioni, sotto il pulsante ANALIZZA FILE.</li>
+<li><b>Avvia la conversione.</b> Ogni file riceve il proprio piano; le impostazioni globali restano la base.</li>
+<li><b>Controlla il risultato</b> su qualche file critico: se il dettaglio manca, valuta di riscattare o di accettare un bianco/nero pulito.</li>
+</ol>
+<div class="nota"><b>Analisi e originali</b>L'analisi apre i file in sola lettura, non crea file temporanei nella cartella della sorgente e non modifica gli originali. Con molte foto può richiedere qualche minuto: è normale.</div>
+
+<!-- ============================== CAP 8 ============================== -->
+<h1 class="chapter" id="cap8"><span class="num">8</span>Prestazioni: profili, processi e benchmark</h1>
+<p class="lead">Il pannello <b>PRESTAZIONI ADATTIVE</b> decide quanti processi usare e con quale cura elaborare le foto. Non è un interruttore «più veloce = meglio»: è un compromesso misurato tra tempo, RAM e qualità.</p>
+
+<figure class="naturale">
+<img src="img/06_prestazioni.jpg" alt="Pannello Prestazioni adattive con profilo, numero processi automatico e benchmark">
+<figcaption><b>Figura 14 — Prestazioni adattive.</b> In alto i core e la RAM libera; poi profilo, processi automatici e benchmark. Il valore <i>14 max (auto)</i> indica il limite calcolato per questo PC.</figcaption>
+</figure>
+
+<h2>8.1 La testata tecnica</h2>
+<table>
+<thead><tr><th style="width:26%">Voce</th><th>Significato</th></tr></thead>
+<tbody>
+<tr><td class="k">CPU: 14 fisici / 20 logici</td><td>Core fisici e thread logici rilevati. I core fisici sono il riferimento per il massimo guadagno reale.</td></tr>
+<tr><td class="k">RAM libera</td><td>Memoria disponibile al momento. Se scende, il numero di processi viene ridotto per evitare swap.</td></tr>
+<tr><td class="k">Profilo</td><td><i>Veloce</i>, <i>Bilanciato</i> o <i>Massima qualità</i>. Cambia denoise, nitidezza e tipo di core.</td></tr>
+<tr><td class="k">Numero processi automatico</td><td>Se attivo, il programma calcola i processi in base a RAM e core. Se lo spegni, usi lo slider manuale.</td></tr>
+<tr><td class="k">Processi</td><td>Numero di processi simultanei. In automatico mostra il massimo consigliato; in manuale puoi scegliere da 1 al numero di core logici.</td></tr>
+<tr><td class="k">BENCHMARK SUI MIEI FILE</td><td>Misura il tempo reale su una piccola copia dei tuoi file. Non modifica gli originali.</td></tr>
+<tr><td class="k">Stima</td><td>Dopo il benchmark mostra il tempo previsto per il batch corrente, in base a numero e peso dei file.</td></tr>
+</tbody>
+</table>
+
+<h2>8.2 I tre profili</h2>
+<table>
+<thead><tr><th style="width:22%">Profilo</th><th>Core usati</th><th>Denoise e nitidezza</th><th style="width:26%">Quando sceglierlo</th></tr></thead>
+<tbody>
+<tr><td class="k">Veloce</td><td>Tutti i core logici.</td><td>Denoise leggero: luminanza 70, colore 80, nitidezza 0,70.</td><td>Anteprime, selezione, consegne rapide, batch molto grandi.</td></tr>
+<tr><td class="k">Bilanciato</td><td>Core fisici.</td><td>Denoise e nitidezza predefiniti: luminanza 88, colore 92, nitidezza 0,90.</td><td>La scelta normale per la maggior parte dei lavori.</td></tr>
+<tr><td class="k">Massima qualità</td><td>Core fisici.</td><td>Denoise e nitidezza più curati: luminanza 95, colore 96, nitidezza 1,10.</td><td>Stampe, consegne finali, file che devono durare.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Perché i core fisici</b>Oltre i core fisici l'iperthreading dà un guadagno limitato e consuma più RAM. Per questo i profili di qualità usano i core fisici: il risultato è più stabile e non rallenta il PC in modo evidente.</div>
+
+<h2>8.3 Processi automatici e manuali</h2>
+<p>Con <b>Numero processi automatico</b> attivo, il programma parte dai core fisici, controlla la RAM libera e riduce il numero se il peso dei file è alto. La soglia è adattiva: un batch di JPEG leggeri può usare più processi di un batch di RAW da 60 MP. L'override manuale prevale sempre: se imposti 4, il programma usa 4.</p>
+<div class="attenzione"><b>Non forzare il massimo</b>Impostare tutti i core logici su RAW grandi può saturare la RAM e rendere il PC poco reattivo. Se senti il disco che lavora senza sosta, riduci i processi di 1–2 e lascia respirare il sistema.</div>
+
+<h2>8.4 Benchmark e stima</h2>
+<ol class="steps">
+<li><b>Apri PRESTAZIONI</b> dal pulsante nella scheda Batch.</li>
+<li><b>Scegli il profilo</b> che userai davvero per quel lavoro.</li>
+<li><b>Lascia automatico</b> il numero di processi, oppure impostane uno manuale se conosci il limite del PC.</li>
+<li><b>Premi BENCHMARK SUI MIEI FILE.</b> Il programma crea una cartella temporanea <code>frc_benchmark_</code>, elabora un campione e la elimina.</li>
+<li><b>Leggi la stima.</b> Dopo la misura, il pannello mostra il tempo previsto per il batch corrente.</li>
+<li><b>Chiudi e avvia.</b> Durante il batch, la scheda Batch mostra <i>file/min</i> ed <i>ETA</i>.</li>
+</ol>
+<div class="regola"><b>Gli originali sono al sicuro</b>Il benchmark lavora su una copia temporanea, non scrive nella cartella della sorgente e non tiene traccia dei file di prova. Puoi eseguirlo anche su una sessione appena scaricata.</div>
+
+<!-- ============================== CAP 9 ============================== -->
+<h1 class="chapter" id="cap9"><span class="num">9</span>Wi-Fi FTP: la fotocamera invia, il PC prepara</h1>
+<p class="lead">Il server FTP integrato trasforma il PC in una destinazione di rete per la fotocamera. Appena arriva uno scatto, il programma sviluppa il RAW, crea un'anteprima JPEG e aggiorna la galleria cliente. L'originale resta intatto.</p>
+
+<figure>
+<img src="img/08_ftp.jpg" alt="Scheda Wi-Fi FTP attiva con dati di connessione, opzioni copyright, galleria e cartelle">
+<figcaption><b>Figura 15 — Wi-Fi FTP attivo.</b> In alto l'interruttore e il pulsante per spegnere; sotto i dati da inserire nella fotocamera, le opzioni di copyright, la galleria e le cartelle di sessione.</figcaption>
+</figure>
+
+<h2>9.1 Accensione e dati di connessione</h2>
+<table>
+<thead><tr><th style="width:24%">Elemento</th><th>Cosa fa</th><th style="width:34%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">Interruttore RICEZIONE WI-FI FTP</td><td>Avvia o ferma il server FTP locale.</td><td>Attivalo solo quando la fotocamera deve inviare. Il server ascolta sulla rete locale, non su Internet.</td></tr>
+<tr><td class="k">SPEGNI WI-FI FTP</td><td>Ferma il server e mostra lo stato inattivo.</td><td>Usalo a fine sessione per chiudere la porta e liberare le risorse.</td></tr>
+<tr><td class="k">IP</td><td>Indirizzo del PC sulla rete locale, per esempio <code>192.168.1.18</code>.</td><td>Va inserito nella configurazione FTP della fotocamera.</td></tr>
+<tr><td class="k">Porta</td><td><code>2121</code>.</td><td>Non è la 21 standard: evita conflitti con altri server FTP.</td></tr>
+<tr><td class="k">Utente</td><td><code>camera</code>.</td><td>Credenziale locale, valida solo mentre il server è attivo.</td></tr>
+<tr><td class="k">Password</td><td><code>1234</code>.</td><td>Credenziale locale. Non riutilizzarla altrove.</td></tr>
+<tr><td class="k">COPIA DATI</td><td>Copia negli appunti IP, porta, utente e password.</td><td>Per incollarli nell'app o nel menu della fotocamera.</td></tr>
+<tr><td class="k">APRI ANTEPRIME</td><td>Apre la cartella delle anteprime della sessione.</td><td>Per controllare i JPEG appena arrivati.</td></tr>
+<tr><td class="k">APRI GALLERIA</td><td>Apre <code>index.html</code> della galleria cliente.</td><td>Solo dopo che la galleria è stata creata.</td></tr>
+</tbody>
+</table>
+
+<h2>9.2 Cosa scrive sopra le foto</h2>
+<table>
+<thead><tr><th style="width:34%">Opzione</th><th>Cosa fa</th><th style="width:28%">Default consigliato</th></tr></thead>
+<tbody>
+<tr><td class="k">Aggiungi copyright/watermark (in basso a destra)</td><td>Scrive il testo di copyright sull'anteprima, in basso a destra.</td><td>Attivo per le anteprime cliente.</td></tr>
+<tr><td class="k">Scrivi copyright nei metadati EXIF/IPTC (anche nel batch)</td><td>Inserisce il copyright nei metadati del JPEG e nel batch.</td><td>Attivo.</td></tr>
+<tr><td class="k">Crea la galleria cliente con le caselle di selezione</td><td>Genera <code>Galleria_Cliente/&lt;sessione&gt;/index.html</code>.</td><td>Attivo se consegni una selezione al cliente.</td></tr>
+<tr><td class="k">Invia automaticamente le anteprime ai cloud attivi (Telegram/Dropbox)</td><td>Invia l'anteprima ai servizi configurati.</td><td><b>Spento</b>: l'invio automatico va attivato solo se serve.</td></tr>
+</tbody>
+</table>
+<div class="attenzione"><b>Il nome del file resta nell'angolo</b>Il programma scrive anche il nome del file originale in basso a sinistra, per riconoscere lo scatto durante la selezione. Non è un watermark di copyright: è un riferimento operativo.</div>
+
+<h2>9.3 Le tre cartelle di sessione</h2>
+<table>
+<thead><tr><th style="width:24%">Pulsante</th><th>Cartella</th><th>Contenuto</th></tr></thead>
+<tbody>
+<tr><td class="k">CARTELLA ORIGINALI</td><td><code>Pictures\FranchettiRawConverterPro\Tethering\Originali\&lt;sessione&gt;</code></td><td>I file ricevuti dalla fotocamera, mai modificati.</td></tr>
+<tr><td class="k">CARTELLA ANTEPRIME</td><td><code>...\Anteprime_Cliente\&lt;sessione&gt;</code></td><td>I JPEG sviluppati, ridotti a un lato massimo di 2000 px, pronti per il cliente.</td></tr>
+<tr><td class="k">CARTELLA GALLERIA</td><td><code>...\Galleria_Cliente\&lt;sessione&gt;</code></td><td>La pagina <code>index.html</code> con le anteprime e le caselle di selezione.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>La galleria usa percorsi relativi</b>Per funzionare, <code>index.html</code> e la cartella delle anteprime devono restare nella stessa struttura. Se sposti solo la pagina HTML, le immagini non si vedono più. Per consegnare, copia l'intera cartella di sessione.</div>
+
+<h2>9.4 Procedura: ricevere gli scatti via Wi-Fi</h2>
+<ol class="steps">
+<li><b>Collega PC e fotocamera alla stessa rete</b> (router, hotspot o Wi-Fi direct della fotocamera).</li>
+<li><b>Apri la scheda Wi-Fi FTP</b> e attiva <b>RICEZIONE WI-FI FTP</b>. Il Log mostra l'indirizzo e la cartella di sessione creata.</li>
+<li><b>Premi COPIA DATI</b> e inserisci IP, porta, utente e password nel menu FTP della fotocamera.</li>
+<li><b>Scatta.</b> La fotocamera invia il file; il programma lo salva in <code>Originali\&lt;sessione&gt;</code> e genera l'anteprima.</li>
+<li><b>Controlla l'anteprima</b> con <b>APRI ANTEPRIME</b>: è il file che vedrà il cliente.</li>
+<li><b>Apri la galleria</b> con <b>APRI GALLERIA</b> e verifica che le foto siano tutte presenti.</li>
+<li><b>A fine sessione</b> premi <b>SPEGNI WI-FI FTP</b>. La cartella resta sul disco e la galleria continua a funzionare.</li>
+</ol>
+
+<h2>9.5 Compatibilità</h2>
+<ul>
+<li><b>Nikon, Canon, Fujifilm e molti modelli recenti</b> hanno un client FTP integrato: inviano direttamente al PC.</li>
+<li><b>Modelli senza client FTP</b> non possono farlo da soli: usa l'app del produttore, la scheda SD o la cartella monitorata in <b>Tethering &amp; Cloud</b>.</li>
+<li><b>Bluetooth</b> non trasferisce RAW di alta qualità in modo universale: il programma non lo simula.</li>
+<li><b>Wi-Fi direct</b> della fotocamera: il PC si collega alla rete <code>DIRECT-xxxx</code> e usa l'IP mostrato dal programma.</li>
+</ul>
+
+<h2>9.6 Sicurezza e buone pratiche</h2>
+<table>
+<thead><tr><th style="width:30%">Aspetto</th><th>Cosa sapere</th></tr></thead>
+<tbody>
+<tr><td class="k">Rete locale</td><td>Il server ascolta sull'indirizzo LAN del PC, non su Internet. Non aprire la porta sul router e non usarlo su reti pubbliche.</td></tr>
+<tr><td class="k">Credenziali</td><td>Utente <code>camera</code> e password <code>1234</code> sono locali e valgono solo mentre il server è attivo. Non riutilizzarle per altri servizi.</td></tr>
+<tr><td class="k">Fine sessione</td><td>Spegni sempre il server con <b>SPEGNI WI-FI FTP</b> quando hai finito: la cartella resta, la porta si chiude.</td></tr>
+<tr><td class="k">File ricevuti</td><td>Gli originali nella cartella <code>Originali</code> non vengono modificati; le anteprime sono file separati.</td></tr>
+<tr><td class="k">Galleria</td><td>Non contiene credenziali e non chiama servizi esterni: è una pagina statica con immagini locali.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Se la ricezione non parte</b>Controlla nell'ordine: stessa rete, server attivo, IP e porta corretti, firewall di Windows, nessun altro programma sulla porta 2121. Il Log riporta l'indirizzo su cui il server è in ascolto.</div>
+
+<!-- ============================== CAP 10 ============================== -->
+<h1 class="chapter" id="cap10"><span class="num">10</span>Galleria cliente: selezione e consegna</h1>
+<p class="lead">La galleria è una singola pagina HTML autonoma. Il cliente la apre con un doppio clic, guarda le anteprime, spunta le foto che gli piacciono e copia l'elenco dei nomi. Non serve un server, non serve Internet e non serve installare nulla.</p>
+
+<figure>
+<img src="img/12_galleria.jpg" alt="Galleria cliente con intestazione, pulsanti di selezione e griglia di anteprime con caselle">
+<figcaption><b>Figura 16 — Galleria cliente.</b> Intestazione con titolo e sottotitolo, pulsanti <i>Seleziona tutte</i>, <i>Deseleziona</i>, <i>Copia selezione</i>, <i>Scarica elenco .txt</i> e contatore delle foto selezionate. Ogni scheda ha una casella e il nome del file.</figcaption>
+</figure>
+
+<h2>10.1 La struttura della pagina</h2>
+<table>
+<thead><tr><th style="width:26%">Elemento</th><th>Cosa fa</th><th style="width:34%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">Titolo</td><td>Il nome della sessione, per esempio <i>Selezione cliente - Sessione Demo</i>.</td><td>Si imposta quando si crea la galleria.</td></tr>
+<tr><td class="k">Sottotitolo</td><td>Una riga descrittiva, per esempio data e tipo di evento.</td><td>Personalizzabile per ogni consegna.</td></tr>
+<tr><td class="k">Seleziona tutte</td><td>Spunta tutte le caselle in un colpo solo.</td><td>Per un cliente che vuole tutto, o per partire da una selezione completa.</td></tr>
+<tr><td class="k">Deseleziona</td><td>Toglie tutte le spunte.</td><td>Per ricominciare la selezione.</td></tr>
+<tr><td class="k">Copia selezione</td><td>Copia negli appunti l'elenco dei nomi selezionati, uno per riga.</td><td>Il cliente lo incolla in un'email o in un messaggio.</td></tr>
+<tr><td class="k">Scarica elenco .txt</td><td>Scarica un file di testo con i nomi selezionati.</td><td>Alternativa a Copia selezione, utile se gli appunti non funzionano.</td></tr>
+<tr><td class="k">Contatore</td><td>Mostra quante foto sono selezionate.</td><td>Conferma immediata prima di inviare l'elenco.</td></tr>
+<tr><td class="k">Scheda foto</td><td>Anteprima, casella di spunta e nome del file.</td><td>Un clic sulla casella seleziona o deseleziona.</td></tr>
+</tbody>
+</table>
+
+<h2>10.2 Come viene creata</h2>
+<p>La galleria nasce in tre modi: dal pulsante <b>APRI GALLERIA</b> della scheda Wi-Fi FTP, dall'opzione <b>Crea la galleria cliente con le caselle di selezione</b>, oppure dal flusso di consegna di una sessione. Il file prodotto è <code>Galleria_Cliente\&lt;sessione&gt;\index.html</code>; le immagini puntano a <code>..\Anteprime_Cliente\&lt;sessione&gt;</code>.</p>
+
+<h2>10.3 Procedura: consegnare la selezione al cliente</h2>
+<ol class="steps">
+<li><b>Genera la galleria</b> dalla scheda Wi-Fi FTP o dal flusso di sessione.</li>
+<li><b>Apri la cartella di sessione</b> e verifica che contenga <code>Anteprime_Cliente</code> e <code>Galleria_Cliente</code>.</li>
+<li><b>Prova la pagina</b> con un doppio clic su <code>index.html</code>: devono comparire tutte le anteprime.</li>
+<li><b>Consegna la cartella intera</b> (per esempio su chiavetta, WeTransfer o cartella condivisa), non solo il file HTML.</li>
+<li><b>Spiega al cliente</b> di spuntare le foto e premere <b>Copia selezione</b> oppure <b>Scarica elenco .txt</b>.</li>
+<li><b>Ricevi l'elenco</b> e usa i nomi per preparare la consegna finale.</li>
+</ol>
+<div class="regola"><b>Nessun server, nessuna installazione</b>La galleria funziona da chiavetta USB, da cartella locale o da una cartella condivisa. Non richiede Internet e non invia dati da nessuna parte: la selezione resta sul computer del cliente finché non la invia lui.</div>
+<div class="limite"><b>Non separare HTML e immagini</b>Se il cliente sposta solo <code>index.html</code>, le anteprime non si caricano. Mantieni la struttura <code>Galleria_Cliente\&lt;sessione&gt;</code> e <code>Anteprime_Cliente\&lt;sessione&gt;</code> allo stesso livello.</div>
+
+<h2>10.4 Cosa consegnare, in pratica</h2>
+<table>
+<thead><tr><th style="width:30%">Contenuto</th><th>Perché serve</th></tr></thead>
+<tbody>
+<tr><td class="k">Cartella <code>Galleria_Cliente\&lt;sessione&gt;</code></td><td>Contiene <code>index.html</code>, cioè la pagina che il cliente apre.</td></tr>
+<tr><td class="k">Cartella <code>Anteprime_Cliente\&lt;sessione&gt;</code></td><td>Contiene le immagini collegate dalla pagina. Senza, la galleria resta vuota.</td></tr>
+<tr><td class="k">Istruzioni in due righe</td><td>Spunta le foto, premi <b>Copia selezione</b> o <b>Scarica elenco .txt</b>, invia l'elenco.</td></tr>
+<tr><td class="k">Un archivio unico</td><td>Se usi uno ZIP, comprimi la cartella di sessione che contiene entrambe le sottocartelle.</td></tr>
+</tbody>
+</table>
+
+<h2>10.5 Se il cliente non vede le foto</h2>
+<ul>
+<li><b>Ha aperto solo l'HTML?</b> Chiedi di aprire la cartella completa, non il singolo file estratto dallo ZIP.</li>
+<li><b>Ha rinominato le cartelle?</b> I percorsi sono relativi: rinominare <code>Anteprime_Cliente</code> rompe i collegamenti.</li>
+<li><b>Ha spostato l'HTML sul desktop?</b> Le immagini non lo seguono: consegna sempre la struttura completa.</li>
+<li><b>Il browser blocca le immagini locali?</b> Con doppio clic da Esplora file la pagina funziona; se serve, prova un altro browser.</li>
+</ul>
+
+<!-- ============================== CAP 11 ============================== -->
+<h1 class="chapter" id="cap11"><span class="num">11</span>Tethering e Cloud</h1>
+<p class="lead">La scheda <b>Tethering &amp; Cloud</b> raccoglie tre cose diverse: il tethering Sony via Wi-Fi diretto, la cartella monitorata per le altre marche e le credenziali per l'invio ai servizi cloud. Sono strumenti separati: puoi usarne uno senza gli altri.</p>
+
+<figure>
+<img src="img/09_tethering.jpg" alt="Scheda Tethering e Cloud con Sony Wi-Fi, hot-folder e credenziali cloud">
+<figcaption><b>Figura 17 — Tethering &amp; Cloud.</b> In alto il tethering Sony, al centro la cartella monitorata per le altre marche, in basso le credenziali e le caselle dei servizi cloud.</figcaption>
+</figure>
+
+<h2>11.1 Sony Wi-Fi diretto</h2>
+<table>
+<thead><tr><th style="width:26%">Elemento</th><th>Cosa fa</th><th style="width:34%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">CONNETTI FOTOCAMERA</td><td>Cerca la fotocamera Sony sulla rete Wi-Fi direct e apre la sessione remota.</td><td>Prima attiva <i>Smart Remote Control</i> sulla fotocamera e collega il PC alla rete <code>DIRECT-xxxx</code>.</td></tr>
+<tr><td class="k">DIAGNOSI</td><td>Mostra lo stato della connessione e le API disponibili.</td><td>Usala se la fotocamera risponde ma lo scatto non parte.</td></tr>
+<tr><td class="k">SCATTA E SCARICA</td><td>Comanda lo scatto e scarica il file sul PC.</td><td>La fotocamera non invia da sola: è il programma a comandarla.</td></tr>
+<tr><td class="k">Stato</td><td><i>Fotocamera non connessa</i> o messaggio di connessione riuscita.</td><td>Se resta non connessa, controlla la rete Wi-Fi e l'app della fotocamera.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Sony A7S e modelli simili</b>Alcune fotocamere restano in uno stato intermedio in cui l'API risponde ma lo scatto non è disponibile. Il programma esegue un ciclo di reset della modalità remota; se serve, attendi qualche secondo e riprova.</div>
+
+<h2>11.2 Altre marche: hot-folder</h2>
+<p>Per Canon, Nikon, Fujifilm, Panasonic, OM System e Leica si usa il software del produttore (Canon EOS Utility, Nikon NX Tether, Fujifilm X Acquire, Panasonic Lumix Tether, OM Capture, Leica Tether). Quel software salva gli scatti in una cartella; il programma la monitora e converte ciò che arriva.</p>
+<table>
+<thead><tr><th style="width:26%">Elemento</th><th>Cosa fa</th><th style="width:34%">Come si usa</th></tr></thead>
+<tbody>
+<tr><td class="k">Cartella da monitorare</td><td>La cartella in cui il software della fotocamera salva gli scatti.</td><td>Può essere anche una cartella sincronizzata da Google Drive o Dropbox.</td></tr>
+<tr><td class="k">Sfoglia (monitorata)</td><td>Sceglie la cartella da osservare.</td><td>Seleziona la cartella di destinazione del software del produttore.</td></tr>
+<tr><td class="k">Cartella output</td><td>Dove vengono scritti i file convertiti.</td><td>Diversa dalla cartella monitorata, per evitare loop.</td></tr>
+<tr><td class="k">Sfoglia (output)</td><td>Sceglie la destinazione.</td><td>Puoi usare una cartella di sessione o una cartella sincronizzata.</td></tr>
+<tr><td class="k">AVVIA MONITORAGGIO CARTELLA</td><td>Avvia il controllo periodico della cartella.</td><td>Ogni nuovo file viene convertito con le impostazioni correnti.</td></tr>
+</tbody>
+</table>
+
+<h2>11.3 Credenziali cloud</h2>
+<table>
+<thead><tr><th style="width:30%">Campo / servizio</th><th>Stato</th><th style="width:34%">Note</th></tr></thead>
+<tbody>
+<tr><td class="k">Telegram Bot Token</td><td>Attivo</td><td>Token del bot creato con BotFather.</td></tr>
+<tr><td class="k">Telegram Chat ID</td><td>Attivo</td><td>ID della chat o del canale in cui inviare.</td></tr>
+<tr><td class="k">Google Drive API Key / Folder ID</td><td>Non attivo</td><td>Campo predisposto, invio non ancora disponibile.</td></tr>
+<tr><td class="k">Meta Access Token (FB/IG)</td><td>Non attivo</td><td>Campo predisposto, invio non ancora disponibile.</td></tr>
+<tr><td class="k">Meta Account ID</td><td>Non attivo</td><td>Campo predisposto.</td></tr>
+<tr><td class="k">Dropbox Access Token</td><td>Attivo</td><td>Token dell'app Dropbox.</td></tr>
+<tr><td class="k">SwissTransfer Email</td><td>Non attivo</td><td>Campo predisposto, invio non ancora disponibile.</td></tr>
+<tr><td class="k">Caselle di invio</td><td>Telegram e Dropbox operativi</td><td>Le altre sono visibili ma disattivate. Un invio verso un servizio non attivo viene saltato senza errori.</td></tr>
+</tbody>
+</table>
+<div class="attenzione"><b>Token e privacy</b>I token sono credenziali: non condividerli e non salvarli in cartelle pubbliche. Se un token viene revocato, l'invio smette di funzionare e va reimpostato.</div>
+
+<h2>11.4 Procedura: tethering Sony</h2>
+<ol class="steps">
+<li><b>Apri l'app Smart Remote Control</b> sulla fotocamera.</li>
+<li><b>Collega il PC</b> alla rete Wi-Fi <code>DIRECT-xxxx</code> della fotocamera.</li>
+<li><b>Apri Tethering &amp; Cloud</b> e premi <b>CONNETTI FOTOCAMERA</b>.</li>
+<li><b>Controlla lo stato.</b> Se resta <i>non connessa</i>, premi <b>DIAGNOSI</b> e leggi il Log.</li>
+<li><b>Premi SCATTA E SCARICA.</b> Il file viene scaricato e convertito con le impostazioni correnti.</li>
+<li><b>Ripeti per gli scatti successivi</b> o usa lo scatto remoto dalla fotocamera, se il modello lo consente.</li>
+</ol>
+
+<h2>11.5 Cosa arriva e cosa resta</h2>
+<table>
+<thead><tr><th style="width:28%">Origine</th><th>Cosa arriva</th><th style="width:32%">Dove finisce</th></tr></thead>
+<tbody>
+<tr><td class="k">Sony Wi-Fi diretto</td><td>Lo scatto comandato dal programma, scaricato sul PC.</td><td>Cartella di lavoro scelta per il tethering.</td></tr>
+<tr><td class="k">Hot-folder</td><td>Il file salvato dal software del produttore o dalla sincronizzazione.</td><td>Cartella output del monitoraggio.</td></tr>
+<tr><td class="k">Cloud</td><td>Solo le anteprime o i file selezionati, secondo il flusso.</td><td>Telegram o Dropbox, se configurati e attivi.</td></tr>
+<tr><td class="k">Server FTP</td><td>Il file inviato dalla fotocamera.</td><td><code>Originali\&lt;sessione&gt;</code>, poi anteprima e galleria.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Un solo flusso per volta</b>Non serve tenere attivi contemporaneamente FTP, hot-folder e cloud. Scegli il percorso adatto alla fotocamera e lascia gli altri spenti: meno variabili, diagnosi più semplice.</div>
+
+<h2>11.6 Errori tipici del tethering</h2>
+<table>
+<thead><tr><th style="width:32%">Sintomo</th><th>Causa probabile</th><th style="width:34%">Rimedio</th></tr></thead>
+<tbody>
+<tr><td class="k">CONNETTI FOTOCAMERA non trova nulla</td><td>PC non collegato alla rete <code>DIRECT-xxxx</code> o app remota non avviata.</td><td>Attiva <i>Smart Remote Control</i>, riconnetti il Wi-Fi e riprova.</td></tr>
+<tr><td class="k">La fotocamera risponde ma non scatta</td><td>Modalità remota in stato intermedio.</td><td>Premi <b>DIAGNOSI</b>, attendi il reset e ripeti lo scatto.</td></tr>
+<tr><td class="k">Il file non compare nella cartella</td><td>Cartella monitorata o output diversa da quella attesa.</td><td>Controlla i due campi nella scheda e riavvia il monitoraggio.</td></tr>
+<tr><td class="k">Il cloud non riceve l'anteprima</td><td>Token assente, casella non attiva o servizio non supportato.</td><td>Configura Telegram o Dropbox e attiva la casella corrispondente.</td></tr>
+</tbody>
+</table>
+
+<!-- ============================== CAP 12 ============================== -->
+<h1 class="chapter" id="cap12"><span class="num">12</span>Log: leggere cosa è successo</h1>
+<p class="lead">Il Log è il registro cronologico di tutto ciò che fa il programma: avvio, analisi, conversione, FTP, cloud, errori. È lo strumento più utile quando qualcosa non torna, perché dice <i>cosa</i> è successo e <i>quando</i>.</p>
+
+<figure>
+<img src="img/11_log.jpg" alt="Scheda Log con righe timestampate e pulsanti Svuota log e Salva log su file">
+<figcaption><b>Figura 18 — Scheda Log.</b> Ogni riga inizia con l'orario tra parentesi quadre. In basso i pulsanti <b>Svuota log</b> e <b>Salva log su file</b>.</figcaption>
+</figure>
+
+<h2>12.1 Come leggere una riga</h2>
+<table>
+<thead><tr><th style="width:24%">Parte</th><th>Esempio</th><th style="width:36%">Significato</th></tr></thead>
+<tbody>
+<tr><td class="k">Orario</td><td><code>[12:07:34]</code></td><td>Ora locale dell'evento. Utile per correlare più operazioni.</td></tr>
+<tr><td class="k">Messaggio</td><td><i>Contrasto naturale applicato.</i></td><td>L'azione o l'esito. I messaggi sono in italiano semplice.</td></tr>
+<tr><td class="k">Avvio batch</td><td><i>Batch avviato: 4 file -&gt; ...</i></td><td>Numero di file e cartella di destinazione.</td></tr>
+<tr><td class="k">Analisi</td><td><i>Analisi completata: 4 file, 4 da correggere, 0 già corrette, 2 critici</i></td><td>Riepilogo dell'analisi, con il numero di file critici.</td></tr>
+<tr><td class="k">FTP</td><td><i>Server FTP attivo su 192.168.1.18:2121</i></td><td>Indirizzo e cartella di sessione creati.</td></tr>
+<tr><td class="k">Errore</td><td><i>Errore: ...</i></td><td>Il file non è stato convertito. Il batch continua con gli altri.</td></tr>
+<tr><td class="k">Fine</td><td><i>Batch terminato: OK 4, errori 0, saltati 0</i></td><td>Riepilogo finale con durata e velocità.</td></tr>
+</tbody>
+</table>
+
+<h2>12.2 Comandi</h2>
+<ul>
+<li><b>Svuota log:</b> cancella il testo visualizzato. Non cancella i file già salvati.</li>
+<li><b>Salva log su file:</b> chiede dove salvare un <code>.txt</code> con tutto il registro. Allegato a una segnalazione, è la diagnosi più utile.</li>
+<li><b>Barra di stato in basso:</b> ripete l'ultimo messaggio importante, per esempio l'esito di un'analisi o di un batch.</li>
+</ul>
+
+<h2>12.3 Errori comuni e cosa controllare</h2>
+<table>
+<thead><tr><th style="width:34%">Messaggio / sintomo</th><th>Causa probabile</th><th style="width:34%">Rimedio</th></tr></thead>
+<tbody>
+<tr><td class="k">Nessun file trovato</td><td>La sorgente non contiene formati supportati, oppure il percorso è errato.</td><td>Controlla il campo SORGENTE e l'estensione dei file.</td></tr>
+<tr><td class="k">Errore durante lo sviluppo</td><td>RAW danneggiato o non supportato dalla versione di LibRaw.</td><td>Prova ad aprire il file con un altro programma; aggiorna l'app.</td></tr>
+<tr><td class="k">Impossibile scrivere nella destinazione</td><td>Cartella in sola lettura, disco pieno o percorso non valido.</td><td>Scegli un'altra cartella o libera spazio.</td></tr>
+<tr><td class="k">FTP non parte</td><td>Porta occupata da un altro programma, firewall, rete diversa.</td><td>Chiudi altri server FTP, consenti l'app nel firewall, verifica l'IP.</td></tr>
+<tr><td class="k">La galleria non mostra le immagini</td><td>HTML e anteprime sono stati separati.</td><td>Ripristina la struttura di cartelle o rigenera la galleria.</td></tr>
+<tr><td class="k">Invio cloud saltato</td><td>Servizio non attivo o token mancante.</td><td>Configura il token e attiva la casella del servizio.</td></tr>
+</tbody>
+</table>
+
+<!-- ============================== CAP 13 ============================== -->
+<h1 class="chapter" id="cap13"><span class="num">13</span>Flussi di lavoro pronti all'uso</h1>
+<p class="lead">Quattro scenari completi, con le impostazioni da scegliere e i passaggi nell'ordine giusto. Ogni flusso parte dalla scheda Batch e usa solo funzioni descritte nei capitoli precedenti.</p>
+
+<h2>13.1 Web e social in pochi minuti</h2>
+<table>
+<thead><tr><th style="width:34%">Impostazione</th><th>Valore</th></tr></thead>
+<tbody>
+<tr><td class="k">Lato massimo</td><td>2048 px</td></tr>
+<tr><td class="k">Formato / qualità</td><td>JPEG / 85–90</td></tr>
+<tr><td class="k">Profilo prestazioni</td><td>Veloce o Bilanciato</td></tr>
+<tr><td class="k">Automatismi</td><td>RIMUOVI GRANA attivo, PIÙ LUMINOSA solo se serve</td></tr>
+<tr><td class="k">Watermark</td><td>Spento (o discreto, se le foto sono anteprime)</td></tr>
+<tr><td class="k">EXIF</td><td>Preserva EXIF attivo</td></tr>
+</tbody>
+</table>
+<ol class="steps">
+<li>Seleziona la cartella delle foto e una destinazione separata.</li>
+<li>Imposta lato 2048, JPEG, qualità 88.</li>
+<li>Controlla il DOPO su 3–4 foto diverse (ritratto, esterno, interno).</li>
+<li>Avvia il batch e controlla l'esito nel Log.</li>
+<li>Apri la cartella output e verifica peso e dimensione di un file.</li>
+</ol>
+
+<h2>13.2 Consegna cliente con galleria</h2>
+<ol class="steps">
+<li>Scatta o importa la sessione; usa il Wi-Fi FTP o la cartella monitorata.</li>
+<li>Lascia attiva la creazione della galleria e del copyright nelle anteprime.</li>
+<li>Apri la galleria e controlla che tutte le foto siano presenti.</li>
+<li>Consegna la cartella intera al cliente, con <code>index.html</code> e le anteprime.</li>
+<li>Ricevi l'elenco dei nomi selezionati e prepara la consegna finale dei file scelti.</li>
+</ol>
+<div class="regola"><b>Anteprime leggere, finali pieni</b>Per la selezione usa JPEG 2000 px e watermark; per la consegna finale usa Originale o 3000 px, qualità alta, watermark spento.</div>
+
+<h2>13.3 Stampa e archivio</h2>
+<table>
+<thead><tr><th style="width:34%">Impostazione</th><th>Valore</th></tr></thead>
+<tbody>
+<tr><td class="k">Lato massimo</td><td>Originale o 6000 px</td></tr>
+<tr><td class="k">Formato / qualità</td><td>TIFF (archivio/stampa) o JPEG 95–100</td></tr>
+<tr><td class="k">Profilo prestazioni</td><td>Massima qualità</td></tr>
+<tr><td class="k">Nitidezza</td><td>0,9–1,1, raggio adatto alla stampa</td></tr>
+<tr><td class="k">Denoise</td><td>Secondo ISO; non esagerare sulla pelle</td></tr>
+<tr><td class="k">Watermark</td><td>Spento</td></tr>
+</tbody>
+</table>
+<p>Per l'archivio a lungo termine, conserva sempre i RAW originali accanto ai TIFF/JPEG finali. Il programma non sostituisce il backup: aggiunge un livello di output.</p>
+
+<h2>13.4 Evento con invio immediato</h2>
+<ol class="steps">
+<li>Collega la fotocamera e configura l'FTP o la cartella monitorata.</li>
+<li>Attiva copyright e galleria; lascia spento l'invio automatico ai cloud finché non hai verificato tutto.</li>
+<li>Scatta e controlla le anteprime nella galleria.</li>
+<li>A fine sessione spegni il server FTP e salva il Log.</li>
+<li>Se serve, attiva l'invio Telegram/Dropbox per le anteprime selezionate.</li>
+</ol>
+
+<!-- ============================== CAP 14 ============================== -->
+<h1 class="chapter" id="cap14"><span class="num">14</span>Soluzione problemi</h1>
+<p class="lead">Le situazioni più frequenti, con la causa probabile e il rimedio. Se il problema resta, apri il Log, salvalo su file e allega quel file alla segnalazione.</p>
+
+<table>
+<thead><tr><th style="width:30%">Problema</th><th>Causa probabile</th><th style="width:34%">Cosa fare</th></tr></thead>
+<tbody>
+<tr><td class="k">L'anteprima resta sul segnaposto</td><td>Percorso non valido, file non supportato o primo file ancora in lettura.</td><td>Premi Invio nel campo SORGENTE, controlla l'estensione, prova con un altro RAW.</td></tr>
+<tr><td class="k">Il batch è molto lento</td><td>Profilo Massima qualità, RAW grandi, pochi processi per poca RAM.</td><td>Passa a Bilanciato o Veloce, chiudi altri programmi, lascia automatico il numero di processi.</td></tr>
+<tr><td class="k">Il PC si blocca durante il batch</td><td>Troppi processi o RAM insufficiente.</td><td>Riduci i processi di 1–2; usa un profilo più leggero; converti a gruppi.</td></tr>
+<tr><td class="k">I colori sono diversi dal previsto</td><td>WB fotocamera spento, preset creativo, split toning, profilo colore non sRGB.</td><td>Controlla WB, preset, split toning e spazio colore; ripristina i parametri di sviluppo.</td></tr>
+<tr><td class="k">Le foto sono troppo morbide o troppo nitide</td><td>Nitidezza/raggio o denoise non adatti.</td><td>Riduci la nitidezza, alza leggermente il raggio, riduci il denoise sulla pelle.</td></tr>
+<tr><td class="k">Il file esportato è più grande del previsto</td><td>Lato Originale, qualità 100, PNG/TIFF.</td><td>Usa 2048–3000 px, JPEG 85–90.</td></tr>
+<tr><td class="k">Il cliente non riesce ad aprire la galleria</td><td>Ha ricevuto solo l'HTML o la cartella è stata rinominata.</td><td>Invia la cartella intera; verifica che le anteprime siano al posto giusto.</td></tr>
+<tr><td class="k">La fotocamera non si connette in FTP</td><td>Rete diversa, IP errato, porta occupata, firewall.</td><td>Stessa rete, COPIA DATI, chiudi altri FTP, consenti l'app nel firewall.</td></tr>
+<tr><td class="k">La fotocamera Sony non scatta</td><td>Modalità remota in stato intermedio.</td><td>DIAGNOSI, attendi il reset, riprova; riavvia Smart Remote Control.</td></tr>
+<tr><td class="k">Il cloud non riceve nulla</td><td>Token mancante, casella non attiva, servizio non supportato.</td><td>Configura Telegram o Dropbox, attiva la casella, controlla il Log.</td></tr>
+<tr><td class="k">SmartScreen blocca l'avvio</td><td>Eseguibile non firmato digitalmente.</td><td><i>Ulteriori informazioni → Esegui comunque</i>; usa l'installer o la versione portabile.</td></tr>
+</tbody>
+</table>
+
+<h2>14.1 Se il problema resta</h2>
+<ol class="steps">
+<li><b>Riproduci il problema</b> con pochi file, non con l'intero archivio.</li>
+<li><b>Apri la scheda Log</b> e premi <b>Salva log su file</b>.</li>
+<li><b>Annota</b> versione (2.58.0), sistema operativo, formato dei file e passaggi fatti.</li>
+<li><b>Allega il log</b> alla segnalazione: contiene orari, errori e percorso delle cartelle.</li>
+<li><b>Non inviare i RAW originali</b> se non sono necessari: bastano il log e un file di prova, se il problema è riproducibile.</li>
+</ol>
+
+<!-- ============================== CAP 15 ============================== -->
+<h1 class="chapter" id="cap15"><span class="num">15</span>Scheda rapida da stampare</h1>
+<p class="lead">Una pagina sola con i comandi e i valori che servono più spesso. Tienila accanto al PC durante il lavoro.</p>
+
+<div class="due-colonne">
+<div class="scheda">
+<h3>Conversione base</h3>
+<ul class="checklist">
+<li>Sorgente scelta, destinazione <b>diversa</b> dalla sorgente.</li>
+<li>Lato 3000 px per uso generale; 2048 per web; Originale per stampa.</li>
+<li>JPEG qualità 90; TIFF per archivio; WebP per siti moderni.</li>
+<li>WB fotocamera e Preserva EXIF attivi.</li>
+<li>RIMUOVI GRANA attivo di default.</li>
+<li>Controlla il DOPO prima di avviare.</li>
+</ul>
+</div>
+
+<div class="scheda">
+<h3>Correzioni rapide</h3>
+<ul class="checklist">
+<li>Foto piatta → <b>CONTRASTO NATURALE</b>.</li>
+<li>Cielo bianco → <b>SALVA LUCI</b>.</li>
+<li>Colori spenti → <b>COLORE PIÙ RICCO</b>.</li>
+<li>Foto scura → <b>SOTTOESPOSTA</b>.</li>
+<li>Foto chiara → <b>SOVRAESPOSTA</b>.</li>
+<li>Errore → <b>ANNULLA CORREZIONI</b>.</li>
+</ul>
+</div>
+
+<div class="scheda">
+<h3>Prestazioni</h3>
+<ul class="checklist">
+<li>Anteprime e selezione → <b>Veloce</b>.</li>
+<li>Lavoro normale → <b>Bilanciato</b>.</li>
+<li>Stampa e consegna → <b>Massima qualità</b>.</li>
+<li>Processi automatici attivi, salvo necessità.</li>
+<li>Benchmark prima di un batch importante.</li>
+</ul>
+</div>
+
+<div class="scheda">
+<h3>Wi-Fi FTP e galleria</h3>
+<ul class="checklist">
+<li>Stessa rete, server attivo, COPIA DATI nella fotocamera.</li>
+<li>IP <code>192.168.x.x</code>, porta <code>2121</code>, utente <code>camera</code>, password <code>1234</code>.</li>
+<li>Copyright attivo, galleria attiva, invio cloud spento.</li>
+<li>A fine sessione: SPEGNI WI-FI FTP.</li>
+<li>Consegna la cartella intera, non solo <code>index.html</code>.</li>
+</ul>
+</div>
+
+<div class="scheda">
+<h3>Prima di consegnare</h3>
+<ul class="checklist">
+<li>Numero file atteso = numero file prodotti.</li>
+<li>Nessun errore o saltato inatteso.</li>
+<li>Dimensione e peso corretti.</li>
+<li>Pelle naturale, cielo non viola, bianchi non bruciati.</li>
+<li>Watermark e copyright coerenti con il tipo di consegna.</li>
+<li>Backup degli originali presente.</li>
+</ul>
+</div>
+</div>
+
+<!-- ============================== APPENDICI ============================== -->
+<h1 class="chapter" id="appA"><span class="num">A</span>Appendice A — Glossario</h1>
+<table>
+<thead><tr><th style="width:22%">Termine</th><th>Significato</th></tr></thead>
+<tbody>
+<tr><td class="k">RAW</td><td>File grezzo della fotocamera: contiene i dati del sensore, non un'immagine già sviluppata.</td></tr>
+<tr><td class="k">LibRaw</td><td>Libreria che decodifica i RAW di molte marche. È il motore di lettura del programma.</td></tr>
+<tr><td class="k">Demosaic</td><td>Ricostruzione del colore da un sensore che misura un solo canale per pixel.</td></tr>
+<tr><td class="k">WB</td><td>Bilanciamento del bianco: rende neutri i bianchi e corregge le dominanti di colore.</td></tr>
+<tr><td class="k">EV</td><td>Esposizione misurata in stop. +1 EV raddoppia la luce, −1 EV la dimezza.</td></tr>
+<tr><td class="k">Luminanza</td><td>Informazione di brightness. La riduzione rumore di luminanza agisce sulla grana.</td></tr>
+<tr><td class="k">Crominanza</td><td>Informazione di colore. La riduzione rumore di colore elimina le macchie verdi/magenta.</td></tr>
+<tr><td class="k">Vivacità</td><td>Saturazione selettiva: esalta i colori spenti e lascia stare quelli già intensi.</td></tr>
+<tr><td class="k">Dehaze</td><td>Rimozione del velo atmosferico; aumenta contrasto e saturazione sulle distanze.</td></tr>
+<tr><td class="k">Split toning</td><td>Colorazione separata di ombre e luci.</td></tr>
+<tr><td class="k">EXIF</td><td>Metadati dello scatto: fotocamera, obiettivo, ISO, tempi, diaframma, GPS.</td></tr>
+<tr><td class="k">IPTC</td><td>Metadati descrittivi: autore, copyright, descrizione, parole chiave.</td></tr>
+<tr><td class="k">Hot-folder</td><td>Cartella monitorata: tutto ciò che compare viene convertito.</td></tr>
+<tr><td class="k">FTP</td><td>Protocollo di trasferimento file. Qui è usato sulla rete locale, non su Internet.</td></tr>
+<tr><td class="k">ETA</td><td>Tempo rimanente stimato per completare il batch.</td></tr>
+<tr><td class="k">Benchmark</td><td>Misura del tempo reale su un campione di file, per stimare il batch.</td></tr>
+</tbody>
+</table>
+
+<h1 class="chapter" id="appB"><span class="num">B</span>Appendice B — Note tecniche</h1>
+
+<h2>B.1 Ordine della pipeline</h2>
+<p>Per ogni file il programma segue un ordine preciso. Il ridimensionamento avviene prima delle correzioni, così il lavoro è più veloce e ottimizzato per la dimensione finale.</p>
+<ol class="steps">
+<li><b>Lettura</b> del RAW o dell'immagine, senza modificare l'originale.</li>
+<li><b>Demosaic</b> e conversione in RGB.</li>
+<li><b>Ridimensionamento</b> al lato massimo scelto (nessun ingrandimento oltre il nativo).</li>
+<li><b>Bilanciamento del bianco</b> e correzioni tonali.</li>
+<li><b>Colore</b>, curva tonale, split toning.</li>
+<li><b>Nitidezza e denoise</b> secondo profilo e parametri.</li>
+<li><b>Watermark</b> e metadati.</li>
+<li><b>Scrittura</b> del file nella destinazione, con gestione dei nomi e dei conflitti.</li>
+</ol>
+
+<h2>B.2 Formati e metadati</h2>
+<table>
+<thead><tr><th style="width:18%">Formato</th><th>Uscita</th><th style="width:34%">Metadati</th></tr></thead>
+<tbody>
+<tr><td class="k">JPEG</td><td>Con perdita, qualità 1–100.</td><td>EXIF e copyright IPTC quando attivi.</td></tr>
+<tr><td class="k">PNG</td><td>Senza perdita, file grandi.</td><td>Metadati non equivalenti al JPEG in questa versione.</td></tr>
+<tr><td class="k">TIFF</td><td>Senza perdita, compressione LZW.</td><td>Metadati non equivalenti al JPEG in questa versione.</td></tr>
+<tr><td class="k">WebP</td><td>Con perdita o senza, secondo qualità.</td><td>Metadati non equivalenti al JPEG in questa versione.</td></tr>
+</tbody>
+</table>
+<div class="nota"><b>Spazio colore</b>L'output è in <b>sRGB</b>, lo standard più compatibile con web, social, Windows e laboratori. Non è previsto il cambio a Display P3 o Adobe RGB in questa versione.</div>
+
+<h2>B.3 Cosa non fa il programma</h2>
+<ul>
+<li><b>Non modifica gli originali</b>, né durante l'analisi né durante il batch o il benchmark.</li>
+<li><b>Non ingrandisce</b> oltre la risoluzione nativa: un valore più alto resta alla dimensione originale.</li>
+<li><b>Non simula una GPU</b>: l'elaborazione è CPU. L'eventuale modulo GPU è separato e opzionale, con fallback su CPU.</li>
+<li><b>Non invia nulla in automatico</b> se l'opzione cloud è spenta. L'invio automatico è disattivato di default.</li>
+<li><b>Non sostituisce un backup</b>: conserva sempre i RAW originali.</li>
+</ul>
+
+<h2>B.4 Prestazioni misurate</h2>
+<div class="kpi">
+<div><b>14</b><span>core fisici / 20 logici (PC di prova)</span></div>
+<div><b>~55 GB</b><span>RAM libera durante i test</span></div>
+<div><b>4</b><span>processi nel test con 4 RAW</span></div>
+</div>
+<p>I valori dipendono dall'hardware e dai file. Con 4 RAW Sony da 24–42 MB, il batch di prova ha completato 4 file in circa 14 secondi, con una velocità intorno a 16 file/min. Su un numero maggiore di file il programma usa più processi e la velocità tende a salire, fino al limite di RAM e core.</p>
+
+<h2>B.5 Struttura delle cartelle di sessione</h2>
+<pre style="background:#f5f8fa;border:.25mm solid #d6dee6;border-radius:1.6mm;padding:3mm;font-size:8.8pt;line-height:1.45;overflow:auto">Pictures\FranchettiRawConverterPro\Tethering\
+  Originali\&lt;sessione&gt;\        RAW ricevuti, mai modificati
+  Anteprime_Cliente\&lt;sessione&gt;\ JPEG pronti per il cliente
+  Galleria_Cliente\&lt;sessione&gt;\  index.html + selezione</pre>
+
+<div class="firma">
+<b>Franchetti Raw Converter Pro 2.58.0 — Guida illustrata.</b> Le figure sono state catturate dall'applicazione reale in esecuzione su Windows 11. Le foto di esempio provengono da una sessione di test e non rappresentano clienti reali. Documento stampabile in A4; le impostazioni consigliate sono indicative e vanno verificate sul proprio flusso di lavoro.
+</div>
+
+</div>
+</body>
+</html>
