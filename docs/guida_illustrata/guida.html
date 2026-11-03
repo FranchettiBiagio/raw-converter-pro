@@ -71,10 +71,11 @@
   .attenzione{border-color:#b07a1e;background:#fdf7ea}
   .limite{border-color:var(--red);background:#fbefec}
   .regola{border-color:var(--green);background:#eff8f1}
-  .nota b,.attenzione b,.limite b,.regola b{display:block;margin-bottom:.8mm;font-size:9.4pt;
+  .nota>b:first-child,.attenzione>b:first-child,.limite>b:first-child,.regola>b:first-child{
+        display:block;margin-bottom:.8mm;font-size:9.4pt;
         text-transform:uppercase;letter-spacing:.05em}
-  .nota b{color:var(--accent-scuro)} .attenzione b{color:var(--amber)}
-  .limite b{color:var(--red)} .regola b{color:var(--green)}
+  .nota>b:first-child{color:var(--accent-scuro)} .attenzione>b:first-child{color:var(--amber)}
+  .limite>b:first-child{color:var(--red)} .regola>b:first-child{color:var(--green)}
   ol.steps{list-style:none;counter-reset:step;padding:0;margin:3mm 0 5mm}
   ol.steps>li{counter-increment:step;position:relative;padding-left:12mm;margin:0 0 3.2mm;
               break-inside:avoid;min-height:8mm}
@@ -91,6 +92,7 @@
   .kpi div{border:.3mm solid var(--line);border-radius:1.6mm;padding:3mm;background:#fbfdfe}
   .kpi b{display:block;font-size:13pt;color:var(--accent-scuro)}
   .kpi span{font-size:8.4pt;color:var(--muted)}
+  .tieni{break-inside:avoid}
   .mini-toc{background:#f7fafc;border:.25mm solid var(--line);border-radius:2mm;padding:3mm 4mm;
             font-size:9pt;margin:4mm 0 6mm;break-inside:avoid}
   .mini-toc b{color:var(--accent-scuro)}
@@ -174,7 +176,7 @@
 <tr><td class="k">Spazio disco</td><td>Almeno 1 GB libero per il programma e lo spazio necessario per i file convertiti.</td></tr>
 <tr><td class="k">Formati in ingresso</td><td>RAW: <code>.arw .cr2 .cr3 .nef .nrw .raf .dng .orf .rw2 .pef .srw .x3f .3fr .fff .raw .rwl .dcr .k25 .kdc .mos .mrw .erf .mef .iiq .cap .braw .gpr</code>. Immagini: <code>.jpg .jpeg .png .tif .tiff .bmp .webp</code>.</td></tr>
 <tr><td class="k">Formati in uscita</td><td>JPEG, PNG, TIFF e WebP.</td></tr>
-<tr><td class="k">Internet</td><td>Non necessario per convertire. Serve solo per Telegram/Dropbox e per la galleria condivisa online.</td></tr>
+<tr><td class="k">Internet</td><td>Non necessario per convertire, ricevere via FTP o usare la galleria in locale. Serve solo per l'invio a Telegram/Dropbox.</td></tr>
 </tbody>
 </table>
 
@@ -478,7 +480,7 @@
 <tbody>
 <tr><td class="k">File prodotti</td><td>Il numero corrisponde a quello atteso? Ci sono <i>Saltati</i> o <i>Errori</i>?</td></tr>
 <tr><td class="k">Dimensione</td><td>Il lato lungo è quello scelto? Il file non è stato ingrandito oltre il nativo?</td></tr>
-<tr><td class="k">Colore</td><td>La pelle non è arancione, il cielo non è violetta, i bianchi non sono bruciati.</td></tr>
+<tr><td class="k">Colore</td><td>La pelle non è arancione, il cielo non è viola, i bianchi non sono bruciati.</td></tr>
 <tr><td class="k">Dettaglio</td><td>Gli ingrandimenti al 100% non mostrano aloni o grana eccessiva.</td></tr>
 <tr><td class="k">Metadati</td><td>Data, fotocamera e copyright sono presenti nel JPEG (se Preserva EXIF e copyright sono attivi).</td></tr>
 </tbody>
@@ -543,14 +545,14 @@
 
 <figure>
 <img src="img/03_avanzate_top.jpg" alt="Finestra Regolazioni avanzate, parte alta: anteprima e controlli esposizione e toni">
-<figcaption><b>Figura 10 — Avanzate, parte alta.</b> In cima l'anteprima PRIMA/DOPO, poi <i>ESPOSIZIONE E BILANCIAMENTO</i> e <i>TONI</i>. Il pulsante <b>Chiudi</b> in alto a destra salva i valori e chiude la finestra.</figcaption>
+<figcaption><b>Figura 10 — Avanzate, parte alta.</b> In cima l'anteprima PRIMA/DOPO, poi <i>ESPOSIZIONE E BILANCIAMENTO</i> e <i>TONI</i>. Il pulsante <b>Chiudi</b> in alto a destra applica i valori correnti e nasconde la finestra.</figcaption>
 </figure>
 
 <h2>6.1 Come è fatta la finestra</h2>
 <table>
 <thead><tr><th style="width:24%">Zona</th><th>Contenuto</th><th style="width:30%">A cosa serve</th></tr></thead>
 <tbody>
-<tr><td class="k">Testata</td><td>Titolo <b>REGOLAZIONI AVANZATE</b>, sottotitolo e pulsante <b>Chiudi</b>.</td><td>Chiudere la finestra applica i valori correnti all'anteprima e al batch.</td></tr>
+<tr><td class="k">Testata</td><td>Titolo <b>REGOLAZIONI AVANZATE</b>, sottotitolo e pulsante <b>Chiudi</b>.</td><td>Chiudere la finestra applica i valori correnti all'anteprima e nasconde la finestra.</td></tr>
 <tr><td class="k">Anteprima PRIMA / DOPO</td><td>Le stesse due immagini della scheda Batch, in formato più grande.</td><td>Controllare l'effetto di ogni slider senza tornare indietro.</td></tr>
 <tr><td class="k">ESPOSIZIONE E BILANCIAMENTO</td><td>Esposizione, temperatura, tinta.</td><td>Correggere luce e colore di base.</td></tr>
 <tr><td class="k">TONI</td><td>Luci, ombre, bianchi, neri.</td><td>Recuperare dettaglio nelle zone chiare e scure.</td></tr>
@@ -690,6 +692,7 @@
 </tbody>
 </table>
 <p><b>Salva config</b> scrive un file <code>.json</code> con tutte le impostazioni; <b>Carica config</b> lo rilegge. <b>Ripristina tutti i parametri di sviluppo</b> riporta slider e curva ai valori iniziali, senza toccare sorgente, destinazione e nomi file.</p>
+<div class="nota"><b>Preset e profilo prestazioni</b>I preset cambiano i parametri di sviluppo, la dimensione, la qualità e il formato. Non cambiano il profilo <i>Veloce</i>, <i>Bilanciato</i> o <i>Massima qualità</i>: quello si sceglie nel pannello <b>PRESTAZIONI</b>, non nel preset.</div>
 
 <h2>6.11 Procedura: mettere a punto una foto</h2>
 <ol class="steps">
@@ -840,7 +843,7 @@
 <tr><td class="k">CARTELLA GALLERIA</td><td><code>...\Galleria_Cliente\&lt;sessione&gt;</code></td><td>La pagina <code>index.html</code> con le anteprime e le caselle di selezione.</td></tr>
 </tbody>
 </table>
-<div class="nota"><b>La galleria usa percorsi relativi</b>Per funzionare, <code>index.html</code> e la cartella delle anteprime devono restare nella stessa struttura. Se sposti solo la pagina HTML, le immagini non si vedono più. Per consegnare, copia l'intera cartella di sessione.</div>
+<div class="nota"><b>La galleria usa percorsi relativi</b>Per funzionare, <code>index.html</code> e la cartella delle anteprime devono restare nella stessa struttura. Se sposti solo la pagina HTML, le immagini non si vedono più. Per consegnare, copia insieme le cartelle <code>Galleria_Cliente\&lt;sessione&gt;</code> e <code>Anteprime_Cliente\&lt;sessione&gt;</code>.</div>
 
 <h2>9.4 Procedura: ricevere gli scatti via Wi-Fi</h2>
 <ol class="steps">
@@ -855,7 +858,7 @@
 
 <h2>9.5 Compatibilità</h2>
 <ul>
-<li><b>Nikon, Canon, Fujifilm e molti modelli recenti</b> hanno un client FTP integrato: inviano direttamente al PC.</li>
+<li><b>Fotocamere con client FTP integrato</b> o con trasmettitore di rete opzionale inviano direttamente al PC. Verifica nel manuale del modello: la voce può chiamarsi <i>FTP</i>, <i>Trasferimento FTP</i> o <i>Upload FTP</i>.</li>
 <li><b>Modelli senza client FTP</b> non possono farlo da soli: usa l'app del produttore, la scheda SD o la cartella monitorata in <b>Tethering &amp; Cloud</b>.</li>
 <li><b>Bluetooth</b> non trasferisce RAW di alta qualità in modo universale: il programma non lo simula.</li>
 <li><b>Wi-Fi direct</b> della fotocamera: il PC si collega alla rete <code>DIRECT-xxxx</code> e usa l'IP mostrato dal programma.</li>
@@ -887,8 +890,8 @@
 <table>
 <thead><tr><th style="width:26%">Elemento</th><th>Cosa fa</th><th style="width:34%">Come si usa</th></tr></thead>
 <tbody>
-<tr><td class="k">Titolo</td><td>Il nome della sessione, per esempio <i>Selezione cliente - Sessione Demo</i>.</td><td>Si imposta quando si crea la galleria.</td></tr>
-<tr><td class="k">Sottotitolo</td><td>Una riga descrittiva, per esempio data e tipo di evento.</td><td>Personalizzabile per ogni consegna.</td></tr>
+<tr><td class="k">Titolo</td><td>Il nome della consegna, per esempio <i>Selezione cliente - Sessione Demo</i>.</td><td>Nella galleria generata dall'app è <i>Selezione cliente</i>, con la sessione indicata nel sottotitolo.</td></tr>
+<tr><td class="k">Sottotitolo</td><td>Una riga descrittiva con le istruzioni e il nome della sessione.</td><td>Spiega al cliente cosa fare senza bisogno di altre indicazioni.</td></tr>
 <tr><td class="k">Seleziona tutte</td><td>Spunta tutte le caselle in un colpo solo.</td><td>Per un cliente che vuole tutto, o per partire da una selezione completa.</td></tr>
 <tr><td class="k">Deseleziona</td><td>Toglie tutte le spunte.</td><td>Per ricominciare la selezione.</td></tr>
 <tr><td class="k">Copia selezione</td><td>Copia negli appunti l'elenco dei nomi selezionati, uno per riga.</td><td>Il cliente lo incolla in un'email o in un messaggio.</td></tr>
@@ -899,14 +902,14 @@
 </table>
 
 <h2>10.2 Come viene creata</h2>
-<p>La galleria nasce in tre modi: dal pulsante <b>APRI GALLERIA</b> della scheda Wi-Fi FTP, dall'opzione <b>Crea la galleria cliente con le caselle di selezione</b>, oppure dal flusso di consegna di una sessione. Il file prodotto è <code>Galleria_Cliente\&lt;sessione&gt;\index.html</code>; le immagini puntano a <code>..\Anteprime_Cliente\&lt;sessione&gt;</code>.</p>
+<p>La galleria nasce in due modi: dal pulsante <b>APRI GALLERIA</b> della scheda Wi-Fi FTP, che la crea o la rigenera, oppure automaticamente durante una sessione FTP se è attiva l'opzione <b>Crea la galleria cliente con le caselle di selezione</b>. Il file prodotto è <code>Galleria_Cliente\&lt;sessione&gt;\index.html</code>; le immagini puntano a <code>..\Anteprime_Cliente\&lt;sessione&gt;</code>.</p>
 
 <h2>10.3 Procedura: consegnare la selezione al cliente</h2>
 <ol class="steps">
-<li><b>Genera la galleria</b> dalla scheda Wi-Fi FTP o dal flusso di sessione.</li>
-<li><b>Apri la cartella di sessione</b> e verifica che contenga <code>Anteprime_Cliente</code> e <code>Galleria_Cliente</code>.</li>
+<li><b>Genera la galleria</b> dalla scheda Wi-Fi FTP, oppure lascia attiva l'opzione che la crea durante la sessione.</li>
+<li><b>Apri la cartella base del tethering</b> e verifica che contenga <code>Anteprime_Cliente\&lt;sessione&gt;</code> e <code>Galleria_Cliente\&lt;sessione&gt;</code>.</li>
 <li><b>Prova la pagina</b> con un doppio clic su <code>index.html</code>: devono comparire tutte le anteprime.</li>
-<li><b>Consegna la cartella intera</b> (per esempio su chiavetta, WeTransfer o cartella condivisa), non solo il file HTML.</li>
+<li><b>Consegna le due cartelle della sessione</b> (per esempio su chiavetta, WeTransfer o cartella condivisa), non solo il file HTML.</li>
 <li><b>Spiega al cliente</b> di spuntare le foto e premere <b>Copia selezione</b> oppure <b>Scarica elenco .txt</b>.</li>
 <li><b>Ricevi l'elenco</b> e usa i nomi per preparare la consegna finale.</li>
 </ol>
@@ -920,7 +923,7 @@
 <tr><td class="k">Cartella <code>Galleria_Cliente\&lt;sessione&gt;</code></td><td>Contiene <code>index.html</code>, cioè la pagina che il cliente apre.</td></tr>
 <tr><td class="k">Cartella <code>Anteprime_Cliente\&lt;sessione&gt;</code></td><td>Contiene le immagini collegate dalla pagina. Senza, la galleria resta vuota.</td></tr>
 <tr><td class="k">Istruzioni in due righe</td><td>Spunta le foto, premi <b>Copia selezione</b> o <b>Scarica elenco .txt</b>, invia l'elenco.</td></tr>
-<tr><td class="k">Un archivio unico</td><td>Se usi uno ZIP, comprimi la cartella di sessione che contiene entrambe le sottocartelle.</td></tr>
+<tr><td class="k">Un archivio unico</td><td>Se usi uno ZIP, comprimi insieme le due cartelle della stessa sessione, mantenendo i nomi <code>Anteprime_Cliente</code> e <code>Galleria_Cliente</code>.</td></tr>
 </tbody>
 </table>
 
@@ -1087,7 +1090,7 @@
 <li>Scatta o importa la sessione; usa il Wi-Fi FTP o la cartella monitorata.</li>
 <li>Lascia attiva la creazione della galleria e del copyright nelle anteprime.</li>
 <li>Apri la galleria e controlla che tutte le foto siano presenti.</li>
-<li>Consegna la cartella intera al cliente, con <code>index.html</code> e le anteprime.</li>
+<li>Consegna al cliente le due cartelle della sessione, con <code>index.html</code> e le anteprime.</li>
 <li>Ricevi l'elenco dei nomi selezionati e prepara la consegna finale dei file scelti.</li>
 </ol>
 <div class="regola"><b>Anteprime leggere, finali pieni</b>Per la selezione usa JPEG 2000 px e watermark; per la consegna finale usa Originale o 3000 px, qualità alta, watermark spento.</div>
@@ -1125,7 +1128,7 @@
 <tr><td class="k">L'anteprima resta sul segnaposto</td><td>Percorso non valido, file non supportato o primo file ancora in lettura.</td><td>Premi Invio nel campo SORGENTE, controlla l'estensione, prova con un altro RAW.</td></tr>
 <tr><td class="k">Il batch è molto lento</td><td>Profilo Massima qualità, RAW grandi, pochi processi per poca RAM.</td><td>Passa a Bilanciato o Veloce, chiudi altri programmi, lascia automatico il numero di processi.</td></tr>
 <tr><td class="k">Il PC si blocca durante il batch</td><td>Troppi processi o RAM insufficiente.</td><td>Riduci i processi di 1–2; usa un profilo più leggero; converti a gruppi.</td></tr>
-<tr><td class="k">I colori sono diversi dal previsto</td><td>WB fotocamera spento, preset creativo, split toning, profilo colore non sRGB.</td><td>Controlla WB, preset, split toning e spazio colore; ripristina i parametri di sviluppo.</td></tr>
+<tr><td class="k">I colori sono diversi dal previsto</td><td>WB fotocamera spento, preset creativo, split toning o monitor non calibrato.</td><td>Controlla WB, preset e split toning; ripristina i parametri di sviluppo e verifica su un monitor calibrato.</td></tr>
 <tr><td class="k">Le foto sono troppo morbide o troppo nitide</td><td>Nitidezza/raggio o denoise non adatti.</td><td>Riduci la nitidezza, alza leggermente il raggio, riduci il denoise sulla pelle.</td></tr>
 <tr><td class="k">Il file esportato è più grande del previsto</td><td>Lato Originale, qualità 100, PNG/TIFF.</td><td>Usa 2048–3000 px, JPEG 85–90.</td></tr>
 <tr><td class="k">Il cliente non riesce ad aprire la galleria</td><td>Ha ricevuto solo l'HTML o la cartella è stata rinominata.</td><td>Invia la cartella intera; verifica che le anteprime siano al posto giusto.</td></tr>
@@ -1236,16 +1239,16 @@
 <h1 class="chapter" id="appB"><span class="num">B</span>Appendice B — Note tecniche</h1>
 
 <h2>B.1 Ordine della pipeline</h2>
-<p>Per ogni file il programma segue un ordine preciso. Il ridimensionamento avviene prima delle correzioni, così il lavoro è più veloce e ottimizzato per la dimensione finale.</p>
+<p>Per ogni file il programma segue un ordine preciso. Il ridimensionamento avviene subito dopo la decodifica, così tutte le correzioni lavorano sulla risoluzione finale e il batch è più veloce.</p>
 <ol class="steps">
 <li><b>Lettura</b> del RAW o dell'immagine, senza modificare l'originale.</li>
-<li><b>Demosaic</b> e conversione in RGB.</li>
+<li><b>Demosaic</b>, bilancio del bianco della fotocamera e conversione in RGB.</li>
 <li><b>Ridimensionamento</b> al lato massimo scelto (nessun ingrandimento oltre il nativo).</li>
-<li><b>Bilanciamento del bianco</b> e correzioni tonali.</li>
-<li><b>Colore</b>, curva tonale, split toning.</li>
-<li><b>Nitidezza e denoise</b> secondo profilo e parametri.</li>
-<li><b>Watermark</b> e metadati.</li>
-<li><b>Scrittura</b> del file nella destinazione, con gestione dei nomi e dei conflitti.</li>
+<li><b>Correzioni tonali</b>: esposizione, luci, ombre, bianchi, neri e curva.</li>
+<li><b>Colore</b>: vivacità, saturazione e split toning.</li>
+<li><b>Dettaglio</b>: nitidezza e denoise secondo profilo e parametri.</li>
+<li><b>Effetti</b>: vignettatura e grana.</li>
+<li><b>Watermark</b> e metadati, poi <b>scrittura</b> del file con la gestione di nomi e conflitti.</li>
 </ol>
 
 <h2>B.2 Formati e metadati</h2>
@@ -1269,6 +1272,7 @@
 <li><b>Non sostituisce un backup</b>: conserva sempre i RAW originali.</li>
 </ul>
 
+<div class="tieni">
 <h2>B.4 Prestazioni misurate</h2>
 <div class="kpi">
 <div><b>14</b><span>core fisici / 20 logici (PC di prova)</span></div>
@@ -1276,6 +1280,7 @@
 <div><b>4</b><span>processi nel test con 4 RAW</span></div>
 </div>
 <p>I valori dipendono dall'hardware e dai file. Con 4 RAW Sony da 24–42 MB, il batch di prova ha completato 4 file in circa 14 secondi, con una velocità intorno a 16 file/min. Su un numero maggiore di file il programma usa più processi e la velocità tende a salire, fino al limite di RAM e core.</p>
+</div>
 
 <h2>B.5 Struttura delle cartelle di sessione</h2>
 <pre style="background:#f5f8fa;border:.25mm solid #d6dee6;border-radius:1.6mm;padding:3mm;font-size:8.8pt;line-height:1.45;overflow:auto">Pictures\FranchettiRawConverterPro\Tethering\
