@@ -1,0 +1,50 @@
+{
+  "tipo": "franchetti-raw-preset",
+  "versione": 1,
+  "nome": "Paesaggio freddo",
+  "autore": "Franchetti",
+  "descrizione": "Paesaggio con bianco piu' freddo, verdi puliti e blu profondi.",
+  "tag": [
+    "paesaggio",
+    "freddo"
+  ],
+  "app_minima": "",
+  "look": {
+    "esposizione": 0.0,
+    "temperatura": -12.0,
+    "tinta": 0.0,
+    "luci": 0.0,
+    "ombre": 0.0,
+    "bianchi": 0.0,
+    "neri": 0.0,
+    "contrasto": 0.36,
+    "proteggi_luci": false,
+    "vivacita": 0.32,
+    "saturazione": 1.0,
+    "chiarezza": 0.14,
+    "dehaze": 0.1,
+    "nr_luminanza": 88.0,
+    "nr_colore": 92.0,
+    "rimuovi_grana_auto": true,
+    "nitidezza_raggio": 0.9,
+    "nitidezza_quantita": 1.05,
+    "vignettatura": 0.0,
+    "grana": 0.0,
+    "curva_tonale": "Lineare",
+    "hsl_rosso": 0.0,
+    "hsl_verde": 10.0,
+    "hsl_blu": 8.0,
+    "colore_ombre": "#2b4c7e",
+    "intensita_ombre": 0.0,
+    "colore_luci": "#e0b070",
+    "intensita_luci": 0.0,
+    "auto_luminosita": false,
+    "use_camera_wb": true,
+    "lut_intensita": 100.0
+  },
+  "output": {
+    "max_dim": 3000,
+    "qualita_jpeg": 92,
+    "formato": "JPEG"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "tipo": "franchetti-raw-preset",
+  "versione": 1,
+  "nome": "Ritratto soft",
+  "autore": "Franchetti",
+  "descrizione": "Pelle morbida e toni bassi, senza schiacciare il contrasto.",
+  "tag": [
+    "ritratto",
+    "soft"
+  ],
+  "app_minima": "",
+  "look": {
+    "esposizione": 0.0,
+    "temperatura": 0.0,
+    "tinta": 0.0,
+    "luci": -6.0,
+    "ombre": 10.0,
+    "bianchi": 0.0,
+    "neri": 0.0,
+    "contrasto": 0.18,
+    "proteggi_luci": false,
+    "vivacita": 0.16,
+    "saturazione": 0.96,
+    "chiarezza": 0.0,
+    "dehaze": 0.0,
+    "nr_luminanza": 86.0,
+    "nr_colore": 92.0,
+    "rimuovi_grana_auto": true,
+    "nitidezza_raggio": 0.9,
+    "nitidezza_quantita": 0.65,
+    "vignettatura": 0.0,
+    "grana": 0.0,
+    "curva_tonale": "Lineare",
+    "hsl_rosso": 0.0,
+    "hsl_verde": 0.0,
+    "hsl_blu": 0.0,
+    "colore_ombre": "#2b4c7e",
+    "intensita_ombre": 0.0,
+    "colore_luci": "#e0b070",
+    "intensita_luci": 0.0,
+    "auto_luminosita": false,
+    "use_camera_wb": true,
+    "lut_intensita": 100.0
+  },
+  "output": {
+    "max_dim": 3000,
+    "qualita_jpeg": 92,
+    "formato": "JPEG"
+  }
+}

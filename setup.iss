@@ -1,15 +1,15 @@
-﻿; Inno Setup Script for Franchetti Raw Converter Pro v2.58.0
+; Inno Setup Script for Franchetti Raw Converter Pro v2.58.1
 ; Build: iscc setup.iss
-; Output: Output/Franchetti_Raw_Converter_Setup_v2.58.0.exe
+; Output: Output/Franchetti_Raw_Converter_Setup_v2.58.1.exe
 
 #define AppName "Franchetti Raw Converter Pro"
-#define AppVersion "2.58.0"
-#define AppVersionTuple "2.58.0.0"
+#define AppVersion "2.58.1"
+#define AppVersionTuple "2.58.1.0"
 #define AppPublisher "Franchetti"
 #define AppWebsite "https://github.com/FranchettiBiagio/raw-converter-pro"
 #define AppExeName "FranchettiRawConverterPro.exe"
 #define SourceExe "dist\FranchettiRawConverterPro.exe"
-#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.58.0"
+#define OutputBaseName "Franchetti_Raw_Converter_Setup_v2.58.1"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
@@ -36,8 +36,8 @@ UsePreviousLanguage=no
 CreateAppDir=yes
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-DisableReadyPage=no
-DisableFinishedPage=no
+DisableReadyPage=yes
+DisableFinishedPage=yes
 ShowLanguageDialog=auto
 LicenseFile=LICENSE
 SetupIconFile=foto\logo_store1080-frc_1.ico

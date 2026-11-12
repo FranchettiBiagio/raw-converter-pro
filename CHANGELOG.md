@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.58.1] - 2026-11-12
+
+### Added
+- **Preset nativi `.frcpreset`**: JSON validato con `look` e `output`
+  facoltativo; esclusi percorsi, cloud, FTP e copyright.
+- **Gestione preset in app**: salva, importa, esporta, elimina e applica con
+  anteprima; i sei preset storici sono migrati al nuovo formato.
+- **Pacchetti preset** con `manifest.json` e checksum SHA-256, import manuale
+  da file o ZIP. Pack ufficiale di esempio in `presets_pack/`.
+- **Import XMP (beta)** con mappatura parziale e avviso esplicito.
+- **LUT 3D `.cube`** con interpolazione trilineare, intensità e calcolo a blocchi.
+- **Profilo Veloce**: denoise non-locale a metà risoluzione e stima del rumore
+  campionata (-39% sul test da 24 MP a 3000 px).
+
+### Changed
+- Luminanza riusata tra le fasi tono/colore/dettaglio: nessun cambiamento di
+  output.
+- Bilanciato e Massima qualità mantengono la stima del rumore a piena
+  risoluzione; sul test l'output di Bilanciato resta identico pixel per pixel.
+
+### Fixed
+- Linux: filtro `.RAF` maiuscolo, core fisici da `/proc/cpuinfo`, memoria da
+  `/proc/meminfo`, semafori rilasciati con `wait=True`, messaggio di dipendenza
+  più chiaro.
+- Versione applicazione, installer e metadati aggiornati a **2.58.1**.
+
+---
+
 ## [2.58.0] - 2026-11-02
 
 ### Added

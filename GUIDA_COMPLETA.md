@@ -1,6 +1,6 @@
 # Guida completa a Franchetti Raw Converter Pro
 
-**Versione 2.58.0 — Windows 10/11 — Italiano**
+**Versione 2.58.1 - Windows 10/11 - Italiano**
 
 Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.
 
@@ -202,11 +202,33 @@ Il menu **Preset** imposta in un colpo solo dimensione, qualità, formato e rego
 | **Paesaggio** | 3000 px, JPEG 92, contrasto 0,35, vivacità 0,35, chiarezza 0,15, dehaze 0,08, nitidezza 1,0 raggio 1,0, verdi +8, blu +6, denoise 88/92 |
 | **Bianco e Nero** | 3000 px, JPEG 92, saturazione 0, contrasto 0,38, chiarezza 0,15, nitidezza 0,9 raggio 0,9, grana 0, denoise 88/92 |
 
-> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.58.0 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
+> I preset **non** sono vincolanti. Dopo averli applicati puoi spostare gli slider. Tutti i preset v2.58.1 attivano **RIMUOVI GRANA (AUTO ISO)** e una nitidezza controllata: il pulsante può essere disattivato, ma il profilo pulito è già pronto.
 
 **Salva config** e **Carica config** salvano e rileggono tutti i parametri in un file JSON. Sono utili per conservare il tuo stile di sviluppo.
 
 > **Privacy:** il file di configurazione può contenere anche token di Telegram/Dropbox e percorsi del computer. Conservalo in un posto sicuro e non condividerlo.
+
+#### Preset portabili `.frcpreset`
+
+Un preset è un file JSON leggibile con nome, autore, descrizione, tag e una sezione `look`. Può avere anche una sezione `output` facoltativa con formato, lato lungo, qualità ed EXIF. **Non** contiene percorsi, cartelle, token cloud, FTP o copyright: applicarlo non cambia mai il flusso di lavoro e non tocca gli originali.
+
+- **Salva preset:** salva il look corrente. Puoi scegliere se includere anche formato e dimensioni.
+- **Importa:** accetta un file `.frcpreset`, un `manifest.json` o un pacchetto ZIP.
+- **Esporta:** crea un file da condividere.
+- **Elimina:** rimuove solo i preset personali, mai quelli integrati.
+- **Apri cartella preset:** apre la cartella dati dell'utente.
+
+I pacchetti usano un `manifest.json` con il checksum **SHA-256** di ogni file. Se un checksum non corrisponde, il file viene rifiutato. L'importazione è sempre manuale: il programma non scarica nulla da solo. Un pack di esempio è in `presets_pack/`.
+
+#### Import XMP (beta)
+
+**Importa XMP (beta)** legge i preset Lightroom `.xmp` e ne mappa una parte: esposizione, luci, ombre, bianchi, neri, contrasto, vivacità, saturazione, chiarezza, dehaze, denoise, nitidezza, vignettatura, grana, saturazione selettiva e split toning.
+
+Restano fuori profili camera, curve puntuali, texture e film simulation. La mappatura è parziale e l'app lo dichiara prima di applicare il preset: non aspettarti una resa identica a Lightroom.
+
+#### LUT 3D `.cube`
+
+In **AVANZATE → CURVA TONALE E SPLIT TONING** puoi scegliere una LUT 3D `.cube`, regolarne l'intensità e rimuoverla. La LUT viene applicata con interpolazione trilineare, a blocchi, per non consumare memoria sulle foto grandi. Il percorso della LUT **non** viene salvato nei preset: un preset resta un file di dati, non un riferimento a un file del computer.
 
 ### 3.7 Barra delle azioni
 
@@ -888,6 +910,6 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-**Franchetti Raw Converter Pro v2.58.0** — Guida completa.  
+**Franchetti Raw Converter Pro v2.58.1** - Guida completa.  
 **2 Novembre 2026**
 Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.

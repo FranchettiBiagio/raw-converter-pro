@@ -1,6 +1,6 @@
-# Franchetti Raw Converter Pro v2.58.0
+# Franchetti Raw Converter Pro v2.58.1
 
-[![Version](https://img.shields.io/badge/version-2.58.0-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.58.1-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
@@ -12,6 +12,19 @@
 > **Guida illustrata 2.58.0:** [HTML](docs/guida_illustrata/guida.html) - ogni schermata reale spiegata campo per campo, con procedure numerate. Versione stampabile: [PDF A4](docs/guida_illustrata/Guida_Illustrata_2.58.0.pdf).
 
 > **Enterprise RAW Suite** — Pipeline Y/Cb/Cr e denoise ISO, Tethering automatico multi-marca, Cloud Dispatch multi-canale, Watermark professionale, EXIF preservation. Portable, Open Source (MIT), Zero telemetria.
+
+---
+
+## 🚀 Novità v2.58.1 — preset, LUT e sviluppo più veloce
+
+- **Preset nativi `.frcpreset`**: file JSON leggibili con nome, autore, descrizione, tag, look e output facoltativo. Non contengono percorsi, cartelle, cloud, FTP o copyright e non vengono mai eseguiti.
+- **Gestione preset in app**: salva il look corrente, importa, esporta, elimina e applica con anteprima. I sei preset storici sono migrati al nuovo formato.
+- **Pacchetti preset scaricabili**: manifest JSON con checksum SHA-256 e importazione manuale da file o ZIP. Nessun download automatico. Pack ufficiale di esempio in [`presets_pack/`](presets_pack/README.md).
+- **Import XMP (beta)**: mappatura parziale dei preset Lightroom (esposizione, toni, colore, denoise, nitidezza, vignettatura, split toning). Profili camera, curve puntuali, texture e film simulation restano fuori, con avviso esplicito.
+- **LUT 3D `.cube`**: applicazione con interpolazione trilineare e intensità regolabile, a blocchi per non consumare memoria sulle foto grandi.
+- **Profilo Veloce più rapido**: denoise non-locale a metà risoluzione e stima del rumore campionata. Sul test da 24 MP a 3000 px passa da 8,8 s a 5,4 s circa (-39%).
+- **Nessun cambiamento visibile negli altri profili**: Bilanciato e Massima qualità mantengono la stima del rumore a piena risoluzione; sul test l'output di Bilanciato resta identico byte per byte.
+- **Linux più solido**: filtro `.RAF` maiuscolo, rilevamento dei core fisici da `/proc/cpuinfo`, memoria da `/proc/meminfo`, rilascio esplicito dei semafori e messaggio di dipendenza più chiaro. Build Linux/macOS ancora sperimentale.
 
 ---
 
@@ -250,12 +263,12 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 
 ## 🚀 Quick Start
 
-### Download v2.58.0
+### Download v2.58.1
 | Metodo | Link |
 |--------|------|
-| **GitHub Releases** | [Download v2.58.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.0) |
+| **GitHub Releases** | [Download v2.58.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1) |
 | **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
-| **Installer Windows** | [Setup v2.58.0](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.58.0.exe) |
+| **Installer Windows** | [Setup v2.58.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.58.1.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
@@ -486,10 +499,10 @@ in the Software without restriction...
 
 **Made with ❤️ per fotografi professionisti da Franchetti**
 
-**v2.58.0 - 2 Novembre 2026**
+**v2.58.1 - 12 Novembre 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-FranchettiBiagio%2Fraw--converter--pro-181717?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro)
-[![Download](https://img.shields.io/badge/Download-v2.58.0-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.0)
+[![Download](https://img.shields.io/badge/Download-v2.58.1-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>

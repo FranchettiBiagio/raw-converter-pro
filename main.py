@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.58.0 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.58.1 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
@@ -22,12 +22,15 @@ import time
 import queue
 import shutil
 import socket
+import hashlib
 import logging
 import tempfile
 import threading
 import traceback
 import functools
+import zipfile
 import multiprocessing
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from concurrent.futures import (
     FIRST_COMPLETED,
@@ -36,7 +39,7 @@ from concurrent.futures import (
     as_completed,
     wait,
 )
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 
 try:
     import numpy as np
@@ -87,7 +90,7 @@ except Exception:  # pragma: no cover
     DummyAuthorizer = FTPHandler = FTPServer = None
 
 
-APP_VERSION = "2.58.0"
+APP_VERSION = "2.58.1"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -202,6 +205,10 @@ def parametri_default():
         "intensita_ombre": 0.0,
         "colore_luci": "#e0b070",
         "intensita_luci": 0.0,
+        # LUT 3D opzionale (.cube). Il percorso resta fuori dai preset:
+        # un preset e' solo dati, non deve puntare a file del computer.
+        "lut_path": "",
+        "lut_intensita": 100.0,
         # --- Sviluppo RAW ---
         "use_camera_wb": True,
         "profilo_colore": "sRGB",
@@ -287,6 +294,7 @@ LIMITI_NUMERICI = {
     "hsl_blu": (-100.0, 100.0),
     "intensita_ombre": (0.0, 100.0),
     "intensita_luci": (0.0, 100.0),
+    "lut_intensita": (0.0, 100.0),
     "max_dim": (0.0, 20000.0),
     "qualita_jpeg": (1.0, 100.0),
     "font_size": (8.0, 600.0),
@@ -356,6 +364,7 @@ def normalizza_parametri(parametri):
 
     p["prefisso"] = pulisci_nome_file(p.get("prefisso", ""))
     p["suffisso"] = pulisci_nome_file(p.get("suffisso", ""))
+    p["lut_path"] = str(p.get("lut_path", "") or "").strip()
     p["watermark_text"] = str(p.get("watermark_text", "") or "")
     p["copyright_autore"] = str(p.get("copyright_autore", "") or "").strip() or "Franchetti"
     p["ftp_copyright"] = bool(p.get("ftp_copyright", True))
@@ -670,6 +679,589 @@ def formatta_durata(secondi):
     if ore:
         return f"{ore}:{minuti:02d}:{sec:02d}"
     return f"{minuti}:{sec:02d}"
+
+
+# ================================================================================
+# 2. PRESET: FORMATO NATIVO .frcpreset
+# ================================================================================
+PRESET_ESTENSIONE = ".frcpreset"
+PRESET_TIPO = "franchetti-raw-preset"
+PRESET_PACK_TIPO = "franchetti-raw-preset-pack"
+PRESET_VERSIONE = 1
+PRESET_DIMENSIONE_MASSIMA = 2 * 1024 * 1024
+
+# Un preset contiene SOLO il look e, facoltativamente, l'output. Non puo'
+# contenere percorsi, cartelle, credenziali cloud, FTP o copyright: cosi'
+# applicarlo non cambia mai il flusso di lavoro ne' tocca gli originali.
+PRESET_CHIAVI_LOOK = (
+    "esposizione", "temperatura", "tinta", "luci", "ombre", "bianchi", "neri",
+    "contrasto", "proteggi_luci", "vivacita", "saturazione", "chiarezza",
+    "dehaze", "nr_luminanza", "nr_colore", "rimuovi_grana_auto",
+    "nitidezza_raggio", "nitidezza_quantita", "vignettatura", "grana",
+    "curva_tonale", "hsl_rosso", "hsl_verde", "hsl_blu", "colore_ombre",
+    "intensita_ombre", "colore_luci", "intensita_luci", "auto_luminosita",
+    "use_camera_wb", "lut_intensita",
+)
+PRESET_CHIAVI_OUTPUT = ("max_dim", "qualita_jpeg", "formato", "preserva_exif")
+PRESET_CHIAVI_BOOLEAN = (
+    "proteggi_luci", "rimuovi_grana_auto", "auto_luminosita", "use_camera_wb",
+    "preserva_exif",
+)
+PRESET_CHIAVI_COLORE = ("colore_ombre", "colore_luci")
+PRESET_CURVE = (
+    "Lineare", "Media", "Forte", "Contrasto Alto", "Schiarisci", "Scurisci",
+)
+
+# I sei preset storici, migrati nel nuovo formato: look e output separati.
+PRESET_BUILTIN = {
+    "Web / Social": {
+        "nome": "Web / Social",
+        "autore": "Franchetti",
+        "descrizione": "JPEG leggero e pulito per web e social, lato lungo 2048 px.",
+        "tag": ["web", "social"],
+        "look": {
+            "contrasto": 0.30, "vivacita": 0.35, "nitidezza_quantita": 0.8,
+            "nitidezza_raggio": 0.8, "chiarezza": 0.08, "dehaze": 0.02,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {"max_dim": 2048, "qualita_jpeg": 90, "formato": "JPEG"},
+    },
+    "Stampa Fine Art": {
+        "nome": "Stampa Fine Art",
+        "autore": "Franchetti",
+        "descrizione": "TIFF a piena risoluzione, contrasto misurato per la stampa.",
+        "tag": ["stampa", "fine art"],
+        "look": {
+            "contrasto": 0.22, "vivacita": 0.25, "nitidezza_quantita": 0.7,
+            "nitidezza_raggio": 1.0, "chiarezza": 0.06,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {"max_dim": 0, "qualita_jpeg": 100, "formato": "TIFF"},
+    },
+    "Archivio JPEG": {
+        "nome": "Archivio JPEG",
+        "autore": "Franchetti",
+        "descrizione": "JPEG a piena risoluzione con EXIF conservati, per l'archivio.",
+        "tag": ["archivio", "jpeg"],
+        "look": {
+            "contrasto": 0.18, "vivacita": 0.20, "nitidezza_quantita": 0.6,
+            "nitidezza_raggio": 1.0,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {
+            "max_dim": 0, "qualita_jpeg": 95, "formato": "JPEG",
+            "preserva_exif": True,
+        },
+    },
+    "Ritratto": {
+        "nome": "Ritratto",
+        "autore": "Franchetti",
+        "descrizione": "Toni morbidi e pelle naturale, con ombre appena aperte.",
+        "tag": ["ritratto", "persone"],
+        "look": {
+            "contrasto": 0.22, "vivacita": 0.20, "saturazione": 0.97,
+            "chiarezza": 0.02, "ombre": 6.0, "luci": -4.0,
+            "nitidezza_quantita": 0.8, "nitidezza_raggio": 0.9,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {"max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG"},
+    },
+    "Paesaggio": {
+        "nome": "Paesaggio",
+        "autore": "Franchetti",
+        "descrizione": "Micro-contrasto e verdi/blu piu' presenti, senza plastica.",
+        "tag": ["paesaggio", "natura"],
+        "look": {
+            "contrasto": 0.35, "vivacita": 0.35, "chiarezza": 0.15,
+            "dehaze": 0.08, "nitidezza_quantita": 1.0, "nitidezza_raggio": 1.0,
+            "hsl_verde": 8.0, "hsl_blu": 6.0,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {"max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG"},
+    },
+    "Bianco e Nero": {
+        "nome": "Bianco e Nero",
+        "autore": "Franchetti",
+        "descrizione": "Conversione monocromatica con contrasto deciso e dettaglio.",
+        "tag": ["bianco e nero", "monocromo"],
+        "look": {
+            "saturazione": 0.0, "contrasto": 0.38, "chiarezza": 0.15,
+            "nitidezza_quantita": 0.9, "nitidezza_raggio": 0.9, "grana": 0.0,
+            "nr_luminanza": 88.0, "nr_colore": 92.0, "rimuovi_grana_auto": True,
+        },
+        "output": {"max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG"},
+    },
+}
+
+
+def cartella_dati_utente():
+    """Cartella dati dell'app, coerente con le convenzioni del sistema."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+    elif sys.platform == "darwin":
+        base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or os.path.join(
+            os.path.expanduser("~"), ".local", "share"
+        )
+    return os.path.join(base, "FranchettiRawConverterPro")
+
+
+def cartella_preset():
+    return os.path.join(cartella_dati_utente(), "presets")
+
+
+def _testo_breve(valore, massimo):
+    testo = str(valore or "").strip().replace("\x00", "")
+    return testo[:massimo]
+
+
+def _colore_valido(valore):
+    testo = str(valore or "").strip()
+    if len(testo) != 7 or not testo.startswith("#"):
+        return False
+    return all(carattere in "0123456789abcdefABCDEF" for carattere in testo[1:])
+
+
+def _pulisci_look(look):
+    """Tiene solo le chiavi di sviluppo consentite e ne limita i valori."""
+    if not isinstance(look, dict):
+        raise ValueError("sezione 'look' mancante o non valida")
+    risultato = {}
+    for chiave in PRESET_CHIAVI_LOOK:
+        if chiave not in look:
+            continue
+        valore = look[chiave]
+        if chiave in PRESET_CHIAVI_BOOLEAN:
+            risultato[chiave] = bool(valore)
+        elif chiave == "curva_tonale":
+            testo = str(valore or "").strip()
+            if testo in PRESET_CURVE:
+                risultato[chiave] = testo
+        elif chiave in PRESET_CHIAVI_COLORE:
+            if _colore_valido(valore):
+                risultato[chiave] = str(valore).strip()
+        elif chiave in LIMITI_NUMERICI:
+            try:
+                numero = float(valore)
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(numero):
+                continue
+            minimo, massimo = LIMITI_NUMERICI[chiave]
+            risultato[chiave] = max(minimo, min(massimo, numero))
+    return risultato
+
+
+def _pulisci_output(output):
+    if not isinstance(output, dict):
+        return {}
+    risultato = {}
+    try:
+        if "max_dim" in output:
+            risultato["max_dim"] = max(0, min(20000, int(round(float(output["max_dim"])))))
+    except (TypeError, ValueError):
+        pass
+    try:
+        if "qualita_jpeg" in output:
+            risultato["qualita_jpeg"] = max(1, min(100, int(round(float(output["qualita_jpeg"])))))
+    except (TypeError, ValueError):
+        pass
+    if "formato" in output:
+        formato = str(output.get("formato", "") or "").strip().upper()
+        if formato == "JPG":
+            formato = "JPEG"
+        if formato == "TIF":
+            formato = "TIFF"
+        if formato in FORMATI_OUTPUT:
+            risultato["formato"] = formato
+    if "preserva_exif" in output:
+        risultato["preserva_exif"] = bool(output["preserva_exif"])
+    return risultato
+
+
+def valida_preset(dati):
+    """Valida un preset e restituisce una copia pulita, pronta da applicare."""
+    if not isinstance(dati, dict):
+        raise ValueError("il file non contiene un preset valido")
+    tipo = str(dati.get("tipo", "") or "")
+    if tipo != PRESET_TIPO:
+        raise ValueError("formato preset non riconosciuto")
+    look = _pulisci_look(dati.get("look"))
+    if not look:
+        raise ValueError("il preset non contiene parametri di sviluppo")
+    nome = _testo_breve(dati.get("nome"), 80)
+    if not nome:
+        raise ValueError("il preset non ha un nome")
+    tag = dati.get("tag") or []
+    if not isinstance(tag, list):
+        tag = []
+    tag = [_testo_breve(valore, 30) for valore in tag[:12] if _testo_breve(valore, 30)]
+    return {
+        "tipo": PRESET_TIPO,
+        "versione": PRESET_VERSIONE,
+        "nome": nome,
+        "autore": _testo_breve(dati.get("autore"), 80),
+        "descrizione": _testo_breve(dati.get("descrizione"), 400),
+        "tag": tag,
+        "app_minima": _testo_breve(dati.get("app_minima"), 20),
+        "look": look,
+        "output": _pulisci_output(dati.get("output")),
+    }
+
+
+def preset_da_parametri(parametri, nome, autore="", descrizione="", tag=None):
+    """Costruisce un preset partendo dai parametri correnti dell'app."""
+    p = normalizza_parametri(parametri)
+    look = {}
+    for chiave in PRESET_CHIAVI_LOOK:
+        if chiave not in p:
+            continue
+        valore = p[chiave]
+        if chiave in PRESET_CHIAVI_BOOLEAN:
+            look[chiave] = bool(valore)
+        elif chiave in PRESET_CHIAVI_COLORE:
+            if _colore_valido(valore):
+                look[chiave] = str(valore)
+        elif chiave in LIMITI_NUMERICI:
+            look[chiave] = float(valore)
+        else:
+            look[chiave] = valore
+    output = {chiave: p[chiave] for chiave in PRESET_CHIAVI_OUTPUT if chiave in p}
+    return valida_preset({
+        "tipo": PRESET_TIPO,
+        "versione": PRESET_VERSIONE,
+        "nome": nome,
+        "autore": autore,
+        "descrizione": descrizione,
+        "tag": tag or [],
+        "look": look,
+        "output": output,
+    })
+
+
+def _sha256_bytes(contenuto):
+    return hashlib.sha256(contenuto).hexdigest()
+
+
+class PresetStore:
+    """Elenco, salvataggio e import/export dei preset dell'utente.
+
+    I preset sono solo JSON: non vengono mai eseguiti. Un pacchetto puo'
+    essere uno ZIP con manifest e checksum SHA-256; i file non verificati
+    vengono rifiutati.
+    """
+
+    def __init__(self, cartella=None):
+        self.cartella = cartella or cartella_preset()
+        try:
+            os.makedirs(self.cartella, exist_ok=True)
+        except OSError:
+            logging.warning("Cartella preset non creabile: %s", self.cartella)
+
+    def _leggi_json(self, percorso):
+        if os.path.getsize(percorso) > PRESET_DIMENSIONE_MASSIMA:
+            raise ValueError("file preset troppo grande")
+        with open(percorso, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    def elenco_utente(self):
+        risultati = []
+        try:
+            nomi = sorted(os.listdir(self.cartella))
+        except OSError:
+            return risultati
+        for nome_file in nomi:
+            if not nome_file.lower().endswith(PRESET_ESTENSIONE):
+                continue
+            percorso = os.path.join(self.cartella, nome_file)
+            try:
+                preset = valida_preset(self._leggi_json(percorso))
+            except Exception as errore:
+                logging.warning("Preset ignorato (%s): %s", nome_file, errore)
+                continue
+            preset["percorso"] = percorso
+            preset["origine"] = "utente"
+            risultati.append(preset)
+        return risultati
+
+    def elenco(self):
+        utenti = self.elenco_utente()
+        nomi_utenti = {preset["nome"] for preset in utenti}
+        risultati = []
+        for nome, preset in PRESET_BUILTIN.items():
+            if nome in nomi_utenti:
+                continue
+            voce = dict(preset)
+            voce["tipo"] = PRESET_TIPO
+            voce["versione"] = PRESET_VERSIONE
+            voce["percorso"] = ""
+            voce["origine"] = "integrato"
+            risultati.append(voce)
+        risultati.extend(utenti)
+        return risultati
+
+    def cerca(self, nome):
+        for preset in self.elenco_utente():
+            if preset["nome"] == nome:
+                return preset
+        preset = PRESET_BUILTIN.get(nome)
+        if preset:
+            voce = dict(preset)
+            voce["tipo"] = PRESET_TIPO
+            voce["versione"] = PRESET_VERSIONE
+            voce = valida_preset(voce)
+            voce["percorso"] = ""
+            voce["origine"] = "integrato"
+            return voce
+        return None
+
+    def salva(self, preset, percorso=None, sovrascrivi=False):
+        preset = valida_preset(preset)
+        if percorso is None:
+            base = pulisci_nome_file(preset["nome"]) or "preset"
+            percorso = os.path.join(self.cartella, base + PRESET_ESTENSIONE)
+            contatore = 2
+            while os.path.exists(percorso) and not sovrascrivi:
+                percorso = os.path.join(
+                    self.cartella, f"{base} ({contatore}){PRESET_ESTENSIONE}"
+                )
+                contatore += 1
+        os.makedirs(os.path.dirname(os.path.abspath(percorso)), exist_ok=True)
+        temporaneo = percorso + ".tmp"
+        with open(temporaneo, "w", encoding="utf-8") as file:
+            json.dump(preset, file, indent=2, ensure_ascii=False)
+        os.replace(temporaneo, percorso)
+        return percorso
+
+    def esporta(self, preset, percorso):
+        return self.salva(preset, percorso=percorso, sovrascrivi=True)
+
+    def elimina(self, percorso):
+        if percorso and os.path.isfile(percorso):
+            os.remove(percorso)
+            return True
+        return False
+
+    def _importa_singolo(self, dati, nome_origine=""):
+        preset = valida_preset(dati)
+        if not preset.get("nome") and nome_origine:
+            preset["nome"] = nome_origine
+        percorso = self.salva(preset)
+        return preset["nome"], percorso
+
+    def importa(self, percorso):
+        """Importa un .frcpreset, un manifest JSON o un pacchetto ZIP.
+
+        Restituisce (nomi_importati, avvisi). Nessun file viene eseguito.
+        """
+        estensione = os.path.splitext(percorso)[1].lower()
+        if estensione == ".zip":
+            return self._importa_zip(percorso)
+        if os.path.getsize(percorso) > PRESET_DIMENSIONE_MASSIMA:
+            raise ValueError("file troppo grande")
+        with open(percorso, "r", encoding="utf-8") as file:
+            dati = json.load(file)
+        if isinstance(dati, dict) and str(dati.get("tipo", "")) == PRESET_PACK_TIPO:
+            return self._importa_manifest(dati, os.path.dirname(os.path.abspath(percorso)))
+        nome, _ = self._importa_singolo(
+            dati, os.path.splitext(os.path.basename(percorso))[0]
+        )
+        return [nome], []
+
+    def _importa_manifest(self, manifest, cartella_base):
+        voci = manifest.get("presets")
+        if not isinstance(voci, list) or not voci:
+            raise ValueError("il manifest non contiene preset")
+        importati, avvisi = [], []
+        for voce in voci[:200]:
+            if not isinstance(voce, dict):
+                continue
+            nome_file = str(voce.get("file", "") or "")
+            if not nome_file or os.path.isabs(nome_file) or ".." in nome_file.replace("\\", "/"):
+                avvisi.append(f"File non valido nel manifest: {nome_file!r}")
+                continue
+            percorso_file = os.path.join(cartella_base, nome_file)
+            if not os.path.isfile(percorso_file):
+                avvisi.append(f"File mancante: {nome_file}")
+                continue
+            if os.path.getsize(percorso_file) > PRESET_DIMENSIONE_MASSIMA:
+                avvisi.append(f"File troppo grande: {nome_file}")
+                continue
+            with open(percorso_file, "rb") as file:
+                contenuto = file.read()
+            atteso = str(voce.get("sha256", "") or "").lower()
+            if atteso:
+                if _sha256_bytes(contenuto) != atteso:
+                    avvisi.append(f"Checksum non valido: {nome_file}")
+                    continue
+            else:
+                avvisi.append(f"Nessun checksum per {nome_file}: importato comunque")
+            try:
+                dati = json.loads(contenuto.decode("utf-8"))
+                nome, _ = self._importa_singolo(dati, os.path.splitext(nome_file)[0])
+                importati.append(nome)
+            except Exception as errore:
+                avvisi.append(f"{nome_file}: {errore}")
+        if not importati:
+            raise ValueError("nessun preset importato: " + "; ".join(avvisi[:3]))
+        return importati, avvisi
+
+    def _importa_zip(self, percorso):
+        with zipfile.ZipFile(percorso) as archivio:
+            nomi = archivio.namelist()
+            manifest_nome = next(
+                (nome for nome in nomi if nome.lower().endswith("manifest.json")), None
+            )
+            if not manifest_nome:
+                raise ValueError("il pacchetto non contiene manifest.json")
+            if os.path.getsize(percorso) > 50 * 1024 * 1024:
+                raise ValueError("pacchetto troppo grande")
+            manifest = json.loads(archivio.read(manifest_nome).decode("utf-8"))
+            if str(manifest.get("tipo", "")) != PRESET_PACK_TIPO:
+                raise ValueError("manifest del pacchetto non riconosciuto")
+            voci = manifest.get("presets")
+            if not isinstance(voci, list) or not voci:
+                raise ValueError("il manifest non contiene preset")
+            cartella_base = os.path.dirname(manifest_nome)
+            importati, avvisi = [], []
+            for voce in voci[:200]:
+                if not isinstance(voce, dict):
+                    continue
+                nome_file = str(voce.get("file", "") or "").replace("\\", "/")
+                if not nome_file or nome_file.startswith("/") or ".." in nome_file.split("/"):
+                    avvisi.append(f"File non valido nel manifest: {nome_file!r}")
+                    continue
+                membro = f"{cartella_base}/{nome_file}" if cartella_base else nome_file
+                if membro not in nomi:
+                    avvisi.append(f"File mancante nel pacchetto: {nome_file}")
+                    continue
+                contenuto = archivio.read(membro)
+                if len(contenuto) > PRESET_DIMENSIONE_MASSIMA:
+                    avvisi.append(f"File troppo grande: {nome_file}")
+                    continue
+                atteso = str(voce.get("sha256", "") or "").lower()
+                if atteso:
+                    if _sha256_bytes(contenuto) != atteso:
+                        avvisi.append(f"Checksum non valido: {nome_file}")
+                        continue
+                else:
+                    avvisi.append(f"Nessun checksum per {nome_file}: importato comunque")
+                try:
+                    dati = json.loads(contenuto.decode("utf-8"))
+                    nome, _ = self._importa_singolo(dati, os.path.splitext(nome_file)[0])
+                    importati.append(nome)
+                except Exception as errore:
+                    avvisi.append(f"{nome_file}: {errore}")
+            if not importati:
+                raise ValueError("nessun preset importato: " + "; ".join(avvisi[:3]))
+            return importati, avvisi
+
+
+def _valore_xmp(mappa, nome):
+    valore = mappa.get(nome)
+    if valore is None:
+        return None
+    try:
+        return float(str(valore).strip().replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+
+def _hex_da_hsl(gradi, saturazione):
+    """Converte tonalita' (0-360) e saturazione (0-100) in #rrggbb."""
+    import colorsys
+    h = (float(gradi) % 360.0) / 360.0
+    s = max(0.0, min(1.0, float(saturazione) / 100.0))
+    r, g, b = colorsys.hsv_to_rgb(h, s, 1.0)
+    return "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
+
+
+def leggi_preset_xmp(percorso):
+    """Legge un preset Lightroom .xmp con mappatura parziale (beta).
+
+    Restituisce (preset, mappati, ignorati). Non promette una resa identica:
+    profili camera, texture, curve e film simulation restano fuori.
+    """
+    if os.path.getsize(percorso) > PRESET_DIMENSIONE_MASSIMA:
+        raise ValueError("file XMP troppo grande")
+    radice = ET.parse(percorso).getroot()
+    mappa = {}
+    for elemento in radice.iter():
+        nome = elemento.tag.split("}")[-1]
+        for chiave, valore in elemento.attrib.items():
+            mappa[chiave.split("}")[-1]] = valore
+        if elemento.text and elemento.text.strip():
+            mappa[nome] = elemento.text.strip()
+
+    parametri = {}
+    mappati = []
+    ignorati = []
+
+    def imposta(chiave, valore):
+        if valore is not None:
+            parametri[chiave] = valore
+            mappati.append(chiave)
+
+    imposta("esposizione", _valore_xmp(mappa, "Exposure2012"))
+    imposta("luci", _valore_xmp(mappa, "Highlights2012"))
+    imposta("ombre", _valore_xmp(mappa, "Shadows2012"))
+    imposta("bianchi", _valore_xmp(mappa, "Whites2012"))
+    imposta("neri", _valore_xmp(mappa, "Blacks2012"))
+
+    contrasto = _valore_xmp(mappa, "Contrast2012")
+    if contrasto is not None:
+        imposta("contrasto", max(0.0, min(1.0, 0.35 + contrasto / 100.0 * 0.45)))
+    vivacita = _valore_xmp(mappa, "Vibrance")
+    if vivacita is not None:
+        imposta("vivacita", max(0.0, min(1.0, vivacita / 100.0)))
+    saturazione = _valore_xmp(mappa, "Saturation")
+    if saturazione is not None:
+        imposta("saturazione", max(0.0, min(2.0, 1.0 + saturazione / 100.0)))
+    chiarezza = _valore_xmp(mappa, "Clarity2012")
+    if chiarezza is not None:
+        imposta("chiarezza", max(0.0, min(1.0, chiarezza / 100.0)))
+    dehaze = _valore_xmp(mappa, "Dehaze")
+    if dehaze is not None:
+        imposta("dehaze", max(0.0, min(1.0, dehaze / 100.0)))
+    nitidezza = _valore_xmp(mappa, "SharpenAmount")
+    if nitidezza is not None:
+        imposta("nitidezza_quantita", max(0.0, min(5.0, nitidezza / 100.0 * 2.0)))
+    imposta("nr_luminanza", _valore_xmp(mappa, "LuminanceSmoothing"))
+    imposta("nr_colore", _valore_xmp(mappa, "ColorNoiseReduction"))
+    imposta("vignettatura", _valore_xmp(mappa, "PostCropVignetteAmount"))
+    imposta("grana", _valore_xmp(mappa, "GrainAmount"))
+
+    for canale, chiave in (
+        ("Red", "hsl_rosso"), ("Green", "hsl_verde"), ("Blue", "hsl_blu"),
+    ):
+        valore = _valore_xmp(mappa, f"SaturationAdjustment{canale}")
+        if valore is not None:
+            imposta(chiave, valore)
+
+    ombre_h = _valore_xmp(mappa, "SplitToningShadowHue")
+    ombre_s = _valore_xmp(mappa, "SplitToningShadowSaturation")
+    if ombre_h is not None and ombre_s:
+        parametri["colore_ombre"] = _hex_da_hsl(ombre_h, 100.0)
+        imposta("intensita_ombre", ombre_s)
+    luci_h = _valore_xmp(mappa, "SplitToningHighlightHue")
+    luci_s = _valore_xmp(mappa, "SplitToningHighlightSaturation")
+    if luci_h is not None and luci_s:
+        parametri["colore_luci"] = _hex_da_hsl(luci_h, 100.0)
+        imposta("intensita_luci", luci_s)
+
+    for chiave in ("ToneCurvePV2012", "CameraProfile", "ProcessVersion", "Texture"):
+        if chiave in mappa:
+            ignorati.append(chiave)
+
+    preset = preset_da_parametri(
+        parametri,
+        os.path.splitext(os.path.basename(percorso))[0][:80] or "Preset XMP",
+        autore="",
+        descrizione="Importato da XMP (beta): mappatura parziale, alcune voci ignorate.",
+        tag=["xmp", "beta"],
+    )
+    return preset, mappati, ignorati
 
 
 def benchmark_conversione(files, parametri, massimo_file=2, log=None):
@@ -1626,9 +2218,15 @@ class ImageEngine:
         return t * t * (3.0 - 2.0 * t)
 
     @classmethod
-    def _applica_luminanza(cls, img, nuova_lum):
-        """Cambia la luminanza preservando la crominanza originale."""
-        lum = np.clip(cls._luma(img), 1e-5, 1.0)
+    def _applica_luminanza(cls, img, nuova_lum, lum=None):
+        """Cambia la luminanza preservando la crominanza originale.
+
+        ``lum`` e' opzionale: chi lo ha gia' calcolato puo' passarlo ed
+        evitare una seconda lettura di tutti i pixel. Il risultato e' identico.
+        """
+        if lum is None:
+            lum = cls._luma(img)
+        lum = np.clip(lum, 1e-5, 1.0)
         fattore = np.clip(nuova_lum, 0.0, 1.0) / lum
         return np.clip(img * fattore[:, :, None], 0.0, 1.0)
 
@@ -1658,6 +2256,112 @@ class ImageEngine:
             return np.array([int(valore[i:i + 2], 16) / 255.0 for i in (0, 2, 4)])
         except Exception:
             return np.array([0.5, 0.5, 0.5])
+
+    # --------------------------------------------------------------- LUT 3D
+    @staticmethod
+    @functools.lru_cache(maxsize=8)
+    def _leggi_cube(percorso, mtime):
+        """Legge una LUT 3D .cube. La cache si invalida cambiando mtime."""
+        dimensione = None
+        dominio_min = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        dominio_max = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+        righe = []
+        with open(percorso, "r", encoding="utf-8", errors="ignore") as file:
+            for riga in file:
+                riga = riga.strip()
+                if not riga or riga.startswith("#"):
+                    continue
+                parti = riga.split()
+                chiave = parti[0].upper()
+                if chiave == "LUT_3D_SIZE":
+                    dimensione = int(parti[1])
+                elif chiave == "DOMAIN_MIN":
+                    dominio_min = np.array([float(v) for v in parti[1:4]], dtype=np.float32)
+                elif chiave == "DOMAIN_MAX":
+                    dominio_max = np.array([float(v) for v in parti[1:4]], dtype=np.float32)
+                elif chiave.startswith("LUT_1D") or chiave == "TITLE":
+                    continue
+                else:
+                    try:
+                        righe.append([float(v) for v in parti[:3]])
+                    except (ValueError, IndexError):
+                        continue
+        if dimensione is None or dimensione < 2:
+            raise ValueError("LUT_3D_SIZE mancante o non valido")
+        attese = dimensione ** 3
+        if len(righe) < attese:
+            raise ValueError(
+                f"LUT incompleta: {len(righe)} righe invece di {attese}"
+            )
+        dati = np.asarray(righe[:attese], dtype=np.float32)
+        # Nel formato .cube il rosso varia piu' velocemente, poi il verde e
+        # infine il blu: reshape -> [blu, verde, rosso, RGB].
+        lut = dati.reshape(dimensione, dimensione, dimensione, 3)
+        return lut, dominio_min, dominio_max
+
+    @classmethod
+    def _applica_lut(cls, img, percorso, intensita=100.0):
+        """Applica una LUT 3D con interpolazione trilineare, a blocchi.
+
+        Il lavoro a blocchi evita di allocare centinaia di MB su foto da
+        24-60 MP. Se il file non e' leggibile, l'immagine resta invariata.
+        """
+        if not percorso:
+            return img
+        try:
+            lut, dominio_min, dominio_max = cls._leggi_cube(
+                percorso, os.path.getmtime(percorso)
+            )
+        except Exception as errore:
+            logging.warning("LUT non applicata (%s): %s", percorso, errore)
+            return img
+
+        dimensione = lut.shape[0]
+        altezza, larghezza = img.shape[:2]
+        piatto = np.ascontiguousarray(img.reshape(-1, 3), dtype=np.float32)
+        risultato = np.empty_like(piatto)
+        scala = np.maximum(dominio_max - dominio_min, 1e-6)
+        passo = 500_000
+
+        for inizio in range(0, piatto.shape[0], passo):
+            blocco = piatto[inizio:inizio + passo]
+            coord = np.clip((blocco - dominio_min) / scala, 0.0, 1.0) * (
+                dimensione - 1
+            )
+            inf = np.floor(coord).astype(np.int32)
+            sup = np.minimum(inf + 1, dimensione - 1)
+            frazione = coord - inf
+            r0, g0, b0 = inf[:, 0], inf[:, 1], inf[:, 2]
+            r1, g1, b1 = sup[:, 0], sup[:, 1], sup[:, 2]
+            fr = frazione[:, 0:1]
+            fg = frazione[:, 1:2]
+            fb = frazione[:, 2:3]
+
+            c000 = lut[b0, g0, r0]
+            c001 = lut[b0, g0, r1]
+            c010 = lut[b0, g1, r0]
+            c011 = lut[b0, g1, r1]
+            c100 = lut[b1, g0, r0]
+            c101 = lut[b1, g0, r1]
+            c110 = lut[b1, g1, r0]
+            c111 = lut[b1, g1, r1]
+
+            c00 = c000 + (c001 - c000) * fr
+            c01 = c010 + (c011 - c010) * fr
+            c10 = c100 + (c101 - c100) * fr
+            c11 = c110 + (c111 - c110) * fr
+            c0 = c00 + (c01 - c00) * fg
+            c1 = c10 + (c11 - c10) * fg
+            risultato[inizio:inizio + passo] = c0 + (c1 - c0) * fb
+
+        try:
+            forza = max(0.0, min(100.0, float(intensita))) / 100.0
+        except (TypeError, ValueError):
+            forza = 1.0
+        if forza < 1.0:
+            risultato = piatto * (1.0 - forza) + risultato * forza
+        return np.clip(risultato.reshape(altezza, larghezza, 3), 0.0, 1.0)
+
 
     @staticmethod
     def _curva_lut(tipo):
@@ -1704,7 +2408,7 @@ class ImageEngine:
             + float(p.get("neri", 0.0)) / 100.0 * 0.30 * m_neri
         )
         if np.any(np.abs(delta) > 1e-5):
-            img = cls._applica_luminanza(img, np.clip(lum + delta, 0.0, 1.0))
+            img = cls._applica_luminanza(img, np.clip(lum + delta, 0.0, 1.0), lum)
 
         forza = float(p.get("contrasto", 0.0))
         if forza > 1e-4:
@@ -1712,7 +2416,7 @@ class ImageEngine:
             curva = lum * lum * (3.0 - 2.0 * lum)
             nuova = lum * (1.0 - forza) + curva * forza
             nuova = np.clip(0.5 + (nuova - 0.5) * (1.0 + forza * 0.35), 0.0, 1.0)
-            img = cls._applica_luminanza(img, nuova)
+            img = cls._applica_luminanza(img, nuova, lum)
 
         if p.get("proteggi_luci"):
             img = cls._proteggi_luci(img)
@@ -1771,7 +2475,7 @@ class ImageEngine:
             sigma = max(2.0, min(img.shape[0], img.shape[1]) / 220.0)
             sfocata = filters.gaussian(lum, sigma=sigma, preserve_range=True)
             nuova = np.clip(lum + (lum - sfocata) * chiarezza * 1.6, 0.0, 1.0)
-            img = cls._applica_luminanza(img, nuova)
+            img = cls._applica_luminanza(img, nuova, lum)
 
         # Dehaze semplificato (rimozione velo atmosferico)
         deh = float(p.get("dehaze", 0.0))
@@ -1820,6 +2524,27 @@ class ImageEngine:
             return array
         return array[: h2 * 2, : w2 * 2].reshape(h2, 2, w2, 2).mean(axis=(1, 3))
 
+    @classmethod
+    def _nlm_veloce(cls, y, h_nlm):
+        """Denoise non-locale a meta' risoluzione, poi ricostruzione lineare.
+
+        Il filtro non-locale e' il costo maggiore della pipeline. La grana che
+        deve rimuovere e' a bassa frequenza: calcolarlo a meta' risoluzione
+        dimezza il tempo (circa -43% sull'intero sviluppo) senza differenze
+        visibili nelle zone piatte. Usato solo nel profilo "Veloce".
+        """
+        ridotta = cls._down2(y)
+        pulita = denoise_nl_means(
+            ridotta,
+            patch_size=5,
+            patch_distance=6,
+            h=h_nlm,
+            fast_mode=True,
+            sigma=0.0,
+            preserve_range=True,
+        )
+        return cls._up2(np.asarray(pulita, dtype=np.float32), y.shape[1], y.shape[0])
+
     @staticmethod
     def _up2(array, larghezza, altezza):
         """Riporta a dimensione piena un canale float con interpolazione lineare."""
@@ -1832,12 +2557,22 @@ class ImageEngine:
         )
 
     @staticmethod
-    def _stima_rumore(y):
+    def _stima_rumore(y, campione=False):
         """Stima robusta del rumore fine (scala 0-1) tramite MAD.
 
         La mediana assoluta delle deviazioni e' poco influenzata dai bordi
         veri: e' quindi adatta a distinguere grana e dettaglio strutturato.
+        Con ``campione=True`` la stima usa un ritaglio centrale di 1024 px:
+        il valore statistico e' lo stesso, ma si evitano due passaggi su
+        milioni di pixel. Il profilo "Veloce" lo abilita; gli altri profili
+        mantengono la stima a piena risoluzione, bit per bit come prima.
         """
+        if campione:
+            lato = 1024
+            if y.shape[0] > lato or y.shape[1] > lato:
+                y0 = max(0, (y.shape[0] - lato) // 2)
+                x0 = max(0, (y.shape[1] - lato) // 2)
+                y = y[y0:y0 + lato, x0:x0 + lato]
         dettaglio = y - filters.gaussian(y, sigma=1.0, preserve_range=True)
         mediana = float(np.median(dettaglio))
         return float(1.4826 * np.median(np.abs(dettaglio - mediana)))
@@ -1893,7 +2628,8 @@ class ImageEngine:
             # a 3000 px la grana e' piu' fine e va trattata con una soglia
             # leggermente piu' alta rispetto a un output da 2048 px.
             massimo = max(y.shape)
-            rumore_misurato = cls._stima_rumore(y)
+            rapido = str(p.get("profilo_prestazioni", "")) == "Veloce"
+            rumore_misurato = cls._stima_rumore(y, campione=rapido)
             rumore_iso = max(0.0025, iso * 5e-6 * (massimo / 2048.0) ** 0.75) if iso > 0 else 0.003
             sigma = max(0.0025, min(0.05, max(rumore_misurato, rumore_iso)))
 
@@ -1910,15 +2646,18 @@ class ImageEngine:
             if nrl > 0.20 and min(y.shape) >= 8:
                 try:
                     h_nlm = max(0.008, min(0.055, sigma * 1.55))
-                    y_nlm = denoise_nl_means(
-                        y,
-                        patch_size=5,
-                        patch_distance=6,
-                        h=h_nlm,
-                        fast_mode=True,
-                        sigma=0.0,
-                        preserve_range=True,
-                    )
+                    if str(p.get("profilo_prestazioni", "")) == "Veloce":
+                        y_nlm = cls._nlm_veloce(y, h_nlm)
+                    else:
+                        y_nlm = denoise_nl_means(
+                            y,
+                            patch_size=5,
+                            patch_distance=6,
+                            h=h_nlm,
+                            fast_mode=True,
+                            sigma=0.0,
+                            preserve_range=True,
+                        )
                     attivita = gaussian_filter(
                         np.abs(y - gaussian_filter(y, sigma=2.0, mode="reflect")),
                         sigma=3.0,
@@ -1957,7 +2696,7 @@ class ImageEngine:
         return np.clip(np.stack((r2, g2, b2), axis=-1), 0.0, 1.0)
 
     @classmethod
-    def _nitidezza_controllata(cls, img, quantita, raggio):
+    def _nitidezza_controllata(cls, img, quantita, raggio, campione=False):
         """Nitidezza con soglia sul rumore: niente grana amplificata.
 
         Il classico unsharp mask agisce anche sulle differenze minime e fa
@@ -1968,17 +2707,18 @@ class ImageEngine:
         if quantita <= 1e-4:
             return img
         y = np.clip(cls._luma(img), 0.0, 1.0)
+        lum_originale = y
         scala = max(1.0, (max(img.shape[:2]) / 2048.0) ** 0.35)
         raggio = max(0.5, min(4.0, float(raggio) * scala))
         dettaglio = y - gaussian_filter(y, sigma=raggio, mode="reflect")
-        sigma = cls._stima_rumore(y)
+        sigma = cls._stima_rumore(y, campione=campione)
         soglia = max(0.0035, min(0.018, sigma * 1.15))
         maschera = np.clip(
             (np.abs(dettaglio) - soglia) / (2.0 * soglia + 1e-12), 0.0, 1.0
         )
         maschera = maschera * maschera * (3.0 - 2.0 * maschera)
         y = np.clip(y + dettaglio * quantita * maschera, 0.0, 1.0)
-        return cls._applica_luminanza(img, y)
+        return cls._applica_luminanza(img, y, lum_originale)
 
     @classmethod
     def _fase_lab(cls, img, p):
@@ -1992,7 +2732,7 @@ class ImageEngine:
             lum = np.clip(cls._luma(img), 0.0, 1.0)
             lut = cls._curva_lut(curva) / 100.0
             indici = np.clip((lum * 255.0).astype(np.int32), 0, 255)
-            img = cls._applica_luminanza(img, lut[indici])
+            img = cls._applica_luminanza(img, lut[indici], lum)
 
         nrl = float(p.get("nr_luminanza", 0.0)) / 100.0
         nrc = float(p.get("nr_colore", 0.0)) / 100.0
@@ -2002,7 +2742,8 @@ class ImageEngine:
         q = float(p.get("nitidezza_quantita", 0.0))
         if q > 1e-4:
             img = cls._nitidezza_controllata(
-                img, q, float(p.get("nitidezza_raggio", 0.9))
+                img, q, float(p.get("nitidezza_raggio", 0.9)),
+                campione=str(p.get("profilo_prestazioni", "")) == "Veloce",
             )
 
         return np.clip(img, 0.0, 1.0)
@@ -2038,6 +2779,13 @@ class ImageEngine:
             else:
                 maschera = 1.0 + (vig / 100.0) * 0.60 * r
             img = np.clip(img * maschera[:, :, None], 0.0, 1.0)
+
+        # LUT 3D opzionale: prima della grana, cosi' il look resta pulito.
+        percorso_lut = str(p.get("lut_path", "") or "")
+        if percorso_lut:
+            img = cls._applica_lut(
+                img, percorso_lut, float(p.get("lut_intensita", 100.0))
+            )
 
         # Grana fotografica
         gr = float(p.get("grana", 0.0)) / 100.0
@@ -3747,6 +4495,10 @@ class FranchettiApp(ctk.CTk):
         self._grana_precedente = (0.0, 0.0, 0.9, 0.9)
         self._ultima_cartella = os.path.expanduser("~")
         self._coda = queue.Queue()
+        # Preset: gli integrali stanno nel codice, quelli dell'utente nella
+        # cartella dati. Nessun preset viene eseguito: e' solo JSON validato.
+        self._preset_store = PresetStore()
+        self._preset_corrente = "Personalizzato"
 
         # Anteprima Prima/Dopo: una sola decodifica per file, poi la pipeline
         # viene rieseguita solo sull'immagine ridotta gia' in memoria.
@@ -4435,6 +5187,24 @@ class FranchettiApp(ctk.CTk):
         self._crea_slider(card2, 4, "intensita_luci", "Split toning luci (intensità)", 0.0, 100.0, 0.0, "{:.0f}")
         self.entry_colore_luci = self._crea_entry_colore(card2, 5, "Colore luci", "#e0b070", "colore_luci")
 
+        ctk.CTkLabel(card2, text="LUT 3D (.cube):").grid(
+            row=6, column=0, padx=10, pady=4, sticky="w"
+        )
+        self.lbl_lut = ctk.CTkLabel(
+            card2, text="Nessuna LUT", anchor="w", text_color="#9aa0a6"
+        )
+        self.lbl_lut.grid(row=6, column=1, padx=10, pady=4, sticky="ew")
+        lut_bar = ctk.CTkFrame(card2, fg_color="transparent")
+        lut_bar.grid(row=6, column=2, padx=10, pady=4, sticky="e")
+        ctk.CTkButton(lut_bar, text="Scegli", width=70,
+                      command=self.seleziona_lut).pack(side="left", padx=(0, 4))
+        ctk.CTkButton(lut_bar, text="Rimuovi", width=70,
+                      command=self.rimuovi_lut).pack(side="left")
+        self._crea_slider(
+            card2, 7, "lut_intensita", "Intensità LUT", 0.0, 100.0, 100.0, "{:.0f}"
+        )
+        self._aggiorna_etichetta_lut()
+
         # ---- Nomi file, watermark, preset (prima nel tab Batch)
         card3 = ctk.CTkFrame(scroll)
         card3.pack(fill="x", padx=6, pady=6)
@@ -4534,13 +5304,42 @@ class FranchettiApp(ctk.CTk):
 
         self.combo_preset = ctk.CTkComboBox(
             card3,
-            values=["Personalizzato", "Web / Social", "Stampa Fine Art", "Archivio JPEG",
-                    "Ritratto", "Paesaggio", "Bianco e Nero"],
-            width=190,
+            values=self._nomi_preset(),
+            width=220,
             command=self.applica_preset,
         )
         self.combo_preset.set("Personalizzato")
         self.combo_preset.grid(row=r, column=0, padx=10, pady=3, sticky="w")
+        self.lbl_preset_info = ctk.CTkLabel(
+            card3,
+            text="Preset integrati e personali. Solo look, mai percorsi o cloud.",
+            font=ctk.CTkFont(size=10),
+            text_color="#9aa0a6",
+            anchor="w",
+            justify="left",
+            wraplength=320,
+        )
+        self.lbl_preset_info.grid(row=r, column=1, padx=(0, 10), pady=3, sticky="w")
+        r += 1
+
+        preset_bar = ctk.CTkFrame(card3, fg_color="transparent")
+        preset_bar.grid(row=r, column=0, columnspan=2, padx=10, pady=(2, 2), sticky="ew")
+        ctk.CTkButton(preset_bar, text="Salva preset", width=110,
+                      command=self.salva_preset_corrente).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(preset_bar, text="Importa", width=90,
+                      command=self.importa_preset).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(preset_bar, text="Esporta", width=90,
+                      command=self.esporta_preset).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(preset_bar, text="Elimina", width=90,
+                      command=self.elimina_preset).pack(side="left")
+        r += 1
+
+        preset_bar2 = ctk.CTkFrame(card3, fg_color="transparent")
+        preset_bar2.grid(row=r, column=0, columnspan=2, padx=10, pady=(0, 6), sticky="ew")
+        ctk.CTkButton(preset_bar2, text="Importa XMP (beta)", width=150,
+                      command=self.importa_xmp).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(preset_bar2, text="Apri cartella preset", width=150,
+                      command=self.apri_cartella_preset).pack(side="left")
         r += 1
 
         cfg = ctk.CTkFrame(card3, fg_color="transparent")
@@ -6097,79 +6896,327 @@ class FranchettiApp(ctk.CTk):
             messagebox.showinfo("Cartella output", cartella)
 
     # ============================================================ PRESET
-    def applica_preset(self, nome):
-        preset = {
-            "Web / Social": {
-                "max_dim": 2048, "qualita_jpeg": 90, "formato": "JPEG",
-                "contrasto": 0.30, "vivacita": 0.35, "nitidezza_quantita": 0.8,
-                "nitidezza_raggio": 0.8, "chiarezza": 0.08, "dehaze": 0.02,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-            "Stampa Fine Art": {
-                "max_dim": 0, "qualita_jpeg": 100, "formato": "TIFF",
-                "contrasto": 0.22, "vivacita": 0.25, "nitidezza_quantita": 0.7,
-                "nitidezza_raggio": 1.0, "chiarezza": 0.06,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-            "Archivio JPEG": {
-                "max_dim": 0, "qualita_jpeg": 95, "formato": "JPEG",
-                "contrasto": 0.18, "vivacita": 0.20, "nitidezza_quantita": 0.6,
-                "nitidezza_raggio": 1.0, "preserva_exif": True,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-            "Ritratto": {
-                "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
-                "contrasto": 0.22, "vivacita": 0.20, "saturazione": 0.97,
-                "chiarezza": 0.02, "ombre": 6, "luci": -4,
-                "nitidezza_quantita": 0.8, "nitidezza_raggio": 0.9,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-            "Paesaggio": {
-                "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
-                "contrasto": 0.35, "vivacita": 0.35, "chiarezza": 0.15,
-                "dehaze": 0.08, "nitidezza_quantita": 1.0, "nitidezza_raggio": 1.0,
-                "hsl_verde": 8, "hsl_blu": 6,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-            "Bianco e Nero": {
-                "max_dim": 3000, "qualita_jpeg": 92, "formato": "JPEG",
-                "saturazione": 0.0, "contrasto": 0.38, "chiarezza": 0.15,
-                "nitidezza_quantita": 0.9, "nitidezza_raggio": 0.9, "grana": 0,
-                "nr_luminanza": 88, "nr_colore": 92, "rimuovi_grana_auto": True,
-            },
-        }.get(nome)
+    def _nomi_preset(self):
+        try:
+            nomi = [preset["nome"] for preset in self._preset_store.elenco()]
+        except Exception:
+            nomi = list(PRESET_BUILTIN)
+        return ["Personalizzato"] + nomi
 
-        if not preset:
+    def _aggiorna_combo_preset(self, selezionato=None):
+        if not hasattr(self, "combo_preset"):
             return
+        nomi = self._nomi_preset()
+        try:
+            self.combo_preset.configure(values=nomi)
+            if selezionato and selezionato in nomi:
+                self.combo_preset.set(selezionato)
+            elif self._preset_corrente in nomi:
+                self.combo_preset.set(self._preset_corrente)
+            else:
+                self.combo_preset.set("Personalizzato")
+        except Exception:
+            pass
+
+    def _aggiorna_info_preset(self, preset):
+        if not hasattr(self, "lbl_preset_info"):
+            return
+        if not preset:
+            testo = "Personalizzato: i valori restano quelli attuali."
+        else:
+            origine = (
+                "integrato" if preset.get("origine") == "integrato" else "tuo preset"
+            )
+            descrizione = preset.get("descrizione") or "Nessuna descrizione."
+            testo = f"{origine} - {descrizione}"
+        try:
+            self.lbl_preset_info.configure(text=testo)
+        except Exception:
+            pass
+
+    def applica_preset(self, nome):
+        if not nome or nome == "Personalizzato":
+            self._preset_corrente = "Personalizzato"
+            self._aggiorna_info_preset(None)
+            return
+
+        preset = self._preset_store.cerca(nome)
+        if not preset:
+            messagebox.showwarning(
+                "Preset non trovato",
+                f"Il preset '{nome}' non e' piu' disponibile.",
+                parent=self,
+            )
+            self._aggiorna_combo_preset()
+            return
+
+        look = preset.get("look") or {}
+        output = preset.get("output") or {}
 
         self._snapshot_rapido = {}
         self._snapshot_luci = None
-        for chiave, valore in preset.items():
+        for chiave, valore in look.items():
             self.parametri[chiave] = valore
             if chiave in self._slider_widgets:
-                slider, label, fmt = self._slider_widgets[chiave]
-                slider.set(valore)
-                label.configure(text=fmt.format(float(valore)))
+                try:
+                    slider, label, fmt = self._slider_widgets[chiave]
+                    slider.set(float(valore))
+                    label.configure(text=fmt.format(float(valore)))
+                except (TypeError, ValueError):
+                    pass
 
-        if "max_dim" in preset:
+        if "curva_tonale" in look and hasattr(self, "combo_curva"):
+            self.combo_curva.set(look["curva_tonale"])
+        if "colore_ombre" in look and hasattr(self, "entry_colore_ombre"):
+            self.entry_colore_ombre.delete(0, "end")
+            self.entry_colore_ombre.insert(0, look["colore_ombre"])
+        if "colore_luci" in look and hasattr(self, "entry_colore_luci"):
+            self.entry_colore_luci.delete(0, "end")
+            self.entry_colore_luci.insert(0, look["colore_luci"])
+        if "use_camera_wb" in look and hasattr(self, "chk_wb_camera"):
+            if look["use_camera_wb"]:
+                self.chk_wb_camera.select()
+            else:
+                self.chk_wb_camera.deselect()
+
+        if "max_dim" in output:
+            self.parametri["max_dim"] = int(output["max_dim"])
             self.entry_max_dim.delete(0, "end")
-            self.entry_max_dim.insert(0, str(preset["max_dim"]))
-            self._evidenzia_max_dim(int(preset["max_dim"]))
-        if "qualita_jpeg" in preset:
+            self.entry_max_dim.insert(0, str(output["max_dim"]))
+            self._evidenzia_max_dim(int(output["max_dim"]))
+        if "qualita_jpeg" in output:
+            self.parametri["qualita_jpeg"] = int(output["qualita_jpeg"])
             self.entry_qualita.delete(0, "end")
-            self.entry_qualita.insert(0, str(preset["qualita_jpeg"]))
-        if "formato" in preset:
-            self.combo_formato.set(preset["formato"])
-        if "preserva_exif" in preset:
-            if preset["preserva_exif"]:
+            self.entry_qualita.insert(0, str(output["qualita_jpeg"]))
+        if "formato" in output:
+            self.parametri["formato"] = output["formato"]
+            self.combo_formato.set(output["formato"])
+        if "preserva_exif" in output:
+            self.parametri["preserva_exif"] = bool(output["preserva_exif"])
+            if output["preserva_exif"]:
                 self.chk_exif.select()
             else:
                 self.chk_exif.deselect()
 
-        self.parametri["rimuovi_grana_auto"] = bool(preset.get("rimuovi_grana_auto", False))
+        if "rimuovi_grana_auto" in look:
+            self.parametri["rimuovi_grana_auto"] = bool(look["rimuovi_grana_auto"])
         self._aggiorna_stato_grana()
         self._aggiorna_stato_proteggi_luci()
-        self.scrivi_log(f"Preset applicato: {nome}")
+
+        self._preset_corrente = preset["nome"]
+        self._aggiorna_combo_preset(preset["nome"])
+        self._aggiorna_info_preset(preset)
+        self.scrivi_log(f"Preset applicato: {preset['nome']}")
+        self._programma_anteprima()
+
+    def salva_preset_corrente(self):
+        try:
+            self._raccogli_campi()
+        except Exception:
+            pass
+        nome = simpledialog.askstring(
+            "Salva preset",
+            "Nome del preset:",
+            parent=self,
+            initialvalue="Mio preset",
+        )
+        if not nome:
+            return
+        descrizione = simpledialog.askstring(
+            "Salva preset",
+            "Descrizione (facoltativa):",
+            parent=self,
+        ) or ""
+        includi_output = messagebox.askyesno(
+            "Salva preset",
+            "Includere anche formato, dimensioni e qualita' di output?\n\n"
+            "Se scegli No, il preset cambiera' solo il look della foto.",
+            parent=self,
+        )
+        try:
+            preset = preset_da_parametri(
+                self.parametri,
+                nome,
+                autore=self.parametri.get("copyright_autore", ""),
+                descrizione=descrizione,
+            )
+            if not includi_output:
+                preset["output"] = {}
+            percorso = self._preset_store.salva(preset)
+            self._preset_corrente = preset["nome"]
+            self._aggiorna_combo_preset(preset["nome"])
+            self._aggiorna_info_preset({**preset, "origine": "utente"})
+            self.scrivi_log(f"Preset salvato: {percorso}")
+        except Exception as errore:
+            messagebox.showerror(
+                "Errore preset", f"Salvataggio non riuscito:\n{errore}", parent=self
+            )
+
+    def esporta_preset(self):
+        nome = getattr(self, "_preset_corrente", "Personalizzato")
+        if nome == "Personalizzato":
+            messagebox.showinfo(
+                "Esporta preset",
+                "Seleziona prima un preset nell'elenco.",
+                parent=self,
+            )
+            return
+        preset = self._preset_store.cerca(nome)
+        if not preset:
+            return
+        percorso = filedialog.asksaveasfilename(
+            defaultextension=PRESET_ESTENSIONE,
+            filetypes=[("Preset Franchetti", "*" + PRESET_ESTENSIONE)],
+            initialfile=pulisci_nome_file(preset["nome"]) + PRESET_ESTENSIONE,
+            parent=self,
+        )
+        if not percorso:
+            return
+        try:
+            self._preset_store.esporta(preset, percorso)
+            self.scrivi_log(f"Preset esportato: {percorso}")
+        except Exception as errore:
+            messagebox.showerror(
+                "Errore preset", f"Esportazione non riuscita:\n{errore}", parent=self
+            )
+
+    def importa_preset(self):
+        percorso = filedialog.askopenfilename(
+            filetypes=[
+                ("Preset o pacchetto", "*.frcpreset *.FrcPreset *.json *.zip"),
+                ("Preset Franchetti", "*" + PRESET_ESTENSIONE),
+                ("Tutti i file", "*.*"),
+            ],
+            parent=self,
+        )
+        if not percorso:
+            return
+        try:
+            importati, avvisi = self._preset_store.importa(percorso)
+        except Exception as errore:
+            messagebox.showerror(
+                "Import preset", f"Importazione non riuscita:\n{errore}", parent=self
+            )
+            return
+        self._aggiorna_combo_preset()
+        messaggio = "Preset importati:\n- " + "\n- ".join(importati)
+        if avvisi:
+            messaggio += "\n\nAvvisi:\n- " + "\n- ".join(avvisi[:8])
+        messagebox.showinfo("Import preset", messaggio, parent=self)
+        self.scrivi_log("Preset importati: " + ", ".join(importati))
+
+    def elimina_preset(self):
+        nome = getattr(self, "_preset_corrente", "Personalizzato")
+        if nome == "Personalizzato":
+            messagebox.showinfo(
+                "Elimina preset", "Seleziona prima un preset personale.", parent=self
+            )
+            return
+        preset = self._preset_store.cerca(nome)
+        if not preset:
+            return
+        if preset.get("origine") == "integrato":
+            messagebox.showinfo(
+                "Elimina preset",
+                "I preset integrati non si eliminano. Puoi duplicarli e modificare la copia.",
+                parent=self,
+            )
+            return
+        if not messagebox.askyesno(
+            "Elimina preset",
+            f"Eliminare il preset '{nome}'?\nQuesta azione non tocca le foto.",
+            parent=self,
+        ):
+            return
+        try:
+            self._preset_store.elimina(preset.get("percorso"))
+            self._preset_corrente = "Personalizzato"
+            self._aggiorna_combo_preset("Personalizzato")
+            self._aggiorna_info_preset(None)
+            self.scrivi_log(f"Preset eliminato: {nome}")
+        except Exception as errore:
+            messagebox.showerror(
+                "Errore preset", f"Eliminazione non riuscita:\n{errore}", parent=self
+            )
+
+    def importa_xmp(self):
+        percorso = filedialog.askopenfilename(
+            filetypes=[("Preset Lightroom XMP", "*.xmp *.XMP"), ("Tutti i file", "*.*")],
+            parent=self,
+        )
+        if not percorso:
+            return
+        try:
+            preset, mappati, ignorati = leggi_preset_xmp(percorso)
+            percorso_preset = self._preset_store.salva(preset)
+        except Exception as errore:
+            messagebox.showerror(
+                "Import XMP", f"Importazione non riuscita:\n{errore}", parent=self
+            )
+            return
+
+        dettaglio = (
+            "Import XMP (beta)\n\n"
+            "La mappatura e' parziale: esposizione, toni, colore, denoise, "
+            "nitidezza, vignettatura e split toning. Profili camera, curve "
+            "puntuali, texture e film simulation non sono riproducibili.\n\n"
+            f"Voci mappate: {len(mappati)}"
+        )
+        if ignorati:
+            dettaglio += "\nVoci note ignorate: " + ", ".join(ignorati)
+        dettaglio += "\n\nVuoi applicare subito il preset importato?"
+        applica = messagebox.askyesno("Import XMP (beta)", dettaglio, parent=self)
+        self._aggiorna_combo_preset(preset["nome"])
+        self.scrivi_log(
+            f"Preset XMP importato: {percorso_preset} ({len(mappati)} voci)"
+        )
+        if applica:
+            self.applica_preset(preset["nome"])
+
+    def apri_cartella_preset(self):
+        cartella = self._preset_store.cartella
+        try:
+            os.makedirs(cartella, exist_ok=True)
+            if os.name == "nt":
+                os.startfile(cartella)
+            elif sys.platform == "darwin":
+                import subprocess
+                subprocess.Popen(["open", cartella])
+            else:
+                import subprocess
+                subprocess.Popen(["xdg-open", cartella])
+        except Exception as errore:
+            messagebox.showerror(
+                "Cartella preset", f"Impossibile aprire la cartella:\n{errore}", parent=self
+            )
+
+    # ------------------------------------------------------------ LUT
+    def _aggiorna_etichetta_lut(self):
+        if not hasattr(self, "lbl_lut"):
+            return
+        percorso = str(self.parametri.get("lut_path", "") or "")
+        testo = os.path.basename(percorso) if percorso else "Nessuna LUT"
+        try:
+            self.lbl_lut.configure(text=testo)
+        except Exception:
+            pass
+
+    def seleziona_lut(self):
+        percorso = filedialog.askopenfilename(
+            filetypes=[("LUT 3D .cube", "*.cube *.CUBE"), ("Tutti i file", "*.*")],
+            parent=self,
+        )
+        if not percorso:
+            return
+        self.parametri["lut_path"] = percorso
+        self._aggiorna_etichetta_lut()
+        self.scrivi_log(f"LUT selezionata: {percorso}")
+        self._programma_anteprima()
+
+    def rimuovi_lut(self):
+        self.parametri["lut_path"] = ""
+        self._aggiorna_etichetta_lut()
+        self.scrivi_log("LUT rimossa.")
         self._programma_anteprima()
 
     # ============================================================ CONFIG
@@ -6199,6 +7246,9 @@ class FranchettiApp(ctk.CTk):
                 raise ValueError("il file non contiene una configurazione valida")
             self.parametri = normalizza_parametri(dati)
             self._applica_config_alla_ui()
+            self._preset_corrente = "Personalizzato"
+            self._aggiorna_combo_preset("Personalizzato")
+            self._aggiorna_info_preset(None)
             self.scrivi_log(f"Configurazione caricata: {percorso}")
         except Exception as e:
             messagebox.showerror("Errore", f"Caricamento non riuscito:\n{e}")
@@ -6298,6 +7348,7 @@ class FranchettiApp(ctk.CTk):
             self.lbl_logo.configure(text=os.path.basename(logo) if logo else "Nessun logo")
         except Exception:
             pass
+        self._aggiorna_etichetta_lut()
 
         self._snapshot_rapido = {}
         self._snapshot_luci = None

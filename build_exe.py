@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script di build per Franchetti Raw Converter Pro.
@@ -26,8 +26,8 @@ VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.58.0"
-VERSION_TUPLE = (2, 58, 0, 0)
+VERSION = "2.58.1"
+VERSION_TUPLE = (2, 58, 1, 0)
 
 
 def run_cmd(cmd, cwd=None):
@@ -159,7 +159,12 @@ def main():
         "--hidden-import=tkinter.ttk",
         "--hidden-import=tkinter.filedialog",
         "--hidden-import=tkinter.messagebox",
+        "--hidden-import=tkinter.simpledialog",
         "--hidden-import=tkinter.scrolledtext",
+        "--hidden-import=xml.etree.ElementTree",
+        "--hidden-import=zipfile",
+        "--hidden-import=hashlib",
+        "--hidden-import=colorsys",
         *extra_args,
         str(MAIN_SCRIPT)
     ]

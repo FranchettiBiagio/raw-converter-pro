@@ -1,0 +1,24 @@
+{
+  "tipo": "franchetti-raw-preset-pack",
+  "versione": 1,
+  "nome": "Pack ufficiale Franchetti - Look di base",
+  "autore": "Franchetti",
+  "descrizione": "Tre look pronti: cinema caldo, paesaggio freddo, ritratto soft.",
+  "presets": [
+    {
+      "nome": "Cinema caldo",
+      "file": "Cinema caldo.frcpreset",
+      "sha256": "a65055af3053401ecbb8973c85efc9eb93941f9855c4e26b96107aa422c15b1d"
+    },
+    {
+      "nome": "Paesaggio freddo",
+      "file": "Paesaggio freddo.frcpreset",
+      "sha256": "73095742a8e615b76fbc6313534b7db74d205c6b0cd37bba343189257c768758"
+    },
+    {
+      "nome": "Ritratto soft",
+      "file": "Ritratto soft.frcpreset",
+      "sha256": "9ed71c73ca6fc1aaac3a4856727ae0e8776ab3cdad0a1c95f1a16478ff1bcaa2"
+    }
+  ]
+}
