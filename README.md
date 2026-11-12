@@ -405,6 +405,15 @@ python build_exe.py
 # Output: dist/FranchettiRawConverterPro.exe (~92 MB)
 ```
 
+### Linux / macOS (sperimentale)
+```bash
+sudo apt install python3-tk        # solo Linux Mint, se manca Tk
+python3 -m pip install -r requirements.txt
+python3 main.py                    # esecuzione da sorgente (consigliata)
+python3 build_exe.py               # output senza estensione in dist/
+```
+La build Linux/macOS è sperimentale: `build_exe.py` salta icona, version-info e manifest, che sono opzioni Windows. Se il bundle `--onefile` dà problemi, usa `python3 main.py`.
+
 ### Sviluppo
 ```cmd
 python main.py  # Esegui da sorgente

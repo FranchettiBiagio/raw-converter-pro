@@ -15,6 +15,7 @@ Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
 import os
 import sys
 import io
+import gc
 import json
 import math
 import time
@@ -50,8 +51,25 @@ try:
     from watchdog.events import FileSystemEventHandler
     import requests
 except ImportError as e:  # pragma: no cover
-    print(f"[ERRORE DI DIPENDENZA] Manca una libreria fondamentale: {e}")
-    print("Esegui: pip install numpy rawpy piexif customtkinter Pillow scikit-image requests watchdog")
+    dettaglio = str(e)
+    print("[ERRORE DI AVVIO] Impossibile caricare una libreria fondamentale.")
+    print(f"Dettaglio: {dettaglio}")
+    if "partially initialized" in dettaglio or "_pocketfft" in dettaglio:
+        # Tipico del bundle PyInstaller quando il processo viene interrotto
+        # durante l'import: non significa che numpy manchi davvero.
+        print(
+            "Questo non indica una libreria mancante: l'import di NumPy e' stato "
+            "interrotto mentre il programma si avviava."
+        )
+        print(
+            "Riavvia l'applicazione da sola. Se usi il pacchetto --onefile, "
+            "evita di avviare due copie contemporaneamente e verifica lo spazio "
+            "libero in /tmp."
+        )
+    else:
+        print("Installa le dipendenze con: pip install -r requirements.txt")
+        if os.name != "nt":
+            print("Su Linux Mint, se manca tkinter: sudo apt install python3-tk")
     sys.exit(1)
 
 # Dipendenze opzionali per la ricezione FTP dalle fotocamere e per il testo
@@ -121,6 +139,21 @@ RAW_ESTENSIONI = (
 )
 IMMAGINI_ESTENSIONI = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp")
 ESTENSIONI_ACCETTATE = RAW_ESTENSIONI + IMMAGINI_ESTENSIONI
+
+
+def _pattern_dialogo(estensioni):
+    """Pattern per filedialog, con le varianti maiuscole su Linux/macOS.
+
+    Su Windows il dialogo ignora il caso, su Linux e macOS no: un file
+    DSCF5306.RAF non comparirebbe con il solo pattern "*.raf".
+    """
+    pattern = []
+    for estensione in estensioni:
+        for variante in (estensione, estensione.upper()):
+            valore = "*" + variante
+            if valore not in pattern:
+                pattern.append(valore)
+    return " ".join(pattern)
 
 FORMATI_OUTPUT = {
     "JPEG": ".jpg",
@@ -333,7 +366,22 @@ def normalizza_parametri(parametri):
 # 1b. ELABORAZIONE PARALLELA: TUTTI I CORE DEL PROCESSORE
 # ================================================================================
 def memoria_disponibile_mb():
-    """Memoria fisica libera in MB (Windows); 4 GB come stima prudente."""
+    """Memoria fisica disponibile in MB; 4 GB come stima prudente.
+
+    Su Linux legge MemAvailable da /proc/meminfo: senza questo dato i profili
+    "Bilanciato" e "Qualita'" restano ancorati a una stima Windows e possono
+    avviare troppi processi su macchine piccole o virtuali.
+    """
+    if os.name != "nt":
+        try:
+            with open("/proc/meminfo", encoding="ascii", errors="ignore") as info:
+                for riga in info:
+                    if riga.startswith("MemAvailable:"):
+                        return int(riga.split()[1]) // 1024
+        except Exception:
+            pass
+        return 4096
+
     try:
         import ctypes
 
@@ -357,6 +405,27 @@ def memoria_disponibile_mb():
     except Exception:
         pass
     return 4096
+
+
+def libera_memoria():
+    """Restituisce al sistema la memoria gia' liberata da Python.
+
+    Su Linux glibc tende a tenere per se' la memoria liberata: dopo un batch
+    di RAW la RAM risulta ancora occupata e la macchina va in swap. malloc_trim
+    restituisce quelle pagine al kernel; su Windows serve solo gc.collect().
+    """
+    try:
+        gc.collect()
+    except Exception:
+        pass
+    if os.name == "nt":
+        return
+    try:
+        import ctypes
+
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 @functools.lru_cache(maxsize=1)
@@ -1100,9 +1169,13 @@ def termina_tutti_gli_esecutori():
     for esecutore in esecutori:
         _termina_esecutore(esecutore)
         try:
-            esecutore.shutdown(wait=False, cancel_futures=True)
+            # wait=True: il thread di gestione chiude code e semafori. Con
+            # wait=False restano i "leaked semaphore objects" all'uscita.
+            esecutore.shutdown(wait=True, cancel_futures=True)
         except Exception:
             pass
+        with _LOCK_ESECUTORI:
+            _ESECUTORI_ATTIVI.discard(esecutore)
 
 
 def _pulisci_temporanei(compiti):
@@ -1348,7 +1421,9 @@ def esegui_batch(
                 if annullato_durante:
                     _termina_esecutore(esecutore)
                     try:
-                        esecutore.shutdown(wait=False, cancel_futures=True)
+                        # wait=True chiude anche le code interne: evita i
+                        # semafori rimasti appesi dopo un annullamento.
+                        esecutore.shutdown(wait=True, cancel_futures=True)
                     except Exception:
                         pass
                     # I processi terminati non eseguono il loro finally: elimina
@@ -1364,6 +1439,9 @@ def esegui_batch(
     annullato = bool(cancel_event is not None and cancel_event.is_set())
     if annullato:
         nota("Batch annullato dall'utente.")
+    # Il batch puo' aver lasciato molta memoria libera ma non restituita al
+    # sistema: su Linux la restituiamo esplicitamente prima di aggiornare la GUI.
+    libera_memoria()
     return {
         "ok": ok,
         "errori": errori,
@@ -2416,6 +2494,10 @@ class ImageEngine:
                 f"{testo_copyright} - {os.path.basename(percorso_raw)}",
             )
         nota(f"Salvato: {os.path.basename(percorso_output)}")
+        # Libera subito i buffer grandi della pipeline: nei worker del pool la
+        # memoria resta altrimenti occupata fino alla chiusura del processo.
+        del pil_img, img, img_finale
+        libera_memoria()
         return percorso_output
 
 
@@ -5933,8 +6015,8 @@ class FranchettiApp(ctk.CTk):
             initialdir=self._ultima_cartella,
             title="Seleziona file RAW",
             filetypes=[
-                ("File RAW", " ".join("*" + e for e in RAW_ESTENSIONI)),
-                ("Immagini", " ".join("*" + e for e in IMMAGINI_ESTENSIONI)),
+                ("File RAW", _pattern_dialogo(RAW_ESTENSIONI)),
+                ("Immagini", _pattern_dialogo(IMMAGINI_ESTENSIONI)),
                 ("Tutti i file", "*.*"),
             ],
         )
