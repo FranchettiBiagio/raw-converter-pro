@@ -430,12 +430,38 @@ def libera_memoria():
 
 @functools.lru_cache(maxsize=1)
 def nuclei_fisici():
-    """Nuclei fisici reali (Windows), senza aggiungere psutil come dipendenza.
+    """Nuclei fisici reali (Windows e Linux), senza aggiungere psutil.
 
     I core logici (hyperthreading) vanno bene per il profilo Veloce, ma per
     elaborare RAW il collo di bottiglia e' la memoria: sui core fisici si
     ottiene quasi lo stesso throughput con meno contesa e meno RAM.
     """
+    if os.name != "nt":
+        # Su Linux il fallback "logici // 2" della versione precedente
+        # restituiva 1 su una VM da 2 vCPU: i batch restavano a un solo
+        # processo anche con piu' file. /proc/cpuinfo espone la topologia.
+        try:
+            coppie = set()
+            physical = core = None
+            with open("/proc/cpuinfo", encoding="ascii", errors="ignore") as info:
+                for riga in info:
+                    if riga.startswith("physical id"):
+                        physical = riga.split(":", 1)[1].strip()
+                    elif riga.startswith("core id"):
+                        core = riga.split(":", 1)[1].strip()
+                    elif not riga.strip():
+                        if physical is not None and core is not None:
+                            coppie.add((physical, core))
+                        physical = core = None
+                if physical is not None and core is not None:
+                    coppie.add((physical, core))
+            if coppie:
+                return len(coppie)
+        except Exception:
+            pass
+        # Topologia non disponibile (VM particolari, macOS): usa i logici.
+        return max(1, os.cpu_count() or 1)
+
     try:
         import ctypes
         from ctypes import wintypes
