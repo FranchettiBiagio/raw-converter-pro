@@ -175,9 +175,10 @@ Istruzioni campo per campo e ordine degli screenshot:
 - [ ] Screenshot aggiornati alla 2.58.1 (minimo 4, 16:9)
 - [ ] Immagine hero 2340×1200 aggiornata, se richiesta
 - [ ] Installer EXE/MSI già caricato nella sottomissione esistente
-- [ ] **Installer, EXE app e uninstaller firmati** (Authenticode, catena
-      Microsoft Trusted Root) — vedi `store_assets/STORE_SUBMISSION_REQUIREMENTS.md`
-- [ ] **Package URL** versionato aggiornato al file firmato
+- [ ] **Firma Authenticode non necessaria** per questo prodotto: l'installer
+      v1.0.0 distribuito dallo Store è `NotSigned`. Vedi
+      `store_assets/PUBLISH_EXE_FREE.md`
+- [ ] **Package URL** versionato aggiornato all'installer v2.58.1
 - [ ] **Installer parameters** `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
 - [ ] Codice di ritorno successo `0`, annullamento `2`
 - [ ] Nessuna modifica al pacchetto: solo testo della scheda

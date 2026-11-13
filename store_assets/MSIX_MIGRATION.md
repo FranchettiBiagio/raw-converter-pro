@@ -1,9 +1,16 @@
 # Da EXE/MSI a MSIX — pubblicazione gratuita sullo Store
 
-Percorso scelto: **MSIX firmato da Microsoft Store**. Zero certificati,
-zero abbonamenti, zero SmartScreen. Il pacchetto viene firmato localmente con
-un certificato self-signed solo per i test; Microsoft lo ri-firma con il
-proprio certificato dopo la certificazione.
+> ℹ️ **Percorso alternativo / di riserva.**
+> La via principale è ora quella già accettata dallo Store: installer EXE
+> **senza firma**, come la versione v1.0.0 (verificata `NotSigned` e distribuita
+> da Microsoft). Vedi [`PUBLISH_EXE_FREE.md`](PUBLISH_EXE_FREE.md).
+> Questo documento resta pronto nel caso la certificazione rifiuti
+> l'installer non firmato.
+
+Percorso MSIX: **firmato da Microsoft Store**. Zero certificati, zero
+abbonamenti, zero SmartScreen. Il pacchetto viene firmato localmente con un
+certificato self-signed solo per i test; Microsoft lo ri-firma con il proprio
+certificato dopo la certificazione.
 
 Stato: pacchetto **costruito, firmato e installato con successo** su questa
 macchina il 13/11/2026.

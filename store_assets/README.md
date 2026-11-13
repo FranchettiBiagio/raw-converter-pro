@@ -104,21 +104,22 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 8. **Note sulla versione**: incolla l'URL
    `https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1`
    oppure il testo breve delle note.
-9. **Pacchetto**: percorso scelto → **MSIX**.
-   - Il prodotto attuale è di tipo EXE/MSI e Partner Center non cambia tipo:
-     serve la richiesta al supporto **oppure** un nuovo prodotto MSIX
-     (procedura e testo in `MSIX_MIGRATION.md`).
-   - Pacchetto pronto: `Output\FranchettiRawConverterPro_2.58.1.0_x64.msix`.
-   - Dopo aver ottenuto l'identità MSIX da Partner Center, ricompila con
-     `--identity` e `--publisher` reali, firma e carica il `.msix` in
-     **Packages**.
-   - In alternativa, il percorso EXE/MSI resta descritto in
-     `STORE_SUBMISSION_REQUIREMENTS.md`.
+9. **Pacchetto**: percorso scelto → **EXE/MSI, senza firma** (come la
+   versione v1.0.0 già pubblicata e distribuita dallo Store).
+   - **Package URL**:
+     `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+   - **Installer parameters**:
+     `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
+   - **App type**: EXE; **Architecture**: x64.
+   - Procedura e verifiche: `PUBLISH_EXE_FREE.md`.
+   - Solo se la certificazione dovesse rifiutare la firma mancante, si passa
+     a MSIX (`MSIX_MIGRATION.md`).
 10. **Salva** → **Invia per la certificazione** (Submit for certification).
 
-> ✅ **Nessun certificato da comprare.** Con MSIX Microsoft ri-firma il
-> pacchetto: la firma self-signed serve solo per i test locali. Vedi
-> `MSIX_MIGRATION.md` per build, firma di prova e upload.
+> ✅ **Nessun certificato da comprare.** Verificato il 13/11/2026: l'installer
+> che Microsoft distribuisce dallo Store per questa app è `NotSigned`, come
+> gli installer GitHub v2.50.1–v2.58.1. Il metodo gratuito già accettato è
+> descritto in `PUBLISH_EXE_FREE.md`.
 
 ### Dopo l'invio
 

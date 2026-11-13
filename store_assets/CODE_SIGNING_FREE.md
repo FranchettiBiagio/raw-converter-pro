@@ -1,9 +1,11 @@
 # Firma gratuita del setup — opzioni reali
 
-> ✅ **Decisione presa: MSIX firmato gratuitamente dallo Store.**
-> Procedura operativa, test già eseguiti e passi per Partner Center in
-> [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md). Questo documento resta come
-> confronto tra le alternative gratuite.
+> ✅ **Aggiornamento 13/11/2026: non serve alcuna firma.**
+> L'installer v1.0.0 distribuito dallo Store e il payload installato sono
+> `NotSigned`: Microsoft ha accettato e distribuisce un installer non firmato.
+> Il percorso gratuito già collaudato è quello EXE/MSI senza firma:
+> [`PUBLISH_EXE_FREE.md`](PUBLISH_EXE_FREE.md).
+> MSIX resta l'alternativa di riserva: [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md).
 
 Domanda: si può firmare l'installer **senza pagare**?
 

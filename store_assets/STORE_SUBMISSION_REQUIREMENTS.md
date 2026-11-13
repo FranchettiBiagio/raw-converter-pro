@@ -1,11 +1,14 @@
 # Requisiti Microsoft Store per installer EXE/MSI — stato e cose da fare
 
-> ⚠️ **Percorso scelto: MSIX firmato gratuitamente dallo Store.**
-> Questo documento descrive i requisiti del percorso EXE/MSI, che **non**
-> richiede più la firma Authenticode a pagamento perché non verrà usato.
-> Per il percorso effettivo vedi [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md).
-> Le sezioni sulla firma restano come riferimento storico e per il caso in cui
-> si torni al pacchetto EXE.
+> ✅ **Percorso consigliato: EXE/MSI, gratis, come la versione già pubblicata.**
+> Verifica del 13/11/2026: l'installer che Microsoft distribuisce dallo Store
+> per questa app è **`NotSigned`**, così come tutti gli installer GitHub
+> v2.50.1–v2.58.1 e il payload installato. La firma Authenticode è richiesta
+> dalla documentazione ma **non è stata applicata** a questo prodotto.
+> Procedura operativa: [`PUBLISH_EXE_FREE.md`](PUBLISH_EXE_FREE.md).
+> Il percorso MSIX resta come alternativa gratuita se la certificazione
+> dovesse rifiutare l'installer non firmato:
+> [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md).
 
 Fonte: Microsoft Learn, *App package requirements for MSI/EXE app* e
 *Upload app packages for MSI/EXE app*. Riassunto operativo per
@@ -33,10 +36,10 @@ Per accettare un installer EXE/MSI lo Store richiede:
 |---|---|---|
 | Installer EXE | ✅ pronto | `Output\Franchetti_Raw_Converter_Setup_v2.58.1.exe` (Inno Setup 7) |
 | Installer offline/standalone | ✅ sì | l'EXE dell'app è incorporato, nessun download |
-| URL HTTPS versionato | ⚠️ da confermare | URL release GitHub disponibile (vedi §3) |
-| Firma installer | ❌ **mancante** | `Get-AuthenticodeSignature` → `NotSigned` |
-| Firma EXE applicazione | ❌ **mancante** | `dist\FranchettiRawConverterPro.exe` → `NotSigned` |
-| Firma uninstaller | ❌ mancante | viene generato al setup; va firmato via Inno (`SignedUninstaller`) |
+| URL HTTPS versionato | ✅ pronto | release GitHub `v2.58.1` (vedi §3) |
+| Firma installer | ✅ non necessaria in pratica | `NotSigned`, come l'installer v1.0.0 distribuito dallo Store |
+| Firma EXE applicazione | ✅ non necessaria in pratica | `NotSigned`, come il payload installato dallo Store |
+| Firma uninstaller | ✅ non necessaria in pratica | `unins000.exe` dello Store è `NotSigned` |
 | Installazione silenziosa | ✅ supportata | Inno Setup accetta `/VERYSILENT` |
 | Parametri installer in Partner Center | ⚠️ da inserire | vedi §3 |
 
@@ -70,8 +73,18 @@ Note:
 
 ## 4. Come ottenere la firma
 
+> ✅ **Per questo prodotto la firma non è stata necessaria.** L'installer
+> v1.0.0 distribuito dallo Store e il payload installato sono `NotSigned`
+> (verifica del 13/11/2026). La procedura consigliata è quindi caricare
+> l'installer v2.58.1 senza firma, come già fatto in passato:
+> [`PUBLISH_EXE_FREE.md`](PUBLISH_EXE_FREE.md).
+>
+> Le opzioni sotto restano valide **solo se** la certificazione dovesse
+> rifiutare l'installer non firmato.
+
 Lo Store **non** ri-firma gli installer EXE/MSI (a differenza degli MSIX).
-Serve un certificato CA accreditato. Opzioni realistiche:
+La documentazione Microsoft richiede un certificato CA accreditato. Opzioni
+realistiche, se serve:
 
 | Opzione | Costo indicativo | Note |
 |---|---|---|
