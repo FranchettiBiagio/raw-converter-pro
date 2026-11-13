@@ -83,6 +83,9 @@ Due strade:
 Partner Center → **Help + support** → **New support request** →
 *Publishing and submissions* → *App package / package type*.
 
+Testo completo, campi da compilare e risposte alle domande tipiche:
+[`PARTNER_CENTER_MSIX_SUPPORT_REQUEST.md`](PARTNER_CENTER_MSIX_SUPPORT_REQUEST.md).
+
 Testo pronto (inglese):
 
 > Subject: Change existing product package type from EXE/MSI to MSIX
