@@ -125,20 +125,17 @@ pacchetto da EXE/MSI a MSIX.
 
 1. Partner Center → prodotto → **Product identity**: annota
    **Package/Identity/Name** e **Package/Identity/Publisher**.
-2. Ricompila e firma:
+2. Ricompila, firma e verifica con un solo comando:
 
 ```powershell
 cd C:\FranchettiRawConverterPro
-python tools\build_msix.py `
-  --identity "<Package/Identity/Name>" `
-  --publisher "<Package/Identity/Publisher>" `
-  --publisher-display "Franchetti Academy"
-
-.\tools\sign_msix_dev.ps1 `
-  -Package "Output\FranchettiRawConverterPro_2.58.1.0_x64.msix" `
-  -Publisher "<Package/Identity/Publisher>" `
-  -IdentityName "<Package/Identity/Name>"
+.\tools\build_store_msix.ps1 `
+  -Identity "<Package/Identity/Name>" `
+  -Publisher "<Package/Identity/Publisher>"
 ```
+
+Lo script controlla che il manifest nel pacchetto e il firmatario coincidano
+con i valori indicati, e stampa lo SHA-256.
 
 3. Partner Center → **Packages** → carica il `.msix`.
 4. Verifica che la versione sia superiore all'ultima pubblicata.

@@ -32,6 +32,7 @@ richiede alcun certificato allo sviluppatore.
 | `msix/AppxManifest.xml.template` | manifest con segnaposto `{{IDENTITY_NAME}}`, `{{PUBLISHER}}`, `{{VERSION}}` |
 | `tools/build_msix.py` | crea layout, asset tile da `icon_512.png`, esegue `makeappx pack` |
 | `tools/sign_msix_dev.ps1` | certificato self-signed, firma, installazione di prova |
+| `tools/build_store_msix.ps1` | build + firma + verifica con l'identità reale di Partner Center |
 | `Output/FranchettiRawConverterPro_2.58.1.0_x64.msix` | pacchetto generato (circa 95 MB) |
 
 Strumenti: `makeappx.exe` e `signtool.exe` da *Windows SDK Build Tools*
@@ -116,18 +117,12 @@ strada B.
 | Package/Identity/Name | `12345FranchettiAcademy.FranchettiRawConverterPro` | `Identity/@Name` |
 | Package/Identity/Publisher | `CN=1A2B3C4D-....` | `Identity/@Publisher` |
 
-4. Ricompila con i valori reali:
+4. Ricompila, firma e verifica con un solo comando:
 
 ```powershell
-python tools\build_msix.py `
-  --identity "12345FranchettiAcademy.FranchettiRawConverterPro" `
-  --publisher "CN=1A2B3C4D-...." `
-  --publisher-display "Franchetti Academy"
-
-.\tools\sign_msix_dev.ps1 `
-  -Package "Output\FranchettiRawConverterPro_2.58.1.0_x64.msix" `
-  -Publisher "CN=1A2B3C4D-...." `
-  -IdentityName "12345FranchettiAcademy.FranchettiRawConverterPro"
+.\tools\build_store_msix.ps1 `
+  -Identity "12345FranchettiAcademy.FranchettiRawConverterPro" `
+  -Publisher "CN=1A2B3C4D-...."
 ```
 
 5. Carica il `.msix` in **Packages** (il publisher deve combaciare
@@ -176,8 +171,10 @@ Da compilare in Partner Center:
 - **Architecture**: x64 (dedotta dal pacchetto).
 - **Capabilities**: `runFullTrust` dichiarata nel manifest.
 - **Privacy policy URL**: obbligatoria (già presente).
-- **Note per la certificazione**: dichiarare che è un'app desktop completa e
-  che non raccoglie dati telemetrici.
+- **Note per la certificazione**: usa il testo pronto in
+  [`MSIX_CERTIFICATION_NOTES.md`](MSIX_CERTIFICATION_NOTES.md) (EN/IT).
+  Dichiara che è un'app desktop completa, senza telemetria, con rete usata
+  solo per tethering locale o condivisione avviata dall'utente.
 - **Screenshot**: quelli già pronti in `store_assets/`.
 - **Età**: 3+ (nessun contenuto sensibile).
 
@@ -187,10 +184,21 @@ Da compilare in Partner Center:
 
 1. Aggiorna `VERSION` (es. `2.58.2.0`; l'ultimo numero deve restare `0`).
 2. Ricompila l'EXE (`python build_exe.py`).
-3. `python tools\build_msix.py --version 2.58.2.0 --identity ... --publisher ...`
-4. Firma con `tools\sign_msix_dev.ps1`.
-5. Carica in Partner Center → **Packages** → **Submit for certification**.
-6. Aggiorna `CHANGELOG.md`, `RELEASE_NOTES.md`, `SHA256SUMS.txt`.
+3. Un solo comando per build, firma e verifica con l'identità reale:
+
+```powershell
+.\tools\build_store_msix.ps1 `
+  -Identity "<Package/Identity/Name>" `
+  -Publisher "<Package/Identity/Publisher>" `
+  -Version "2.58.2.0"
+```
+
+4. Carica in Partner Center → **Packages** → **Submit for certification**.
+5. Aggiorna `CHANGELOG.md`, `RELEASE_NOTES.md`, `SHA256SUMS.txt`.
+
+Lo script estrae il manifest dal pacchetto e verifica che identità, publisher,
+versione e architettura coincidano con i valori richiesti, e che il firmatario
+corrisponda al publisher.
 
 La versione MSIX **deve aumentare** a ogni invio; lo Store rifiuta versioni
 uguali o inferiori.
