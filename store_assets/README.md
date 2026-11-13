@@ -117,10 +117,10 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 
 > ⚠️ **Firma obbligatoria.** Lo Store non ri-firma gli installer EXE/MSI:
 > installer, EXE dell'app e uninstaller devono essere firmati con un
-> certificato CA accreditato (es. Azure Artifact Signing). Al momento i file
-> sono `NotSigned`: senza firma la sottomissione viene rifiutata. La pipeline
-> è pronta in `tools/sign_and_build.ps1`; procedura completa in
-> `AZURE_ARTIFACT_SIGNING_SETUP.md`, requisiti in
+> certificato CA accreditato. Al momento i file sono `NotSigned`: senza firma
+> la sottomissione viene rifiutata. La pipeline è pronta in
+> `tools/sign_and_build.ps1`; per una persona fisica in Italia serve un
+> certificato IV (`CODE_SIGNING_INDIVIDUAL_IT.md`), requisiti generali in
 > `STORE_SUBMISSION_REQUIREMENTS.md`.
 
 ### Dopo l'invio

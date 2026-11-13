@@ -75,20 +75,30 @@ Serve un certificato CA accreditato. Opzioni realistiche:
 
 Con Azure Artifact Signing il certificato catena a un root Microsoft ed è
 accettato dallo Store. **In Italia l'identity validation individuale non è
-disponibile**: serve un'entità legale (partita IVA / ditta / società) per la
-Organization validation, altrimenti un certificato IV/OV da CA commerciale.
-Procedura completa: [`AZURE_ARTIFACT_SIGNING_SETUP.md`](AZURE_ARTIFACT_SIGNING_SETUP.md).
+disponibile**: il servizio richiede un'entità legale (partita IVA / ditta /
+società) per la Organization validation.
+
+**Situazione attuale del publisher: persona fisica, senza partita IVA.**
+Percorso applicabile: certificato **IV (Individual Validation)** da una CA
+commerciale — SSL.com IV a 129 USD/anno + eSigner (~20 USD/mese nei mesi di
+firma) oppure Certum Standard Code Signing in the Cloud a 209 €/anno.
+Guida dedicata: [`CODE_SIGNING_INDIVIDUAL_IT.md`](CODE_SIGNING_INDIVIDUAL_IT.md).
+La procedura Azure resta valida in futuro, se nasce un'entità legale:
+[`AZURE_ARTIFACT_SIGNING_SETUP.md`](AZURE_ARTIFACT_SIGNING_SETUP.md).
 
 ### Pipeline pronta nel repo
 
 ```powershell
-# 1) Azure Artifact Signing (dlib e signtool gia installati su questa macchina)
-.\tools\sign_and_build.ps1 -Mode Azure -Account <account> -Profile <profilo>
+# 1) Individua il certificato disponibile (token o cloud)
+.\tools\check-signing-cert.ps1
 
-# 2) Certificato in CurrentUser\My (token)
+# 2) Certificato in CurrentUser\My (token, SSL.com eSigner CKA, Certum SimplySign)
 .\tools\sign_and_build.ps1 -Mode Store -Thumbprint <THUMBPRINT>
 
-# 3) PFX (solo se hai un certificato con chiave esportabile)
+# 3) Azure Artifact Signing (solo con entita legale)
+.\tools\sign_and_build.ps1 -Mode Azure -Account <account> -Profile <profilo>
+
+# 4) PFX (solo se hai un certificato con chiave esportabile)
 .\tools\sign_and_build.ps1 -Mode Pfx -PfxPath C:\certs\frc.pfx -PfxPassword "***"
 ```
 
@@ -107,7 +117,8 @@ Lo script:
 Stato dei prerequisiti su questa macchina (13/11/2026): `signtool.exe`
 10.0.26100.0 ✅, dlib Artifact Signing 1.0.151 ✅ (in
 `tools\artifactsigning\`), .NET 8/10 ✅, VC++ Redistributable ✅.
-Manca solo l'account Azure con identità validata e certificate profile.
+Manca solo il certificato: con una persona fisica serve un IV da CA
+commerciale (`CODE_SIGNING_INDIVIDUAL_IT.md`).
 `sign_tool.iss` e `tools\metadata.json` sono generati e ignorati da git.
 
 ## 5. Dopo la firma
