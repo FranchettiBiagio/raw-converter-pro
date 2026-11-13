@@ -28,3 +28,7 @@ store_assets_v2.58.1.zip
 
 # Generato da tools/sign_and_build.ps1
 sign_tool.iss
+
+# Client dlib Artifact Signing e metadata di firma (locali)
+tools/artifactsigning/
+tools/metadata.json

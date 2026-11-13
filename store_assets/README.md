@@ -119,7 +119,8 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 > installer, EXE dell'app e uninstaller devono essere firmati con un
 > certificato CA accreditato (es. Azure Artifact Signing). Al momento i file
 > sono `NotSigned`: senza firma la sottomissione viene rifiutata. La pipeline
-> è pronta in `tools/sign_and_build.ps1`; vedi
+> è pronta in `tools/sign_and_build.ps1`; procedura completa in
+> `AZURE_ARTIFACT_SIGNING_SETUP.md`, requisiti in
 > `STORE_SUBMISSION_REQUIREMENTS.md`.
 
 ### Dopo l'invio

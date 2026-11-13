@@ -68,41 +68,47 @@ Serve un certificato CA accreditato. Opzioni realistiche:
 
 | Opzione | Costo indicativo | Note |
 |---|---|---|
-| **Azure Artifact Signing** (ex Trusted Signing) | ~9,99 USD/mese | Cloud, niente token; aperto anche ai privati; firma con `signtool /dlib` |
+| **Azure Artifact Signing** (ex Trusted Signing) | ~9,99 USD/mese | Cloud, niente token. Public Trust per le **organizzazioni** UE; per le persone fisiche solo USA/Canada |
 | Certificato **OV/IV** code signing | ~200–400 €/anno | Su token/HSM (obbligatorio dal 2023) |
 | Certificato **EV** code signing | ~300–600 €/anno | Massima reputazione SmartScreen |
 | Self-signed | 0 € | ❌ **non accettato** dallo Store |
 
 Con Azure Artifact Signing il certificato catena a un root Microsoft ed è
-accettato dallo Store.
+accettato dallo Store. **In Italia l'identity validation individuale non è
+disponibile**: serve un'entità legale (partita IVA / ditta / società) per la
+Organization validation, altrimenti un certificato IV/OV da CA commerciale.
+Procedura completa: [`AZURE_ARTIFACT_SIGNING_SETUP.md`](AZURE_ARTIFACT_SIGNING_SETUP.md).
 
 ### Pipeline pronta nel repo
 
 ```powershell
-# 1) Certificato in CurrentUser\My (token o Azure)
+# 1) Azure Artifact Signing (dlib e signtool gia installati su questa macchina)
+.\tools\sign_and_build.ps1 -Mode Azure -Account <account> -Profile <profilo>
+
+# 2) Certificato in CurrentUser\My (token)
 .\tools\sign_and_build.ps1 -Mode Store -Thumbprint <THUMBPRINT>
 
-# 2) PFX (solo se hai un certificato con chiave esportabile)
+# 3) PFX (solo se hai un certificato con chiave esportabile)
 .\tools\sign_and_build.ps1 -Mode Pfx -PfxPath C:\certs\frc.pfx -PfxPassword "***"
-
-# 3) Azure Artifact Signing
-.\tools\sign_and_build.ps1 -Mode Azure `
-  -Dlib "C:\...\Azure.CodeSigning.Dlib.dll" `
-  -Metadata "C:\...\metadata.json"
 ```
 
 Lo script:
 
-1. firma `dist\FranchettiRawConverterPro.exe` (SHA-256 + timestamp);
-2. genera `sign_tool.iss` con il comando `signtool` per Inno Setup;
-3. compila `setup.iss` con `/DSIGN`, firmando installer **e** uninstaller
+1. genera `tools\metadata.json` (solo modalità Azure);
+2. firma `dist\FranchettiRawConverterPro.exe` (SHA-256 + timestamp; con Azure
+   usa `http://timestamp.acs.microsoft.com`, obbligatorio perché i certificati
+   durano 3 giorni);
+3. genera `sign_tool.iss` con il comando `signtool` per Inno Setup;
+4. compila `setup.iss` con `/DSIGN`, firmando installer **e** uninstaller
    (`SignTool` + `SignedUninstaller`, inclusi via `sign_tool.iss`);
-4. verifica le firme e stampa gli SHA-256 (esce con codice 1 se una firma non
+5. verifica le firme e stampa gli SHA-256 (esce con codice 1 se una firma non
    è valida).
 
-Prerequisiti: `signtool.exe` (Windows SDK → Signing Tools) e Inno Setup 7.
-Su questa macchina **signtool non è installato**: va aggiunto prima di firmare.
-`sign_tool.iss` è generato e ignorato da git: non modificarlo a mano.
+Stato dei prerequisiti su questa macchina (13/11/2026): `signtool.exe`
+10.0.26100.0 ✅, dlib Artifact Signing 1.0.151 ✅ (in
+`tools\artifactsigning\`), .NET 8/10 ✅, VC++ Redistributable ✅.
+Manca solo l'account Azure con identità validata e certificate profile.
+`sign_tool.iss` e `tools\metadata.json` sono generati e ignorati da git.
 
 ## 5. Dopo la firma
 
