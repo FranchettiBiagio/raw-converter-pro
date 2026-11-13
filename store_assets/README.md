@@ -104,24 +104,21 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 8. **Note sulla versione**: incolla l'URL
    `https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1`
    oppure il testo breve delle note.
-9. **Pacchetto**: lascia l'installer già presente
-   (`WPM` / Inno Setup). Non serve ricaricarlo se la sottomissione punta già a
-   `Franchetti_Raw_Converter_Setup_v2.58.1.exe`.
-   - **App type**: EXE; **Architecture**: x64
-   - **Package URL**:
-     `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
-   - **Installer parameters**:
-     `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
-   - Dettagli e requisiti di firma: `STORE_SUBMISSION_REQUIREMENTS.md`
+9. **Pacchetto**: percorso scelto → **MSIX**.
+   - Il prodotto attuale è di tipo EXE/MSI e Partner Center non cambia tipo:
+     serve la richiesta al supporto **oppure** un nuovo prodotto MSIX
+     (procedura e testo in `MSIX_MIGRATION.md`).
+   - Pacchetto pronto: `Output\FranchettiRawConverterPro_2.58.1.0_x64.msix`.
+   - Dopo aver ottenuto l'identità MSIX da Partner Center, ricompila con
+     `--identity` e `--publisher` reali, firma e carica il `.msix` in
+     **Packages**.
+   - In alternativa, il percorso EXE/MSI resta descritto in
+     `STORE_SUBMISSION_REQUIREMENTS.md`.
 10. **Salva** → **Invia per la certificazione** (Submit for certification).
 
-> ⚠️ **Firma obbligatoria.** Lo Store non ri-firma gli installer EXE/MSI:
-> installer, EXE dell'app e uninstaller devono essere firmati con un
-> certificato CA accreditato. Al momento i file sono `NotSigned`: senza firma
-> la sottomissione viene rifiutata. La pipeline è pronta in
-> `tools/sign_and_build.ps1`; per una persona fisica in Italia serve un
-> certificato IV (`CODE_SIGNING_INDIVIDUAL_IT.md`), requisiti generali in
-> `STORE_SUBMISSION_REQUIREMENTS.md`.
+> ✅ **Nessun certificato da comprare.** Con MSIX Microsoft ri-firma il
+> pacchetto: la firma self-signed serve solo per i test locali. Vedi
+> `MSIX_MIGRATION.md` per build, firma di prova e upload.
 
 ### Dopo l'invio
 

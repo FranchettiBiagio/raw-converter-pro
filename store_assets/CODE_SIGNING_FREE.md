@@ -1,5 +1,10 @@
 # Firma gratuita del setup — opzioni reali
 
+> ✅ **Decisione presa: MSIX firmato gratuitamente dallo Store.**
+> Procedura operativa, test già eseguiti e passi per Partner Center in
+> [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md). Questo documento resta come
+> confronto tra le alternative gratuite.
+
 Domanda: si può firmare l'installer **senza pagare**?
 
 Risposta breve: **non esiste un certificato Authenticode gratuito rilasciato a

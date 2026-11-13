@@ -418,6 +418,16 @@ python build_exe.py
 # Output: dist/FranchettiRawConverterPro.exe (~92 MB)
 ```
 
+### Pacchetto MSIX per il Microsoft Store
+```cmd
+python tools\build_msix.py
+:: Output: Output\FranchettiRawConverterPro_2.58.1.0_x64.msix
+
+.\tools\sign_msix_dev.ps1 -Package "Output\FranchettiRawConverterPro_2.58.1.0_x64.msix" -Install
+```
+Richiede *Windows SDK Build Tools* (`makeappx.exe`, `signtool.exe`). Guida
+completa, identità Partner Center e test: `store_assets\MSIX_MIGRATION.md`.
+
 ### Linux / macOS (sperimentale)
 ```bash
 sudo apt install python3-tk        # solo Linux Mint, se manca Tk

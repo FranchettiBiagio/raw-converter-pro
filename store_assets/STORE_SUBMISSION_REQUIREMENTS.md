@@ -1,5 +1,12 @@
 # Requisiti Microsoft Store per installer EXE/MSI — stato e cose da fare
 
+> ⚠️ **Percorso scelto: MSIX firmato gratuitamente dallo Store.**
+> Questo documento descrive i requisiti del percorso EXE/MSI, che **non**
+> richiede più la firma Authenticode a pagamento perché non verrà usato.
+> Per il percorso effettivo vedi [`MSIX_MIGRATION.md`](MSIX_MIGRATION.md).
+> Le sezioni sulla firma restano come riferimento storico e per il caso in cui
+> si torni al pacchetto EXE.
+
 Fonte: Microsoft Learn, *App package requirements for MSI/EXE app* e
 *Upload app packages for MSI/EXE app*. Riassunto operativo per
 Franchetti Raw Converter Pro v2.58.1.
