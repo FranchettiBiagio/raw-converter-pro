@@ -69,6 +69,12 @@ Get-AppxPackage -Name "FranchettiAcademy.FranchettiRawConverterPro" | Remove-App
 > `LocalMachine\TrustedPeople` **e** `LocalMachine\Root`, altrimenti
 > `Add-AppxPackage` fallisce con `0x800B0109`.
 
+> Nota Store: Microsoft documenta che per la distribuzione via Store la firma
+> è gestita dal servizio. Il pacchetto che carichiamo è comunque firmato con
+> subject **identico** a `Package/Identity/Publisher`, che è la forma
+> validata in upload; dopo la certificazione Microsoft ri-firma il pacchetto
+> con il proprio certificato.
+
 ---
 
 ## 3. Il vincolo di Partner Center
@@ -105,6 +111,10 @@ Testo pronto (inglese):
 
 Tempi tipici: alcuni giorni lavorativi. Se il supporto rifiuta, resta la
 strada B.
+
+**Stato:** richiesta aperta il **13/11/2026**, numero
+**2611130050000788**, risposta prevista entro 8 ore, contatto via email
+(`reportage@libero.it`).
 
 ### B. Nuovo prodotto MSIX (nessuna attesa, si riparte da zero)
 
