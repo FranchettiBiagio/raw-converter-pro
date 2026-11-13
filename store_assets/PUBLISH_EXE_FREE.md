@@ -66,15 +66,24 @@ percorso che ha già funzionato è disponibile di nuovo a costo zero.
 4. Architettura: **x64**. Tipo: **EXE**.
 5. Attendi la validazione della URL **senza inviare**. Se Partner Center non
    segnala errori di firma, la strada è percorribile.
-6. Compila le note di certificazione (vedi
-   [`MSIX_CERTIFICATION_NOTES.md`](MSIX_CERTIFICATION_NOTES.md), la parte
-   senza riferimenti MSIX).
+6. Compila le note di certificazione: testo pronto in
+   [`CERTIFICATION_NOTES_EXE_v2.58.1.md`](CERTIFICATION_NOTES_EXE_v2.58.1.md).
 7. **Salva** e **Invia per la certificazione**.
 
 Se la validazione o la certificazione rifiuta per firma mancante:
 
 - non modificare la scheda già live (la versione precedente resta pubblicata);
 - riprendi il percorso MSIX: `store_assets\MSIX_MIGRATION.md`.
+
+### 3.1 Come leggere l'esito della validazione
+
+| Messaggio di Partner Center | Significato | Cosa fare |
+|---|---|---|
+| Nessun errore, pacchetto accettato | La firma non è bloccante | Salva e invia |
+| Errore su **firma / signature / certificate** | La regola Authenticode viene applicata | Passa a MSIX |
+| Errore su **installazione / silent install / exit code** | Problema di scope o di parametri, non di firma | Si ricompila una variante Store con `PrivilegesRequired=admin` e si carica un nuovo asset |
+| Errore su **URL non raggiungibile** | Il file non è scaricabile o l'URL non è immutabile | Verifica che la release sia pubblica e che l'URL contenga `v2.58.1` |
+| Errore su **versione** | La versione non è superiore a 1.0.0 | Inserisci `2.58.1` nel campo versione |
 
 ---
 
