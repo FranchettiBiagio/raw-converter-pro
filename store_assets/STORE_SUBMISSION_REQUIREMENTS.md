@@ -1,0 +1,123 @@
+# Requisiti Microsoft Store per installer EXE/MSI — stato e cose da fare
+
+Fonte: Microsoft Learn, *App package requirements for MSI/EXE app* e
+*Upload app packages for MSI/EXE app*. Riassunto operativo per
+Franchetti Raw Converter Pro v2.58.1.
+
+## 1. Regole dello Store (EXE/MSI)
+
+Per accettare un installer EXE/MSI lo Store richiede:
+
+1. **URL HTTPS diretto e versionato** dell'installer, ospitato su CDN o
+   infrastruttura propria. Il file a quell'URL **non deve cambiare** dopo
+   l'invio.
+2. **Firma Authenticode** dell'installer **e di tutti i file PE** che contiene
+   (EXE, DLL, uninstaller), con certificato che catena al
+   *Microsoft Trusted Root Program*. Un certificato self-signed **non** basta.
+3. **Installazione silenziosa**: il Partner Center chiede gli switch da passare
+   all'EXE, oppure un installer già silenzioso di suo.
+4. **Installer offline e standalone**: nessun download di componenti durante
+   il setup; nessun bundle di software non correlato.
+5. **Architettura dichiarata** (x64) e lingue supportate.
+
+## 2. Stato attuale del progetto
+
+| Requisito | Stato | Dettaglio |
+|---|---|---|
+| Installer EXE | ✅ pronto | `Output\Franchetti_Raw_Converter_Setup_v2.58.1.exe` (Inno Setup 7) |
+| Installer offline/standalone | ✅ sì | l'EXE dell'app è incorporato, nessun download |
+| URL HTTPS versionato | ⚠️ da confermare | URL release GitHub disponibile (vedi §3) |
+| Firma installer | ❌ **mancante** | `Get-AuthenticodeSignature` → `NotSigned` |
+| Firma EXE applicazione | ❌ **mancante** | `dist\FranchettiRawConverterPro.exe` → `NotSigned` |
+| Firma uninstaller | ❌ mancante | viene generato al setup; va firmato via Inno (`SignedUninstaller`) |
+| Installazione silenziosa | ✅ supportata | Inno Setup accetta `/VERYSILENT` |
+| Parametri installer in Partner Center | ⚠️ da inserire | vedi §3 |
+
+Hash dei file **non firmati** attualmente pubblicati su GitHub:
+
+```
+316a34c16d45f6e3cca05e517b95797d83bc0e88adf4199659025e4cb1b86405  Franchetti_Raw_Converter_Setup_v2.58.1.exe
+0dd9593e879268b3209c33052e17f0323013389082d9ec985e58b5ec0a1cea7d  FranchettiRawConverterPro.exe
+```
+
+## 3. Valori da inserire in Partner Center (Packages)
+
+| Campo | Valore |
+|---|---|
+| App type | **EXE** |
+| Architecture | **x64** |
+| Package URL | `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe` |
+| Installer parameters | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-` |
+| Return code: success | `0` |
+| Return code: cancelled by user | `2` |
+| Altre lingue | Italiano (Italia) |
+
+Note:
+
+- L'URL GitHub è versionato (contiene `v2.58.1`) e i file di una release
+  GitHub non vengono sovrascritti: va bene come URL immutabile. Se preferisci,
+  puoi caricare lo stesso file su un tuo dominio/CDN e usare quello.
+- **Non** usare l'URL "latest": deve puntare alla versione esatta.
+- Con `/VERYSILENT` non compare alcuna finestra e l'app non parte a fine
+  installazione (`skipifsilent` è già nello script).
+
+## 4. Come ottenere la firma
+
+Lo Store **non** ri-firma gli installer EXE/MSI (a differenza degli MSIX).
+Serve un certificato CA accreditato. Opzioni realistiche:
+
+| Opzione | Costo indicativo | Note |
+|---|---|---|
+| **Azure Artifact Signing** (ex Trusted Signing) | ~9,99 USD/mese | Cloud, niente token; aperto anche ai privati; firma con `signtool /dlib` |
+| Certificato **OV/IV** code signing | ~200–400 €/anno | Su token/HSM (obbligatorio dal 2023) |
+| Certificato **EV** code signing | ~300–600 €/anno | Massima reputazione SmartScreen |
+| Self-signed | 0 € | ❌ **non accettato** dallo Store |
+
+Con Azure Artifact Signing il certificato catena a un root Microsoft ed è
+accettato dallo Store.
+
+### Pipeline pronta nel repo
+
+```powershell
+# 1) Certificato in CurrentUser\My (token o Azure)
+.\tools\sign_and_build.ps1 -Mode Store -Thumbprint <THUMBPRINT>
+
+# 2) PFX (solo se hai un certificato con chiave esportabile)
+.\tools\sign_and_build.ps1 -Mode Pfx -PfxPath C:\certs\frc.pfx -PfxPassword "***"
+
+# 3) Azure Artifact Signing
+.\tools\sign_and_build.ps1 -Mode Azure `
+  -Dlib "C:\...\Azure.CodeSigning.Dlib.dll" `
+  -Metadata "C:\...\metadata.json"
+```
+
+Lo script:
+
+1. firma `dist\FranchettiRawConverterPro.exe` (SHA-256 + timestamp);
+2. genera `sign_tool.iss` con il comando `signtool` per Inno Setup;
+3. compila `setup.iss` con `/DSIGN`, firmando installer **e** uninstaller
+   (`SignTool` + `SignedUninstaller`, inclusi via `sign_tool.iss`);
+4. verifica le firme e stampa gli SHA-256 (esce con codice 1 se una firma non
+   è valida).
+
+Prerequisiti: `signtool.exe` (Windows SDK → Signing Tools) e Inno Setup 7.
+Su questa macchina **signtool non è installato**: va aggiunto prima di firmare.
+`sign_tool.iss` è generato e ignorato da git: non modificarlo a mano.
+
+## 5. Dopo la firma
+
+1. Carica l'installer firmato su un URL versionato **nuovo** (es. release
+   `v2.58.1-store`) perché il binario precedente è cambiato.
+2. Aggiorna il campo **Package URL** in Partner Center.
+3. Mantieni la stessa versione (`2.58.1`) nella scheda.
+4. Invia per la certificazione.
+
+> Se cambi la firma, cambiano anche gli hash: aggiorna `SHA256SUMS.txt` e le
+> note di rilascio.
+
+## 6. Alternativa: MSIX
+
+Con un pacchetto **MSIX** lo Store firma gratis e non serve alcun certificato,
+ma cambia il modello di installazione (container, percorsi virtualizzati) e
+non è compatibile con il comportamento "portable" attuale. Per questo il
+progetto resta su EXE/MSI: l'unica cosa che manca è la firma.

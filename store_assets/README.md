@@ -107,7 +107,20 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 9. **Pacchetto**: lascia l'installer già presente
    (`WPM` / Inno Setup). Non serve ricaricarlo se la sottomissione punta già a
    `Franchetti_Raw_Converter_Setup_v2.58.1.exe`.
+   - **App type**: EXE; **Architecture**: x64
+   - **Package URL**:
+     `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+   - **Installer parameters**:
+     `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
+   - Dettagli e requisiti di firma: `STORE_SUBMISSION_REQUIREMENTS.md`
 10. **Salva** → **Invia per la certificazione** (Submit for certification).
+
+> ⚠️ **Firma obbligatoria.** Lo Store non ri-firma gli installer EXE/MSI:
+> installer, EXE dell'app e uninstaller devono essere firmati con un
+> certificato CA accreditato (es. Azure Artifact Signing). Al momento i file
+> sono `NotSigned`: senza firma la sottomissione viene rifiutata. La pipeline
+> è pronta in `tools/sign_and_build.ps1`; vedi
+> `STORE_SUBMISSION_REQUIREMENTS.md`.
 
 ### Dopo l'invio
 

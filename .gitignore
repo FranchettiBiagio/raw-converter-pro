@@ -25,3 +25,6 @@ desktop.ini
 
 # Archivio asset Store (rigenerabile, consegnato a parte)
 store_assets_v2.58.1.zip
+
+# Generato da tools/sign_and_build.ps1
+sign_tool.iss

@@ -46,6 +46,17 @@ UninstallDisplayName={#AppName} {#AppVersion}
 UninstallDisplaySize=82000000
 UninstallFilesDir={app}
 
+; Firma Authenticode: attiva solo compilando con /DSIGN.
+; tools\sign_and_build.ps1 genera sign_tool.iss con il comando signtool
+; corretto (certificato, timestamp, eventuale dlib Azure) e poi compila
+; con  ISCC /DSIGN setup.iss
+; Senza /DSIGN il build resta identico a prima (nessuna firma).
+#ifdef SIGN
+#include "sign_tool.iss"
+SignTool=frctool
+SignedUninstaller=yes
+#endif
+
 [Languages]
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
