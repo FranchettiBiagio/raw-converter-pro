@@ -152,6 +152,19 @@ conversione RAW
 
 ---
 
+## Materiale grafico pronto
+
+La cartella `store_assets/` (e l'archivio `store_assets_v2.58.1.zip`) contiene:
+
+- 9 screenshot reali 1920×1080 in ordine di caricamento (`store_assets/screenshots/`);
+- immagine hero 2340×1200 (`store_assets/hero/`);
+- logo Store 300×300, 1080×1080 e 2160×2160 (`store_assets/logos/`).
+
+Istruzioni campo per campo e ordine degli screenshot:
+`store_assets/README.md`.
+
+---
+
 ## Controlli prima della pubblicazione
 
 - [ ] Nome prodotto invariato rispetto alla scheda esistente

@@ -22,3 +22,6 @@ upx64.exe
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Archivio asset Store (rigenerabile, consegnato a parte)
+store_assets_v2.58.1.zip
