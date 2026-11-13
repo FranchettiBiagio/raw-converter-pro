@@ -15,13 +15,27 @@ sezione dei codici di ritorno e un campo versione inesistente.
 | Languages | ✅ sì | Italiano (`it`, `it-it`) |
 | App type | ✅ sì | EXE |
 | Installer parameters | ✅ sì (per EXE) | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-` |
-| **Installer handling** (codici di ritorno) | ❌ **no** | *"Not Required"* — si può lasciare vuota |
+| **Installer handling — URL documentazione** | ✅ **sì** | La sezione ha l'asterisco: il campo obbligatorio è **solo l'URL** in alto |
+| Codici di ritorno per scenario | ❌ no | Nessun asterisco: si possono lasciare vuoti |
 | **Versione** | ❌ **non esiste** | *"Package version numbering for Win32 is not supported"*: la versione è quella dell'installer |
 
 La sezione dei codici serve solo a far mostrare allo Store messaggi mirati
 all'utente. Se compilata, ogni codice deve essere **unico** in tutta la pagina
 (errore: *"Il pacchetto non può avere valori di codice di ritorno duplicati"*).
 Se non compilata, non manca nulla.
+
+**Verifica sugli screenshot ufficiali dell'interfaccia** (scaricati da
+Microsoft Learn il 13/11/2026): l'intestazione è `Installer handling *` e sotto
+c'è un unico campo, `Enter a valid URL`. Le caselle "EXE return code value"
+degli otto scenari **non hanno asterisco**. L'errore *"Alcuni campi richiedono
+la vostra attenzione"* con la sezione apparentemente compilata è causato dal
+**campo URL lasciato vuoto**, non dai codici.
+
+Valore da inserire:
+
+```
+https://jrsoftware.org/ishelp/topic_setupexitcodes.htm
+```
 
 ## Flusso corretto della pagina
 
