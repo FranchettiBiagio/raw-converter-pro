@@ -95,7 +95,13 @@ Se la validazione o la certificazione rifiuta per firma mancante:
 | Errore su **firma / signature / certificate** | La regola Authenticode viene applicata | Passa a MSIX |
 | Errore su **installazione / silent install / exit code** | Problema di scope o di parametri, non di firma | Si ricompila una variante Store con `PrivilegesRequired=admin` e si carica un nuovo asset |
 | Errore su **URL non raggiungibile** | Il file non è scaricabile o l'URL non è immutabile | Verifica che la release sia pubblica e che l'URL contenga `v2.58.1` |
-| Errore su **versione** | La versione non è superiore a 1.0.0 | Inserisci `2.58.1` nel campo versione |
+| Errore **pacchetto già esistente** (stessa architettura e lingua) | Si sta creando un pacchetto nuovo invece di aggiornare quello della 1.0.0 | Seleziona il pacchetto esistente e cambia solo il Package URL |
+| Errore **codici duplicati** | La sezione Installer handling è compilata con valori ripetuti | Svuotala: è facoltativa (*Not Required*) |
+
+> ⚠️ Per le app Win32 **non esiste un campo versione** in Partner Center:
+> *"Package version numbering for Win32 is not supported through the Store"*.
+> La versione mostrata è quella dichiarata nell'installer (`ProductVersion`
+> `2.58.1`).
 
 ---
 

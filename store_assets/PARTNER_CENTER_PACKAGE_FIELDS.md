@@ -1,68 +1,91 @@
-# Partner Center → Packages — valori da inserire (v2.58.1)
+# Partner Center → Packages — come si compila davvero (v2.58.1)
 
-Pagina: **App e giochi → Franchetti Raw Converter Pro → Packages → Dettagli
-del pacchetto**.
+Fonte: Microsoft Learn, *Upload app packages for MSI/EXE app* e *App package
+requirements for MSI/EXE app*, consultate il 13/11/2026.
 
-Valori verificati il 13/11/2026. Riutilizzabili per le versioni future
-cambiando solo URL e versione.
+Questo file corregge le indicazioni precedenti, che davano per obbligatoria la
+sezione dei codici di ritorno e un campo versione inesistente.
 
-## Campi
+## Regole verificate sulla documentazione
 
-| Campo Partner Center | Valore |
-|---|---|
-| **URL del pacchetto** | `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe` |
-| **Architettura** | `x64` |
-| **Parametri dell'installatore** | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-` |
-| **Lingue** | Italiano (aggiungi English solo se la scheda è multilingua) |
-| **Tipo di app** | `EXE` |
-| **Checkbox "Installatore viene eseguito in modalità silenziosa, ma non richiede interruttori"** | ❌ **non selezionare** (forniamo noi gli interruttori) |
-| **URL documentazione codici di ritorno** | `https://jrsoftware.org/ishelp/topic_setupexitcodes.htm` |
-
-## Codici di ritorno EXE
-
-Codici reali di Inno Setup 7 (`Setup Exit Codes`), non convenzioni MSI:
-
-| Codice | Significato |
-|---|---|
-| `0` | Installazione completata con successo |
-| `1` | Setup non riuscito ad inizializzarsi |
-| `2` | Utente ha annullato prima dell'inizio dell'installazione |
-| `3` | Errore fatale durante la preparazione della fase successiva |
-| `4` | Errore fatale durante l'installazione |
-| `5` | Utente ha annullato durante l'installazione / Abort |
-| `6` | Processo terminato dal debugger (non applicabile in produzione) |
-| `7` | La fase "Preparing to Install" ha stabilito che non si può procedere |
-| `8` | Come 7, ma serve un riavvio per correggere il problema |
-
-### Mappatura sugli scenari richiesti
-
-| Scenario Partner Center | Valore | Note |
+| Campo | Obbligatorio | Note |
 |---|---|---|
-| Installazione riuscita | `0` | **obbligatorio**, è il codice che conta |
-| Installazione annullata dall'utente | `2`, `5` | annullamento prima e durante |
-| Riavvio richiesto | `8` | l'installer non richiede mai riavvio, ma il codice esiste |
-| Applicazione esiste già | *(vuoto)* | Inno aggiorna e ritorna `0` |
-| Installazione già in corso | *(vuoto)* | bloccata dal mutex di Inno, non gestita come scenario |
-| Spazio su disco pieno | *(vuoto)* | errore generico `4` |
-| Fallimento della rete | *(vuoto)* | l'installer è offline, nessuna rete coinvolta |
-| Pacchetto rifiutato da policy | *(vuoto)* | errore generico `3`/`7` |
-| Vari scenari di guasto | *(vuoto)* | errore generico `4` |
+| Package URL | ✅ sì | URL versionato, HTTPS, diretto, immutabile |
+| Architecture | ✅ sì | x64 per questo prodotto |
+| Languages | ✅ sì | Italiano (`it`, `it-it`) |
+| App type | ✅ sì | EXE |
+| Installer parameters | ✅ sì (per EXE) | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-` |
+| **Installer handling** (codici di ritorno) | ❌ **no** | *"Not Required"* — si può lasciare vuota |
+| **Versione** | ❌ **non esiste** | *"Package version numbering for Win32 is not supported"*: la versione è quella dell'installer |
 
-Se un campo non accetta il valore vuoto, usare il codice indicato nella colonna
-"Note": sono i codici generici con cui Inno segnala quella classe di problema.
+La sezione dei codici serve solo a far mostrare allo Store messaggi mirati
+all'utente. Se compilata, ogni codice deve essere **unico** in tutta la pagina
+(errore: *"Il pacchetto non può avere valori di codice di ritorno duplicati"*).
+Se non compilata, non manca nulla.
 
-## Perché il dominio proprio e non GitHub
+## Flusso corretto della pagina
 
-L'asset GitHub risponde con redirect verso `objects.githubusercontent.com`:
-la validazione di Partner Center può fallire con errore di download.
-`https://www.franchettitv.it/downloads/...` serve il file con HTTP 200 diretto,
-`Accept-Ranges: bytes`, TLS Let's Encrypt valido, SHA256 identico all'asset
-GitHub (`316a34c1…b86405`).
+La pagina funziona in due passaggi, ed è qui che si creano i conflitti:
 
-## Dopo la compilazione
+1. **Manage packages** → elenco dei pacchetti già presenti (contiene la 1.0.0).
+2. **Add package** crea un *nuovo* pacchetto. Se esiste già un pacchetto con la
+   stessa architettura + lingua, Partner Center risponde:
+   *"Il pacchetto con l'architettura e il linguaggio forniti esiste già"*.
+3. Per un **aggiornamento** non si usa "Add package": si **seleziona il
+   pacchetto esistente** dall'elenco e si modifica il suo Package URL.
+4. **Save draft** → si torna all'elenco dei pacchetti.
+5. **Save All** → upload e validazione dell'URL.
 
-1. **Salvare la bozza**.
-2. Leggere eventuali errori di validazione (la verifica parte al salvataggio).
-3. Compilare **Note per la certificazione** con
-   [`CERTIFICATION_NOTES_EXE_v2.58.1.md`](CERTIFICATION_NOTES_EXE_v2.58.1.md).
-4. **Invia per la certificazione**.
+## Procedura per la v2.58.1
+
+1. **Packages** → **Manage packages**.
+2. Nell'elenco, **seleziona il pacchetto già presente** (quello della 1.0.0,
+   x64, italiano). Non creare un pacchetto nuovo.
+3. Nel campo **Package URL** sostituisci il vecchio indirizzo con:
+   ```
+   https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe
+   ```
+4. Lascia invariati: Architecture `x64`, Languages `Italiano`, App type `EXE`.
+5. Parametri: `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`.
+6. **Svuota completamente la sezione "Installer handling"**: nessun codice,
+   nessuna riga aggiuntiva.
+7. **Save draft**, poi **Save All**.
+8. Attendi l'esito della validazione dell'URL.
+
+## Perché l'URL sul dominio proprio
+
+`https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+risponde HTTP 200 diretto (`nginx/1.22.1`), 101.165.696 byte, TLS Let's Encrypt
+valido fino all'11/02/2027, `Accept-Ranges: bytes`, SHA256
+`316a34c16d45f6e3cca05e517b95797d83bc0e88adf4199659025e4cb1b86405`, identico
+all'asset della release GitHub. L'asset GitHub reindirizza a
+`objects.githubusercontent.com` e può far fallire il download del validatore.
+
+## Codici di ritorno (solo se in futuro si volesse compilare la sezione)
+
+Codici reali di Inno Setup 7 (`Setup Exit Codes`), da usare **uno solo per
+riga**, senza ripetizioni:
+
+| Codice | Significato Inno |
+|---|---|
+| 0 | Installazione completata |
+| 1 | Setup non riuscito ad inizializzarsi |
+| 2 | Annullamento prima dell'installazione |
+| 3 | Errore fatale in preparazione |
+| 4 | Errore fatale durante l'installazione |
+| 5 | Annullamento durante l'installazione |
+| 6 | Terminato dal debugger (mai in produzione) |
+| 7 | Impossibile procedere |
+| 8 | Impossibile procedere, serve riavvio |
+
+La corrispondenza tra questi codici e gli scenari di Partner Center è una
+scelta del singolo installer, non una regola imposta: è per questo che la
+sezione è facoltativa.
+
+## Attenzione: firma richiesta dalla documentazione
+
+La pagina *App package requirements* impone che installer e tutti i PE siano
+firmati con certificato che catena al Microsoft Trusted Root Program. La
+versione 1.0.0 pubblicata sullo Store è però `NotSigned` e la scheda è live.
+Resta quindi un rischio da verificare in certificazione: vedi
+[`PUBLISH_EXE_FREE.md`](PUBLISH_EXE_FREE.md).
