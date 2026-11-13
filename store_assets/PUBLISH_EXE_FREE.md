@@ -56,9 +56,21 @@ percorso che ha già funzionato è disponibile di nuovo a costo zero.
 1. Partner Center → prodotto `XP9CJZTBCW6VS7` → **Packages**.
 2. Crea/aggiorna la sottomissione e inserisci come **Package URL**:
    ```
-   https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe
+   https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe
    ```
    L'URL è versionato e il file non cambia più: requisito soddisfatto.
+   Verificato il 13/11/2026: HTTP 200 diretto, `nginx/1.22.1`, 101.165.696
+   byte, TLS Let's Encrypt valido, `Accept-Ranges: bytes`, SHA256
+   `316a34c16d45f6e3cca05e517b95797d83bc0e88adf4199659025e4cb1b86405`
+   (identico all'asset della release GitHub).
+
+   > ⚠️ **Non sovrascrivere mai questo file.** Se ricompili l'installer,
+   > caricalo con un nome nuovo (es. `..._v2.58.2.exe`) e aggiorna l'URL nella
+   > sottomissione. Stesso nome + contenuto diverso = URL non immutabile.
+
+   > Perché non GitHub: l'asset GitHub risponde con redirect verso
+   > `objects.githubusercontent.com` e la validazione di Partner Center può
+   > fallire. Il dominio proprio serve il file direttamente con HTTP 200.
 3. **Installer parameters**:
    ```
    /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-

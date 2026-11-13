@@ -107,7 +107,9 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
 9. **Pacchetto**: percorso scelto → **EXE/MSI, senza firma** (come la
    versione v1.0.0 già pubblicata e distribuita dallo Store).
    - **Package URL**:
-     `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+     `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+     (dominio proprio, HTTP 200 diretto: gli asset GitHub reindirizzano e la
+     validazione di Partner Center può fallire)
    - **Installer parameters**:
      `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
    - **App type**: EXE; **Architecture**: x64.

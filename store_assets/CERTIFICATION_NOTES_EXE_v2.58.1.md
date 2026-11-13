@@ -11,7 +11,7 @@ Riferimenti della sottomissione:
 | Prodotto | Franchetti Raw Converter Pro — `XP9CJZTBCW6VS7` |
 | Versione attuale live | 1.0.0 |
 | Nuova versione | 2.58.1 |
-| Package URL | `https://github.com/FranchettiBiagio/raw-converter-pro/releases/download/v2.58.1/Franchetti_Raw_Converter_Setup_v2.58.1.exe` |
+| Package URL | `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe` |
 | SHA256 installer | `316a34c16d45f6e3cca05e517b95797d83bc0e88adf4199659025e4cb1b86405` |
 | Tipo | EXE (Inno Setup 7), x64 |
 | Parametri silent | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-` |
