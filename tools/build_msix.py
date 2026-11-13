@@ -116,6 +116,14 @@ def main():
         raise SystemExit(f"EXE non trovato: {args.exe}")
 
     version = args.version.count(".") == 3 and args.version or args.version + ".0"
+    if not all(part.isdigit() for part in version.split(".")) or len(version.split(".")) != 4:
+        raise SystemExit(f"Versione non valida: {version} (atteso N.N.N.0)")
+    if version.split(".")[3] != "0":
+        raise SystemExit("La revision MSIX per lo Store deve essere 0 (es. 2.58.2.0).")
+
+    if args.identity == "FranchettiAcademy.FranchettiRawConverterPro" or args.publisher == "CN=FranchettiAcademy":
+        print("ATTENZIONE: identita' provvisoria, valida solo per i test locali.")
+        print("Per lo Store usa --identity e --publisher di Partner Center (Product identity).")
 
     print("Preparazione layout MSIX...")
     if os.path.isdir(args.layout):
