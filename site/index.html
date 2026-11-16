@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Franchetti Raw Converter Pro — Convertitore RAW per Windows</title>
-<meta name="description" content="Convertitore RAW desktop per Windows 10/11: batch ricorsivo, 25+ formati, preset portabili, LUT 3D e profilo Veloce. Elaborazione locale su CPU, gli originali non vengono mai modificati.">
+<title>Franchetti Raw Converter Pro — sviluppo RAW e JPEG per Windows</title>
+<meta name="description" content="Convertitore RAW desktop per Windows 10/11: 27 formati, batch ricorsivo, protezione luci, denoise guidato, preset portabili, LUT 3D e tethering. Elaborazione locale su CPU, originali intatti.">
 <meta name="theme-color" content="#08090b">
 <meta property="og:title" content="Franchetti Raw Converter Pro 2.58.1">
-<meta property="og:description" content="Dal RAW al JPEG senza perdere il controllo: batch ricorsivo, preset portabili, LUT 3D. Windows 10/11 x64, gratuito.">
+<meta property="og:description" content="Il RAW al massimo del suo potenziale: tono che protegge le luci, denoise guidato, LUT 3D, preset portabili. Windows 10/11 x64, gratuito.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="assets/hero.jpg">
 <link rel="icon" href="favicon.png" type="image/png">
@@ -22,10 +22,11 @@
       Franchetti <span>Raw Converter Pro</span>
     </a>
     <nav class="nav__links" aria-label="Sezioni">
+      <a href="#confronti">Confronti</a>
+      <a href="#motore">Motore</a>
       <a href="#funzioni">Funzioni</a>
-      <a href="#novita">Novità 2.58.1</a>
-      <a href="#galleria">Schermate</a>
-      <a href="#compatibilita">Compatibilità</a>
+      <a href="#tethering">Tethering</a>
+      <a href="#lut">LUT</a>
       <a href="#faq">Domande</a>
     </nav>
     <a class="nav__cta" href="#scarica">Scarica</a>
@@ -42,11 +43,11 @@
     <div class="wrap">
       <div class="hero__inner">
         <span class="eyebrow">Versione 2.58.1 · Windows 10/11 x64</span>
-        <h1>Dal RAW al JPEG<br>senza perdere <em>controllo</em>.</h1>
+        <h1>Il RAW, al massimo<br>del suo <em>potenziale</em>.</h1>
         <p class="hero__lead">
-          Convertitore RAW desktop per Windows: batch ricorsivo su intere cartelle,
-          profili di sviluppo, preset portabili e LUT 3D. Tutto in locale, sulla CPU.
-          Gli originali restano intatti.
+          Bilanciamento del bianco e matrice della fotocamera, tono che protegge le luci,
+          denoise guidato dal rumore, nitidezza sulla sola luminanza. Poi LUT 3D,
+          preset portabili e batch ricorsivo. Tutto in locale, su CPU.
         </p>
 
         <div class="hero__actions">
@@ -56,14 +57,14 @@
             </svg>
             Scarica l'installer
           </a>
-          <a class="btn btn--ghost" href="#novita">Novità della 2.58.1</a>
+          <a class="btn btn--ghost" href="#confronti">Guarda i confronti</a>
         </div>
 
         <div class="hero__meta">
-          <span>101 MB · installer offline</span>
+          <span>27 formati RAW</span>
+          <span>73 parametri</span>
+          <span>4 formati di uscita</span>
           <span>Nessun account</span>
-          <span>Gratuito</span>
-          <span>Installazione senza privilegi di amministratore</span>
         </div>
       </div>
     </div>
@@ -74,21 +75,230 @@
     <div class="wrap">
       <div class="trust__grid">
         <div class="trust__item">
-          <h3>Sola lettura</h3>
-          <p>I file RAW vengono letti e mai modificati, spostati o cancellati.</p>
+          <h3>Originali in sola lettura</h3>
+          <p>I RAW vengono letti e mai modificati, spostati o cancellati: si scrive solo nella cartella di output.</p>
         </div>
         <div class="trust__item">
-          <h3>Completamente offline</h3>
-          <p>Nessuna connessione richiesta, nessuna telemetria, nessun caricamento.</p>
+          <h3>Offline per scelta</h3>
+          <p>Nessuna telemetria, nessun account. La rete si apre solo se attivi tethering o invio cloud.</p>
         </div>
         <div class="trust__item">
-          <h3>EXIF preservato</h3>
-          <p>Metadati, autore e copyright mantenuti nei formati che li supportano.</p>
+          <h3>Scrittura atomica</h3>
+          <p>Ogni file viene scritto in temporaneo e pubblicato a conversione finita: un errore non rovina il batch.</p>
         </div>
         <div class="trust__item">
-          <h3>Elaborazione locale</h3>
-          <p>Solo CPU: nessun servizio cloud, nessuna coda, nessun credito da consumare.</p>
+          <h3>Prestazioni adattive</h3>
+          <p>Processi scelti in base ai core fisici e alla RAM disponibile, con tre profili di qualità.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONFRONTI ===================== -->
+  <section class="section" id="confronti">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Prima / dopo · output reale</span>
+        <h2>La differenza si vede, pixel per pixel.</h2>
+        <p>Confronti prodotti dal motore del programma: stessa inquadratura, stesso ritaglio, nessun ritocco esterno. Trascina la maniglia per aprire l'immagine.</p>
+      </div>
+
+      <div class="scenes" data-reveal>
+        <div class="ba__tabs" role="tablist" aria-label="Scegli il confronto">
+          <button class="ba__tab is-active" id="tab-raw" role="tab" aria-selected="true" aria-controls="scena-raw" data-scene="scena-raw" type="button">RAW notturno</button>
+          <button class="ba__tab" id="tab-paesaggio" role="tab" aria-selected="false" aria-controls="scena-paesaggio" data-scene="scena-paesaggio" type="button">Paesaggio</button>
+          <button class="ba__tab" id="tab-bianconero" role="tab" aria-selected="false" aria-controls="scena-bianconero" data-scene="scena-bianconero" type="button">Bianco e nero</button>
+        </div>
+
+        <div class="scene" id="scena-raw" role="tabpanel" aria-labelledby="tab-raw">
+          <div class="ba" data-ba style="--pos:42%">
+            <img class="ba__after" src="assets/ba-raw-after.jpg" width="1500" height="1000"
+                 alt="Via di paese di notte dopo lo sviluppo: ombre aperte, pietra leggibile e luci calde">
+            <div class="ba__layer">
+              <img src="assets/ba-raw-before.jpg" width="1500" height="1000" alt="">
+            </div>
+            <span class="ba__tag ba__tag--l">Prima</span>
+            <span class="ba__tag ba__tag--r">Dopo</span>
+            <span class="ba__handle" aria-hidden="true"></span>
+            <input class="ba__range" type="range" min="0" max="100" value="42" step="1"
+                   aria-label="Confronta prima e dopo, RAW notturno">
+          </div>
+
+          <div class="scene__meta">
+            <div class="scene__chips">
+              <span>Sony ARW · 33 MP</span>
+              <span>ISO 2000</span>
+              <span>Preset Cinema caldo</span>
+              <span>Smart Batch</span>
+            </div>
+            <p>
+              Scatto di prova in notturna. La decodifica neutra lascia le ombre chiuse; il programma
+              applica il preset <b>Cinema caldo</b> e le correzioni <b>Smart Batch</b> lette dal file
+              (esposizione +0,65 EV, ombre +18, neri +5, vivacità +0,48), con denoise 91/94.
+              Nessun intervento manuale fuori dal programma.
+            </p>
+          </div>
+        </div>
+
+        <div class="scene" id="scena-paesaggio" role="tabpanel" aria-labelledby="tab-paesaggio" hidden>
+          <div class="ba" data-ba style="--pos:50%">
+            <img class="ba__after" src="assets/ba-paesaggio-after.jpg" width="1500" height="1000"
+                 alt="Lago alpino dopo il preset Paesaggio freddo: acqua turchese, verdi puliti e cielo separato">
+            <div class="ba__layer">
+              <img src="assets/ba-paesaggio-before.jpg" width="1500" height="1000" alt="">
+            </div>
+            <span class="ba__tag ba__tag--l">Prima</span>
+            <span class="ba__tag ba__tag--r">Dopo</span>
+            <span class="ba__handle" aria-hidden="true"></span>
+            <input class="ba__range" type="range" min="0" max="100" value="50" step="1"
+                   aria-label="Confronta prima e dopo, paesaggio">
+          </div>
+
+          <div class="scene__meta">
+            <div class="scene__chips">
+              <span>Foto CC0</span>
+              <span>Preset Paesaggio freddo</span>
+              <span>Temperatura −12</span>
+              <span>Vivacità +0,32</span>
+            </div>
+            <p>
+              Il preset raffredda il bianco, alza la chiarezza a +0,14 e riallinea verdi e blu
+              (HSL +10 / +8). L'acqua resta separata dalla vegetazione, il cielo non diventa
+              una macchia unica.
+            </p>
+          </div>
+        </div>
+
+        <div class="scene" id="scena-bianconero" role="tabpanel" aria-labelledby="tab-bianconero" hidden>
+          <div class="ba" data-ba style="--pos:50%">
+            <img class="ba__after" src="assets/ba-bianconero-after.jpg" width="1500" height="1000"
+                 alt="Lago di montagna in bianco e nero, con rocce dettagliate e neri profondi">
+            <div class="ba__layer">
+              <img src="assets/ba-bianconero-before.jpg" width="1500" height="1000" alt="">
+            </div>
+            <span class="ba__tag ba__tag--l">Prima</span>
+            <span class="ba__tag ba__tag--r">Dopo</span>
+            <span class="ba__handle" aria-hidden="true"></span>
+            <input class="ba__range" type="range" min="0" max="100" value="50" step="1"
+                   aria-label="Confronta prima e dopo, bianco e nero">
+          </div>
+
+          <div class="scene__meta">
+            <div class="scene__chips">
+              <span>Foto CC0</span>
+              <span>Preset interno</span>
+              <span>Contrasto +0,38</span>
+              <span>Nitidezza 0,9</span>
+            </div>
+            <p>
+              Saturazione a zero, contrasto +0,38, chiarezza +0,15 e nitidezza 0,9 sulla sola
+              luminanza: il monocromo conserva il dettaglio nelle rocce senza otturare i neri.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="crops" data-reveal>
+        <div class="crops__head">
+          <span class="eyebrow">Dettaglio 100%</span>
+          <p>Stesso ritaglio dello scatto notturno: le ombre si aprono, il rumore di crominanza si riduce, la pietra resta leggibile.</p>
+        </div>
+        <div class="crops__grid">
+          <figure class="crop">
+            <img src="assets/noise-before.jpg" width="760" height="500" loading="lazy" alt="Ritaglio al 100% prima dello sviluppo: ombre chiuse e rumore visibile">
+            <figcaption>Prima · decodifica neutra</figcaption>
+          </figure>
+          <figure class="crop">
+            <img src="assets/noise-after.jpg" width="760" height="500" loading="lazy" alt="Ritaglio al 100% dopo lo sviluppo: pietra leggibile e rumore ridotto">
+            <figcaption>Dopo · sviluppo con denoise</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MOTORE ===================== -->
+  <section class="section section--soft" id="motore">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Dentro il motore</span>
+        <h2>Dieci fasi, nessun passaggio a caso.</h2>
+        <p>La pipeline lavora alla risoluzione finale: prima ridimensiona, poi sviluppa. Così denoise e nitidezza vedono esattamente i pixel che consegni.</p>
+      </div>
+
+      <div class="engine">
+        <ol class="pipeline" data-reveal>
+          <li>
+            <span class="pipeline__num">01</span>
+            <div><h3>Decodifica RAW</h3>
+              <p>LibRaw con bilanciamento del bianco e matrice della fotocamera. Demosaicizzazione AHD per Bayer, AAHD per X-Trans Fujifilm.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">02</span>
+            <div><h3>Ridimensionamento</h3>
+              <p>Lanczos-3 al lato lungo scelto, prima di ogni altra cosa: il resto della pipeline non lavora su pixel che poi butterai.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">03</span>
+            <div><h3>Tono</h3>
+              <p>Esposizione che preserva la luminanza, contrasto sigmoide, luci, ombre, bianchi e neri. La protezione luci comprime solo la spalla.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">04</span>
+            <div><h3>Colore</h3>
+              <p>Vivacità selettiva sulle tinte spente, saturazione, HSL su rosso, verde e blu, split toning separato per ombre e luci.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">05</span>
+            <div><h3>Denoise</h3>
+              <p>Filtro guidato sul dettaglio, non-local means solo nelle aree piatte, soglia derivata dal rumore misurato e dagli ISO.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">06</span>
+            <div><h3>Nitidezza</h3>
+              <p>Unsharp mask applicata alla sola luminanza, con soglia legata al rumore: contrasto percepito senza aloni colorati.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">07</span>
+            <div><h3>Effetti</h3>
+              <p>Grana, vignettatura e LUT 3D con interpolazione trilineare e intensità da 0 a 100%, calcolate a blocchi.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">08</span>
+            <div><h3>Firma</h3>
+              <p>Watermark di testo o logo, quattro posizioni, opacità regolabile e ombra a un pixel per restare leggibile su ogni fondo.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">09</span>
+            <div><h3>Metadati</h3>
+              <p>EXIF conservati; artista, copyright e descrizione scritti anche nei blocchi IPTC dei formati che li supportano.</p></div>
+          </li>
+          <li>
+            <span class="pipeline__num">10</span>
+            <div><h3>Scrittura</h3>
+              <p>JPEG 4:4:4 con profilo ICC sRGB, PNG, TIFF LZW o WebP. File temporaneo e sostituzione atomica dell'output.</p></div>
+          </li>
+        </ol>
+
+        <aside class="engine__aside" data-reveal>
+          <figure class="chart">
+            <img src="assets/curva-luci.png" width="1100" height="620" loading="lazy"
+                 alt="Grafico della compressione della spalla: fino a 4,8 livelli sopra la soglia 0,68, con ritorno a 255">
+            <figcaption>Protezione luci: la compressione massima è di 4,8 livelli su 255. Abbastanza per non bruciare, troppo poca per vedersi.</figcaption>
+          </figure>
+
+          <dl class="statline">
+            <div><dt>Formati RAW</dt><dd>27</dd></div>
+            <div><dt>Formati immagine</dt><dd>7</dd></div>
+            <div><dt>Parametri</dt><dd>73</dd></div>
+            <div><dt>Uscite</dt><dd>4</dd></div>
+          </dl>
+
+          <p class="engine__note">
+            La pipeline è la stessa per anteprima e batch. L'anteprima lavora a risoluzione ridotta
+            per restare immediata; il batch applica gli stessi passaggi alla dimensione finale.
+          </p>
+        </aside>
       </div>
     </div>
   </section>
@@ -105,11 +315,11 @@
       <div class="steps">
         <article class="step" data-reveal>
           <h3>Scegli le cartelle</h3>
-          <p>Trascina una o più cartelle: la scansione è ricorsiva e riconosce oltre 25 formati RAW.</p>
+          <p>Trascina una o più cartelle: la scansione è ricorsiva e riconosce 27 formati RAW.</p>
         </article>
         <article class="step" data-reveal>
           <h3>Regola lo sviluppo</h3>
-          <p>Tono, colore, curva, riduzione rumore per ISO, nitidezza, grana, vignettatura e split toning.</p>
+          <p>Tono, colore, curva, denoise per ISO, nitidezza, grana, vignettatura, split toning e LUT.</p>
         </article>
         <article class="step" data-reveal>
           <h3>Definisci l'output</h3>
@@ -117,7 +327,7 @@
         </article>
         <article class="step" data-reveal>
           <h3>Converti</h3>
-          <p>Anteprima fedele prima di partire, poi batch completo nella cartella che hai scelto.</p>
+          <p>Anteprima fedele prima di partire, poi batch completo con log per file e ripresa degli errori.</p>
         </article>
       </div>
     </div>
@@ -139,8 +349,8 @@
               <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             </svg>
           </div>
-          <h3>Batch ricorsivo</h3>
-          <p>Intere cartelle, sottocartelle comprese, in un solo passaggio. La coda mostra file elaborati, saltati ed errori.</p>
+          <h3>27 formati RAW</h3>
+          <p>ARW, CR2, CR3, NEF, NRW, RAF, DNG, ORF, RW2, PEF, SRW, X3F, 3FR, FFF, RAW, RWL, DCR, K25, KDC, MOS, MRW, ERF, MEF, IIQ, CAP, BRAW, GPR. In ingresso anche JPG, PNG, TIFF, BMP e WebP.</p>
         </article>
 
         <article class="card" data-reveal>
@@ -149,28 +359,18 @@
               <path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="17" r="2" fill="currentColor" stroke="none"/>
             </svg>
           </div>
-          <h3>Profili di sviluppo</h3>
-          <p>Un profilo <b>Bilanciato</b> per la resa di riferimento e un profilo <b>Veloce</b> per i grandi volumi, senza cambiare la pipeline predefinita.</p>
+          <h3>Batch ricorsivo</h3>
+          <p>Cartelle e sottocartelle in un solo passaggio, con prefisso, suffisso e gestione dei file già esistenti. La coda mostra elaborati, saltati ed errori.</p>
         </article>
 
         <article class="card" data-reveal>
           <div class="card__icon">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="7" y="7" width="10" height="10" rx="2"/><path d="M11 3v4M13 3v4M11 17v4M13 17v4M3 11h4M3 13h4M17 11h4M17 13h4"/>
+              <path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/>
             </svg>
           </div>
-          <h3>Riduzione rumore per ISO</h3>
-          <p>Denoise guidato dal valore ISO dello scatto e dal dettaglio che vuoi conservare: pulizia dove serve, texture dove conta.</p>
-        </article>
-
-        <article class="card" data-reveal>
-          <div class="card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 16 5-4 4 3 3-2 4 3"/>
-            </svg>
-          </div>
-          <h3>Output controllato</h3>
-          <p>JPEG o TIFF, lato lungo in pixel, qualità, schema dei nomi con prefisso e suffisso, gestione dei file già esistenti.</p>
+          <h3>Smart Batch</h3>
+          <p>Ogni file viene analizzato a mezza risoluzione: istogramma, clipping reale del sensore, rumore. Le correzioni vengono applicate solo dove l'istogramma le giustifica.</p>
         </article>
 
         <article class="card" data-reveal>
@@ -180,7 +380,7 @@
             </svg>
           </div>
           <h3>Preset portabili</h3>
-          <p>Un file <span class="mono">.frcpreset</span> è JSON leggibile: solo dati, mai codice. Import, esporta, condividi, applica con anteprima.</p>
+          <p>Un file <span class="mono">.frcpreset</span> è JSON leggibile: solo dati, mai codice. Import con anteprima, export, e pacchetti ZIP con SHA-256 per ogni voce.</p>
         </article>
 
         <article class="card" data-reveal>
@@ -190,7 +390,37 @@
             </svg>
           </div>
           <h3>LUT 3D e split toning</h3>
-          <p>LUT <span class="mono">.cube</span> con intensità regolabile e interpolazione trilineare, più split toning separato su ombre e luci.</p>
+          <p>LUT <span class="mono">.cube</span> con interpolazione trilineare e intensità regolabile, più split toning separato su ombre e luci. 108 LUT in omaggio.</p>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 16 5-4 4 3 3-2 4 3"/>
+            </svg>
+          </div>
+          <h3>Firma e metadati</h3>
+          <p>Watermark di testo o logo, quattro posizioni, opacità regolabile. EXIF conservati e copyright scritto anche in IPTC.</p>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12a7 7 0 0 1 14 0"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="16" r="1.6" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <h3>Tethering e galleria</h3>
+          <p>Server FTP, cartella sorvegliata o Sony Wi-Fi: gli scatti arrivano, diventano anteprime firmate e finiscono in una galleria per la selezione cliente.</p>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 18h16"/>
+            </svg>
+          </div>
+          <h3>Output e integrità</h3>
+          <p>JPEG 4:4:4 con profilo ICC sRGB, PNG, TIFF LZW e WebP. Scrittura atomica: un file corrotto non ferma la coda e non lascia mezzi output.</p>
         </article>
       </div>
     </div>
@@ -227,7 +457,7 @@
             <div class="tag">03</div>
             <div>
               <h3>LUT 3D <span class="mono">.cube</span></h3>
-              <p>Applicazione con interpolazione trilineare, intensità regolabile e calcolo a blocchi: una foto da 24–60 MP non alloca centinaia di MB. Se il file non è leggibile, l'immagine resta invariata.</p>
+              <p>Interpolazione trilineare, intensità regolabile e calcolo a blocchi: una foto da 24–60 MP non alloca centinaia di MB. Se il file non è leggibile, l'immagine resta invariata.</p>
             </div>
           </article>
 
@@ -243,15 +473,13 @@
         <aside class="bench" data-reveal>
           <h3>Profilo Veloce: −39% nel test</h3>
           <p>Il collo di bottiglia era il denoise non locale. In <b>Veloce</b> lavora a metà risoluzione e la stima del rumore usa un ritaglio centrale da 1024 px.</p>
-          <table>
-            <thead>
-              <tr><th>Scenario</th><th>Prima</th><th>Dopo</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Pipeline completa · Bilanciato</td><td>8,8 s</td><td class="up">8,8 s</td></tr>
-              <tr><td>Pipeline completa · Veloce</td><td>9,1 s</td><td class="up">5,4 s</td></tr>
-            </tbody>
-          </table>
+
+          <div class="bars">
+            <div class="bars__row"><span>Veloce · prima</span><i style="--w:100%"></i><b>8,8 s</b></div>
+            <div class="bars__row"><span>Veloce · dopo</span><i style="--w:61%"></i><b>5,4 s</b></div>
+            <div class="bars__row"><span>Bilanciato</span><i style="--w:100%"></i><b>8,8 s</b></div>
+          </div>
+
           <p class="bench__note">
             RAW sintetico da 24 MP, output a 3000 px, CPU locale. Nel profilo Bilanciato
             l'output resta identico: la stima campionata e il denoise a metà risoluzione
@@ -262,8 +490,55 @@
     </div>
   </section>
 
+  <!-- ===================== TETHERING ===================== -->
+  <section class="section section--soft" id="tethering">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Dal corpo macchina al cliente</span>
+        <h2>La consegna inizia allo scatto.</h2>
+        <p>Se lavori in evento o in studio, il programma può ricevere i file mentre li fai, sviluppare un'anteprima, firmarla e preparare la selezione per il cliente.</p>
+      </div>
+
+      <div class="flow" data-reveal>
+        <article class="flow__item">
+          <span class="flow__num">01</span>
+          <h3>Arrivo</h3>
+          <p>Server FTP integrato sulla rete locale (porta 2121), cartella sorvegliata per le schede, oppure Sony Wi-Fi con l'app Smart Remote Control.</p>
+        </article>
+        <article class="flow__item">
+          <span class="flow__num">02</span>
+          <h3>Sviluppo</h3>
+          <p>Decodifica con bianco e matrice della fotocamera, ridimensionamento a 2000 px e stessa resa colore della pipeline principale.</p>
+        </article>
+        <article class="flow__item">
+          <span class="flow__num">03</span>
+          <h3>Firma</h3>
+          <p>Nome del file e copyright in sovrimpressione; dati EXIF e IPTC scritti nell'anteprima, pronta da mostrare.</p>
+        </article>
+        <article class="flow__item">
+          <span class="flow__num">04</span>
+          <h3>Consegna</h3>
+          <p>Galleria HTML autonoma con caselle di selezione, più invio facoltativo a Telegram, Dropbox, Google Drive, Meta o SwissTransfer.</p>
+        </article>
+      </div>
+
+      <div class="flow__note" data-reveal>
+        <p>
+          Ogni sessione crea cartelle separate per data e ora:
+          <span class="mono">Originali</span>, <span class="mono">Anteprime_Cliente</span> e
+          <span class="mono">Galleria_Cliente</span>. La galleria è un singolo file HTML:
+          si apre da chiavetta o da cartella condivisa, senza server e senza dipendenze esterne.
+        </p>
+        <p>
+          Tethering e cloud sono spenti per impostazione predefinita. Senza di essi il programma
+          non apre nessuna connessione.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== GALLERIA ===================== -->
-  <section class="section section--soft" id="galleria">
+  <section class="section" id="galleria">
     <div class="wrap">
       <div class="section-head" data-reveal>
         <span class="eyebrow">Interfaccia</span>
@@ -308,34 +583,74 @@
     </div>
   </section>
 
-  <!-- ===================== GENERI ===================== -->
-  <section class="section" id="generi">
+  <!-- ===================== LUT FRANCHETTI ARTS ===================== -->
+  <section class="section" id="lut">
     <div class="wrap">
       <div class="section-head" data-reveal>
-        <span class="eyebrow">Generi</span>
-        <h2>Paesaggio, macro, architettura.</h2>
-        <p>La stessa pipeline regge soggetti con esigenze opposte: cielo e vegetazione, dettaglio fine, linee e geometrie.</p>
+        <span class="eyebrow">In omaggio · Franchetti Arts</span>
+        <h2>108 LUT per dare carattere agli scatti.</h2>
+        <p>Dodici famiglie di look, nove varianti ciascuna, in file <span class="mono">.cube</span> standard. Si scaricano a parte, senza account, e si caricano nel pannello delle regolazioni avanzate.</p>
       </div>
 
-      <div class="genres">
-        <figure class="genre" data-reveal>
-          <img src="assets/card-paesaggio.jpg" width="960" height="540" loading="lazy" alt="Lago alpino con foresta">
-          <figcaption><b>Paesaggio</b><span>Recupero luci, colore naturale, dettaglio nelle ombre</span></figcaption>
+      <div class="lut">
+        <figure class="lut__figure" data-reveal>
+          <a class="lut__zoom" href="assets/luts-grid.jpg" aria-label="Apri l'anteprima delle LUT a dimensione piena">
+            <img src="assets/luts-grid.jpg" width="1600" height="1200" loading="lazy"
+                 alt="Griglia di confronto sulla stessa fotografia di un lago alpino: l'originale e quindici rese diverse, tra cui cinema, pellicola, bianco e nero, neon, deserto, ghiaccio, cross process e pastello">
+          </a>
+          <figcaption>L'originale e quindici LUT del pack sulla stessa fotografia. Anteprime calcolate con la stessa interpolazione trilineare usata dal programma.</figcaption>
         </figure>
-        <figure class="genre" data-reveal>
-          <img src="assets/card-macro.jpg" width="960" height="640" loading="lazy" alt="Dettaglio macro di una foglia">
-          <figcaption><b>Macro</b><span>Micro-contrasto e nitidezza senza aloni</span></figcaption>
-        </figure>
-        <figure class="genre" data-reveal>
-          <img src="assets/card-architettura.jpg" width="960" height="640" loading="lazy" alt="Facciata di un edificio con finestre ripetute">
-          <figcaption><b>Architettura</b><span>Linee pulite, prospettiva e tonalità neutre</span></figcaption>
-        </figure>
-      </div>
 
-      <p class="note-cc0">
-        Fotografie di repertorio con licenza CC0 (pubblico dominio), usate come esempio
-        di genere: non sono elaborazioni prodotte dal programma.
-      </p>
+        <div class="lut__info">
+          <div class="lut__famiglie" data-reveal>
+            <h3>Dodici famiglie, nove varianti</h3>
+            <ul class="lut__families">
+              <li><b>Cinema</b> · teal e orange</li>
+              <li><b>Pellicola</b> · resa analogica</li>
+              <li><b>Vintage</b> · fade e cartolina</li>
+              <li><b>Bianco e Nero</b> · selenio, seppia, platino</li>
+              <li><b>Neon</b> · magenta e ciano</li>
+              <li><b>Naturale</b> · resa fedele</li>
+              <li><b>Caldo</b> · ora d'oro e tramonto</li>
+              <li><b>Freddo</b> · ora blu e nebbia</li>
+              <li><b>Cross Process</b> · sviluppo incrociato</li>
+              <li><b>Bleach Bypass</b> · contrasto e desaturazione</li>
+              <li><b>Pastello</b> · neri alzati</li>
+              <li><b>Drammatico</b> · ombre profonde</li>
+            </ul>
+          </div>
+
+          <div class="lut__cta" data-reveal>
+            <div class="lut__stats">
+              <span>108 file .cube</span>
+              <span>17 × 17 × 17 punti</span>
+              <span>4,3 MB</span>
+              <span>Licenza libera</span>
+            </div>
+
+            <div class="lut__actions">
+              <a class="btn btn--primary" href="downloads/Franchetti_Arts_LUTs.zip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>
+                </svg>
+                Scarica le LUT <small>4,3 MB</small>
+              </a>
+            </div>
+
+            <p class="lut__hint">
+              Download separato dall'installer: un archivio ZIP, nessuna registrazione.
+              Uso libero anche in lavori commerciali; non è consentita la rivendita del
+              pack così com'è. Le LUT sono originali e non riproducono marchi di terzi.
+            </p>
+
+            <div class="pack">
+              <h4>Pack preset ufficiale</h4>
+              <p>Tre look pronti — Cinema caldo, Paesaggio freddo, Ritratto soft — con <span class="mono">manifest.json</span> e SHA-256 per ogni file.</p>
+              <a class="pack__link" href="downloads/Franchetti_Preset_Pack.zip">Scarica i 3 preset <span>3,3 KB</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -345,28 +660,34 @@
       <div class="section-head" data-reveal>
         <span class="eyebrow">Compatibilità</span>
         <h2>Cosa apre, cosa scrive, dove gira.</h2>
+        <p>I formati sono quelli gestiti da LibRaw e dalla pipeline. Dove il supporto è parziale, lo diciamo qui.</p>
       </div>
 
       <div class="specs">
         <div class="spec" data-reveal>
-          <h3>Formati in ingresso</h3>
-          <p>Oltre 25 formati RAW: Sony ARW, Canon CR2 e CR3, Nikon NEF, Fujifilm RAF, Olympus ORF, Panasonic RW2, DNG e altri.</p>
-          <p>La scansione è ricorsiva e ignora i file già elaborati.</p>
+          <h3>Ingresso</h3>
+          <p>27 formati RAW più le immagini già pronte.</p>
+          <div class="formats">
+            <span>ARW</span><span>CR2</span><span>CR3</span><span>NEF</span><span>NRW</span><span>RAF</span><span>DNG</span><span>ORF</span><span>RW2</span><span>PEF</span><span>SRW</span><span>X3F</span><span>3FR</span><span>FFF</span><span>RAW</span><span>RWL</span><span>DCR</span><span>K25</span><span>KDC</span><span>MOS</span><span>MRW</span><span>ERF</span><span>MEF</span><span>IIQ</span><span>CAP</span><span>BRAW</span><span>GPR</span>
+          </div>
+          <p class="formats__note">Immagini: JPG, PNG, TIFF, BMP, WebP.</p>
         </div>
+
         <div class="spec" data-reveal>
-          <h3>Formati in uscita</h3>
-          <p>JPEG e TIFF, con lato lungo, qualità e schema dei nomi configurabili.</p>
-          <p>EXIF, autore e copyright conservati dove il formato li supporta.</p>
+          <h3>Uscita</h3>
+          <p>JPEG 4:4:4 con profilo ICC sRGB, PNG, TIFF LZW, WebP.</p>
+          <p>Lato lungo in pixel, qualità, schema dei nomi, watermark e metadati. I file vengono scritti in temporaneo e pubblicati solo a conversione finita.</p>
         </div>
+
         <div class="spec" data-reveal>
           <h3>Sistema</h3>
-          <p>Windows 10 e Windows 11, 64 bit.</p>
-          <p>Nessuna dipendenza esterna da installare: il programma è autonomo.</p>
+          <p>Windows 10 e 11 a 64 bit, installer per-utente o portable. Solo CPU: nessuna GPU richiesta, nessun servizio esterno.</p>
+          <p>Processi adattivi con guardia sulla memoria disponibile. Tre profili: Veloce, Bilanciato, Massima qualità.</p>
         </div>
+
         <div class="spec" data-reveal>
-          <h3>Installazione</h3>
-          <p>Installer per-utente, senza privilegi di amministratore, oppure versione portable.</p>
-          <p>Disinstallazione gestita dall'installer, che rimuove il programma e la voce nel menu Start.</p>
+          <h3>Limiti dichiarati</h3>
+          <p>CR3 compresso ha supporto parziale. L'import XMP è una mappatura parziale, non una conversione 1:1. Il tethering Sony richiede l'app Smart Remote Control e il PC sulla rete della fotocamera. Le build Linux e macOS sono sperimentali.</p>
         </div>
       </div>
     </div>
@@ -392,13 +713,28 @@
         </details>
 
         <details data-reveal>
-          <summary>Serve una connessione a internet?</summary>
-          <p>No. Il programma funziona interamente offline e non effettua chiamate di rete, né invia dati di utilizzo.</p>
+          <summary>Il programma usa internet?</summary>
+          <p>Solo se attivi tethering, galleria o invio cloud. In tutti gli altri casi non apre connessioni e non invia dati di utilizzo. Non c'è telemetria.</p>
         </details>
 
         <details data-reveal>
           <summary>Che differenza c'è tra installer e versione portable?</summary>
           <p>L'installer colloca il programma nel profilo dell'utente, crea la voce nel menu Start e permette la disinstallazione dalle impostazioni di Windows. La versione portable è un singolo eseguibile: non installa nulla e si avvia dove la copi.</p>
+        </details>
+
+        <details data-reveal>
+          <summary>Un file corrotto può fermare il batch?</summary>
+          <p>No. Ogni conversione scrive prima su un file temporaneo e sostituisce l'output solo alla fine. Se un file fallisce, il batch prosegue e il log riporta il motivo; i temporanei vengono rimossi.</p>
+        </details>
+
+        <details data-reveal>
+          <summary>Come funziona il tethering?</summary>
+          <p>Puoi usare il server FTP integrato (porta 2121) con la fotocamera impostata per l'invio, una cartella sorvegliata per le schede, oppure Sony Wi-Fi con l'app Smart Remote Control. Gli scatti arrivano in <span class="mono">Originali</span>, l'anteprima firmata in <span class="mono">Anteprime_Cliente</span> e la galleria HTML in <span class="mono">Galleria_Cliente</span>.</p>
+        </details>
+
+        <details data-reveal>
+          <summary>Le LUT e i preset sono compresi nell'installer?</summary>
+          <p>No, sono due download separati e facoltativi: un archivio da 4,3 MB con 108 LUT e uno da 3,3 KB con tre preset. L'installer resta un unico eseguibile da 101 MB. Le LUT si caricano dal pannello delle regolazioni avanzate con intensità da 0 a 100%.</p>
         </details>
 
         <details data-reveal>
@@ -408,7 +744,7 @@
 
         <details data-reveal>
           <summary>Quali fotocamere sono supportate?</summary>
-          <p>I formati RAW più diffusi: Sony ARW, Canon CR2 e CR3, Nikon NEF, Fujifilm RAF, Olympus ORF, Panasonic RW2, DNG e altri, per oltre 25 estensioni riconosciute.</p>
+          <p>I formati RAW più diffusi: Sony ARW, Canon CR2 e CR3, Nikon NEF, Fujifilm RAF, Olympus ORF, Panasonic RW2, DNG e altri, per 27 estensioni riconosciute.</p>
         </details>
       </div>
     </div>
@@ -459,7 +795,8 @@
     </div>
     <div class="footer__credits">
       <strong>Fotografie</strong><br>
-      Immagini CC0 / pubblico dominio. Nessun marchio di terzi è utilizzato
+      Immagini CC0 / pubblico dominio. I confronti sono output reali del programma;
+      il RAW notturno è uno scatto di prova. Nessun marchio di terzi è utilizzato
       a scopo pubblicitario.
     </div>
     <div>

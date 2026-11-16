@@ -1,9 +1,9 @@
-/* Interazioni minime: ombra della barra allo scroll e comparsa progressiva.
-   Se lo script non parte, la pagina resta completamente leggibile: le classi
-   che nascondono gli elementi vengono aggiunte solo da qui. */
+/* Interazioni progressive: senza JavaScript la pagina resta leggibile.
+   Le classi che nascondono gli elementi vengono aggiunte solo da qui. */
 (function () {
   "use strict";
 
+  /* ---------- Ombra della barra allo scroll ------------------------------- */
   var nav = document.getElementById("nav");
   var onScroll = function () {
     if (!nav) return;
@@ -12,6 +12,69 @@
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
+  /* ---------- Confronti prima / dopo -------------------------------------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("[data-ba]"));
+
+  boxes.forEach(function (box) {
+    var range = box.querySelector(".ba__range");
+    if (!range) return;
+
+    var update = function () {
+      box.style.setProperty("--pos", range.value + "%");
+    };
+
+    range.addEventListener("input", update);
+    range.addEventListener("change", update);
+    update();
+  });
+
+  /* ---------- Schede dei confronti ---------------------------------------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".ba__tab"));
+
+  if (tabs.length) {
+    var panels = Array.prototype.slice.call(document.querySelectorAll(".scene"));
+
+    var activate = function (tab, focus) {
+      tabs.forEach(function (item) {
+        var selected = item === tab;
+        item.classList.toggle("is-active", selected);
+        item.setAttribute("aria-selected", selected ? "true" : "false");
+        item.tabIndex = selected ? 0 : -1;
+      });
+
+      panels.forEach(function (panel) {
+        panel.hidden = panel.id !== tab.getAttribute("data-scene");
+      });
+
+      if (focus) tab.focus();
+    };
+
+    tabs.forEach(function (tab, index) {
+      tab.tabIndex = index === 0 ? 0 : -1;
+
+      tab.addEventListener("click", function () {
+        activate(tab, false);
+      });
+
+      tab.addEventListener("keydown", function (event) {
+        var next = null;
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          next = tabs[(index + 1) % tabs.length];
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          next = tabs[(index - 1 + tabs.length) % tabs.length];
+        } else if (event.key === "Home") {
+          next = tabs[0];
+        } else if (event.key === "End") {
+          next = tabs[tabs.length - 1];
+        }
+        if (!next) return;
+        event.preventDefault();
+        activate(next, true);
+      });
+    });
+  }
+
+  /* ---------- Comparsa progressiva ---------------------------------------- */
   var prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var items = Array.prototype.slice.call(document.querySelectorAll("[data-reveal]"));
 

@@ -1,18 +1,37 @@
 # Deploy del sito — Franchetti Raw Converter Pro
 
-## Stato: pubblicato (16/11/2026)
+## Stato: pubblicato (16/11/2026) — revisione grafica 2.58.1
 
 | | |
 |---|---|
 | Repository | `github.com/FranchettiBiagio/franchetti-raw-converter-site` (pubblico) |
 | Sito online | https://franchettibiagio.github.io/franchetti-raw-converter-site/ |
-| Verifica | HTTP 200, 22.212 byte, 0 errori in console, 0 richieste esterne, immagini tutte caricate |
+| Verifica | HTTP 200, 0 errori in console, 0 richieste esterne, 14 immagini caricate |
 | Sorgente locale | `C:\FranchettiRawConverterPro\_publish` (repo git separato dal progetto) |
-| Backup distribuibile | `dist\franchetti-site.zip` (2,03 MB, 13 file) |
+| Backup distribuibile | `dist\franchetti-site.zip` (25 file) |
 
 Il repository contiene **solo** il sito: `store_assets`, i documenti di
 certificazione e il codice dell'applicazione restano nel repository privato del
 progetto.
+
+## Struttura della pagina
+
+| Sezione | Contenuto |
+|---|---|
+| `hero` | promessa, versione, tre azioni, micro-dati (27 RAW / 73 parametri / 4 uscite) |
+| `trust` | originali in sola lettura, offline, scrittura atomica, prestazioni adattive |
+| `#confronti` | tre confronti prima/dopo con maniglia trascinabile (RAW notturno, paesaggio, bianco e nero) + ritagli 100% |
+| `#motore` | pipeline in 10 fasi, grafico misurato della protezione luci, statistiche |
+| `#come` | quattro passaggi del flusso di lavoro |
+| `#funzioni` | otto schede: formati, batch, Smart Batch, preset, LUT, firma, tethering, output |
+| `#novita` | preset `.frcpreset`, XMP beta, LUT 3D, pacchetti con checksum, tempi Veloce |
+| `#tethering` | FTP 2121 / hot folder / Sony Wi-Fi → sviluppo → firma → galleria |
+| `#galleria` | tre schermate reali dell'applicazione |
+| `band` | impegno sugli originali |
+| `#lut` | griglia reale di 16 rese, 12 famiglie, download LUT + pack preset |
+| `#compatibilita` | formati di ingresso/uscita, sistema, limiti dichiarati |
+| `#faq` | nove domande, incluse LUT/preset separati e avviso SmartScreen |
+| `#scarica` | installer, byte esatti, SHA-256, comando `certutil` |
 
 ## Aggiornare il sito
 
@@ -26,7 +45,7 @@ git push
 
 GitHub Pages ricostruisce in 30–60 secondi. Non serve toccare il DNS.
 
-Pacchetto pronto: `dist\franchetti-site.zip` (2,03 MB, 13 file, nessuna cartella
+Pacchetto pronto: `dist\franchetti-site.zip` (25 file, nessuna cartella
 di primo livello: il contenuto va estratto nella radice del sito).
 
 ## Contenuto
@@ -34,19 +53,34 @@ di primo livello: il contenuto va estratto nella radice del sito).
 ```
 index.html               pagina unica, italiana
 styles.css               foglio di stile completo (responsive, print, reduced-motion)
-app.js                   ombra della barra allo scroll + comparsa progressiva
+app.js                   barra allo scroll, confronti trascinabili, schede accessibili,
+                         comparsa progressiva
 favicon.png              64×64
 assets/
   hero.jpg               2400×1600  (CC0)
   band.jpg               2400×1600  (CC0)
-  card-paesaggio.jpg      960×540   (CC0)
-  card-macro.jpg          960×640   (CC0)
-  card-architettura.jpg   960×640   (CC0)
   logo.png               256×256    (icona dell'app)
   ui-batch.jpg          1600×900    (schermata reale dell'app)
   ui-anteprima.jpg      1600×900    (schermata reale dell'app)
   ui-preset.jpg         1600×900    (schermata reale dell'app)
+  ba-raw-before.jpg     1500×1000   (output reale: decodifica neutra)
+  ba-raw-after.jpg      1500×1000   (output reale: preset + Smart Batch)
+  ba-paesaggio-*.jpg    1500×1000   (output reale: preset Paesaggio freddo)
+  ba-bianconero-*.jpg   1500×1000   (output reale: preset Bianco e Nero)
+  noise-before.jpg       760×500    (ritaglio 100% prima)
+  noise-after.jpg        760×500    (ritaglio 100% dopo, denoise reale)
+  curva-luci.png        1100×620    (grafico misurato con la funzione del motore)
+  luts-grid.jpg         1600×1200   (griglia LUT calcolata con interpolazione trilineare)
+  card-paesaggio.jpg     960×540    (CC0, riserva)
+  card-macro.jpg         960×640    (CC0, riserva)
+  card-architettura.jpg  960×640    (CC0, riserva)
+downloads/
+  Franchetti_Arts_LUTs.zip      108 .cube + README + licenza, 4.535.997 byte
+  Franchetti_Preset_Pack.zip    3 preset + manifest + README, 3.349 byte
 ```
+
+Gli asset `ba-*` e `curva-luci.png` sono prodotti dal motore dell'applicazione,
+non ritoccati: il sorgente RAW è uno scatto di prova Sony da 33 MP a ISO 2000.
 
 ## Pubblicazione
 
@@ -58,9 +92,22 @@ assets/
    - il pulsante «Scarica l'installer» porta a
      `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe`;
    - l'hash mostrato nella sezione Download corrisponde al file servito;
-   - su telefono (375 px) non compare scorrimento orizzontale.
+   - le tre schede dei confronti cambiano immagine e la maniglia si trascina;
+   - i due ZIP in `downloads/` rispondono 200 e hanno le dimensioni dichiarate
+     (4,3 MB LUT, 3,3 KB preset);
+   - su telefono (375 px e 320 px) non compare scorrimento orizzontale.
 4. In Partner Center, nel campo **Sito web** della scheda dello Store, usa questo
    indirizzo. È lo stesso dominio da cui viene servito l'installer.
+
+## Download separati
+
+| File | Contenuto | Byte | SHA-256 |
+|---|---|---|---|
+| `Franchetti_Arts_LUTs.zip` | 108 `.cube` + `README.txt` + `LICENZA.txt` | 4.535.997 | `56AB9A8E77CA87494387CC40AA2BB1289BC7C686BD15DC00F653E783A7E3D604` |
+| `Franchetti_Preset_Pack.zip` | 3 `.frcpreset` + `manifest.json` + `README.md` | 3.349 | `D4DA327B8FA8948EC3C4E2BA2AE2CAC6DE8059F979BC756CC31FDB352F49D3A8` |
+
+Il pack preset va rigenerato solo se cambia uno dei `.frcpreset`: gli hash in
+`manifest.json` devono corrispondere ai file al momento della compressione.
 
 ## Contenuti: regole rispettate
 
