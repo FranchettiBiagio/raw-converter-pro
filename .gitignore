@@ -4,6 +4,9 @@ dist/
 Output/
 *.spec.bak
 
+# Clone di pubblicazione del sito (repo separato: franchetti-raw-converter-site)
+_publish/
+
 # Python
 __pycache__/
 *.py[cod]
