@@ -8,7 +8,7 @@
 | Sito online | https://franchettibiagio.github.io/franchetti-raw-converter-site/ |
 | Verifica | HTTP 200, 0 errori in console, 0 richieste esterne, 14 immagini caricate |
 | Sorgente locale | `C:\FranchettiRawConverterPro\_publish` (repo git separato dal progetto) |
-| Backup distribuibile | `dist\franchetti-site.zip` (25 file) |
+| Backup distribuibile | `dist\franchetti-site.zip` (8,8 MB, 25 file) |
 
 Il repository contiene **solo** il sito: `store_assets`, i documenti di
 certificazione e il codice dell'applicazione restano nel repository privato del
@@ -45,7 +45,7 @@ git push
 
 GitHub Pages ricostruisce in 30–60 secondi. Non serve toccare il DNS.
 
-Pacchetto pronto: `dist\franchetti-site.zip` (25 file, nessuna cartella
+Pacchetto pronto: `dist\franchetti-site.zip` (8,8 MB, 25 file, nessuna cartella
 di primo livello: il contenuto va estratto nella radice del sito).
 
 ## Contenuto
