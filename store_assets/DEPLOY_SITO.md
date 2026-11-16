@@ -57,8 +57,8 @@ app.js                   barra allo scroll, confronti trascinabili, schede acces
                          comparsa progressiva
 favicon.png              64×64
 assets/
-  hero.jpg               2400×1600  (CC0)
-  band.jpg               2400×1600  (CC0)
+  hero.jpg               2400×1600  (Unsplash, licenza Unsplash)
+  band.jpg               2400×1600  (Unsplash, licenza Unsplash)
   og-image.jpg           1200×630   (immagine di condivisione: logo, titolo, etichette)
   logo.png               256×256    (icona dell'app)
   ui-batch.jpg          1600×900    (schermata reale dell'app)
@@ -72,9 +72,9 @@ assets/
   noise-after.jpg        760×500    (ritaglio 100% dopo, denoise reale)
   curva-luci.png        1100×620    (grafico misurato con la funzione del motore)
   luts-grid.jpg         1600×1200   (griglia LUT calcolata con interpolazione trilineare)
-  card-paesaggio.jpg     960×540    (CC0, riserva)
-  card-macro.jpg         960×640    (CC0, riserva)
-  card-architettura.jpg  960×640    (CC0, riserva)
+  card-paesaggio.jpg     960×540    (Unsplash, riserva)
+  card-macro.jpg         960×640    (Unsplash, riserva)
+  card-architettura.jpg  960×640    (Unsplash, riserva)
 downloads/
   Franchetti_Arts_LUTs.zip      108 .cube + README + licenza, 4.535.997 byte
   Franchetti_Preset_Pack.zip    3 preset + manifest + README, 3.349 byte
@@ -129,13 +129,13 @@ Il pack preset va rigenerato solo se cambia uno dei `.frcpreset`: gli hash in
   gli unici link esterni sono il download sul dominio dell'autore e la posta.
   I meta `og:url` / `og:image` usano l'indirizzo assoluto di pubblicazione perché
   i social lo richiedono (senza, l'anteprima non compare).
-- **Nessun logo o marchio di terzi**: le uniche immagini sono fotografie CC0 e
-  schermate reali del programma.
+- **Nessun logo o marchio di terzi**: le uniche immagini sono fotografie Unsplash
+  (licenza Unsplash) e schermate reali del programma.
 - **Nessuna promessa non verificata**: niente «certificato», niente «firmato»,
   niente tempi di conversione inventati; i numeri del profilo Veloce sono quelli
   misurati in `RELEASE_NOTES.md`.
-- **Crediti fotografici** nel footer: CC0 / pubblico dominio, uso non
-  pubblicitario di marchi.
+- **Crediti fotografici** nel footer: licenza Unsplash per le foto di scena,
+  uso non pubblicitario di marchi.
 
 ## Manutenzione a ogni nuova versione
 
