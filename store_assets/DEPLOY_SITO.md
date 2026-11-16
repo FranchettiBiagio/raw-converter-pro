@@ -8,7 +8,7 @@
 | Sito online | https://franchettibiagio.github.io/franchetti-raw-converter-site/ |
 | Verifica | HTTP 200, 0 errori in console, 0 richieste esterne, 14 immagini caricate |
 | Sorgente locale | `C:\FranchettiRawConverterPro\_publish` (repo git separato dal progetto) |
-| Backup distribuibile | `dist\franchetti-site.zip` (8,8 MB, 25 file) |
+| Backup distribuibile | `dist\franchetti-site.zip` (8,9 MB, 26 file) |
 
 Il repository contiene **solo** il sito: `store_assets`, i documenti di
 certificazione e il codice dell'applicazione restano nel repository privato del
@@ -45,7 +45,7 @@ git push
 
 GitHub Pages ricostruisce in 30–60 secondi. Non serve toccare il DNS.
 
-Pacchetto pronto: `dist\franchetti-site.zip` (8,8 MB, 25 file, nessuna cartella
+Pacchetto pronto: `dist\franchetti-site.zip` (8,9 MB, 26 file, nessuna cartella
 di primo livello: il contenuto va estratto nella radice del sito).
 
 ## Contenuto
@@ -59,6 +59,7 @@ favicon.png              64×64
 assets/
   hero.jpg               2400×1600  (CC0)
   band.jpg               2400×1600  (CC0)
+  og-image.jpg           1200×630   (immagine di condivisione: logo, titolo, etichette)
   logo.png               256×256    (icona dell'app)
   ui-batch.jpg          1600×900    (schermata reale dell'app)
   ui-anteprima.jpg      1600×900    (schermata reale dell'app)
@@ -81,6 +82,19 @@ downloads/
 
 Gli asset `ba-*` e `curva-luci.png` sono prodotti dal motore dell'applicazione,
 non ritoccati: il sorgente RAW è uno scatto di prova Sony da 33 MP a ISO 2000.
+
+## Anteprima di condivisione
+
+In `<head>` sono presenti `og:image` e `twitter:image` con indirizzo **assoluto**
+verso `assets/og-image.jpg` (1200×630, 126 KB): è l'immagine che WhatsApp,
+Telegram, Facebook e LinkedIn mostrano quando si incolla il link. I campi
+`og:url` e `og:image` contengono l'host di pubblicazione: **vanno aggiornati in
+blocco** se il sito passa a un dominio proprio (`raw.franchettitv.it`).
+
+Le anteprime vengono messe in cache dai social: dopo una modifica può servire
+un nuovo link con parametro (`?v=2`) per forzare la rilettura. Per ripristinare
+la cache di WhatsApp si condivide il link con una parte diversa dopo la barra
+(`/` → `/?v=2`).
 
 ## Pubblicazione
 
@@ -111,8 +125,10 @@ Il pack preset va rigenerato solo se cambia uno dei `.frcpreset`: gli hash in
 
 ## Contenuti: regole rispettate
 
-- **Nessun riferimento a GitHub**, né nel testo né nei link: l'unico link esterno
-  è il download sul dominio dell'autore e l'indirizzo di posta.
+- **Nessun riferimento a GitHub nel testo visibile**, né link alla piattaforma:
+  gli unici link esterni sono il download sul dominio dell'autore e la posta.
+  I meta `og:url` / `og:image` usano l'indirizzo assoluto di pubblicazione perché
+  i social lo richiedono (senza, l'anteprima non compare).
 - **Nessun logo o marchio di terzi**: le uniche immagini sono fotografie CC0 e
   schermate reali del programma.
 - **Nessuna promessa non verificata**: niente «certificato», niente «firmato»,
