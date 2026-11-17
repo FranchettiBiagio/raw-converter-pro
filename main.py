@@ -4589,6 +4589,16 @@ class FranchettiApp(ctk.CTk):
         except Exception:
             pass
 
+    def _apri_recensione_store(self):
+        """Apre la scheda dello Store, dove si lascia la recensione."""
+        try:
+            os.startfile("ms-windows-store://review/?ProductId=XP9CJZTBCW6VS7")
+        except OSError:
+            try:
+                os.startfile("https://apps.microsoft.com/detail/XP9CJZTBCW6VS7")
+            except OSError as errore:
+                logging.info("Pagina Store non disponibile: %s", errore)
+
     # ---------------------------------------------------------------- layout
     def _crea_interfaccia(self):
         self.grid_columnconfigure(0, weight=1)
@@ -4603,12 +4613,15 @@ class FranchettiApp(ctk.CTk):
             text="FRANCHETTI RAW CONVERTER PRO",
             font=ctk.CTkFont(size=18, weight="bold"),
         ).grid(row=0, column=0, padx=(20, 6), pady=10, sticky="w")
-        ctk.CTkLabel(
+        self.link_recensione = ctk.CTkLabel(
             header,
-            text="Ogni recensione positiva aiuta lo sviluppo del programma - grazie!",
-            font=ctk.CTkFont(size=10),
+            text="Ti è utile? Lascia una recensione nello Store - grazie!",
+            font=ctk.CTkFont(size=10, underline=True),
             text_color="#9aa0a6",
-        ).grid(row=0, column=1, padx=(0, 14), pady=(22, 4), sticky="w")
+            cursor="hand2",
+        )
+        self.link_recensione.grid(row=0, column=1, padx=(0, 14), pady=(22, 4), sticky="w")
+        self.link_recensione.bind("<Button-1>", lambda _evento: self._apri_recensione_store())
         ctk.CTkLabel(
             header,
             text=f"v{APP_VERSION}  |  LibRaw  |  Multi-core  |  Wi-Fi FTP e tethering",
