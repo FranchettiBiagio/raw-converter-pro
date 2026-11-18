@@ -1,9 +1,9 @@
-# Microsoft Store — Testo del listing v2.58.1
+# Microsoft Store — Testo del listing v2.58.2
 
 Testo pronto per il **Partner Center** (solo aggiornamento della scheda, nessun
 nuovo pacchetto). Campi pensati per la pubblicazione **EXE/MSI**: nel Partner
 Center la scheda descrive l'app, mentre il file caricato resta l'installer
-Inno Setup `Franchetti_Raw_Converter_Setup_v2.58.1.exe`.
+Inno Setup `Franchetti_Raw_Converter_Setup_v2.58.2.exe`.
 
 > Nota: i limiti di carattere indicati sono quelli tipici del Partner Center.
 > I testi sono volutamente più corti, così non vengono troncati.
@@ -40,7 +40,7 @@ PIPELINE Y/Cb/Cr
 La luminanza viene separata dalla crominanza: il contrasto sigmoidale protegge luci e ombre, la vivacità selettiva interviene solo sui toni spenti, il denoise ibrido lavora sulle zone piatte e la nitidezza controllata agisce solo su Y con una soglia sul rumore. Il risultato sono dettagli puliti, incarnati naturali e nessun alone colorato.
 
 PRESTAZIONI ADATTIVE
-Il pannello PRESTAZIONI legge i core fisici, i core logici e la RAM libera del PC. Scegli il profilo Veloce, Bilanciato o Massima qualità; il numero di processi è automatico, con slider per l'override manuale. Il pool multi-processo parte solo quando il numero e il peso dei file lo giustificano, così i batch piccoli restano immediati. Il benchmark sui tuoi file misura il tempo reale su 1-2 foto in una cartella temporanea e fornisce una stima del batch, con file/min ed ETA durante la conversione. Nella 2.58.1 il profilo Veloce è circa il 39% più rapido sul test da 24 MP a 3000 px.
+Il pannello PRESTAZIONI legge i core fisici, i core logici e la RAM libera del PC. Scegli il profilo Veloce, Bilanciato o Massima qualità; il numero di processi è automatico, con slider per l'override manuale. Il pool multi-processo parte solo quando il numero e il peso dei file lo giustificano, così i batch piccoli restano immediati. Il benchmark sui tuoi file misura il tempo reale su 1-2 foto in una cartella temporanea e fornisce una stima del batch, con file/min ed ETA durante la conversione. Dalla 2.58.1 il profilo Veloce è circa il 39% più rapido sul test da 24 MP a 3000 px.
 
 PRESET PORTABILI .frcpreset
 I preset sono file JSON leggibili, con nome, autore, descrizione, tag, una sezione look e un output facoltativo. Non contengono percorsi, cartelle, credenziali cloud, FTP o copyright e non vengono mai eseguiti. Puoi salvare il look corrente, importare, esportare, eliminare e applicare un preset con anteprima. I sei preset storici sono già inclusi: Web / Social, Stampa Fine Art, Archivio JPEG, Ritratto, Paesaggio e Bianco e Nero. I pacchetti scaricabili usano un manifest con checksum SHA-256 e l'importazione è sempre manuale: l'app non scarica nulla da sola.
@@ -69,10 +69,10 @@ MIT: gratuito per uso personale e commerciale. Attribuzione apprezzata: "Franche
 
 ---
 
-## Novità della versione 2.58.1 (max 1.500 caratteri)
+## Novità della versione 2.58.2 (max 1.500 caratteri)
 
 ```text
-Preset portabili .frcpreset: file JSON con look e output facoltativo, senza percorsi, cloud, FTP o copyright. Salva, importa, esporta, elimina e applica i preset con anteprima; i sei preset storici sono già migrati. Pacchetti scaricabili con manifest e checksum SHA-256, importazione sempre manuale. Import XMP (beta) con mappatura parziale dei preset Lightroom. LUT 3D .cube con interpolazione trilineare e intensità regolabile. Profilo Veloce più rapido: denoise non-locale a metà risoluzione e stima del rumore campionata, circa -39% sul test da 24 MP a 3000 px. Bilanciato e Massima qualità restano invariati. Correzioni Linux sperimentali: filtro .RAF maiuscolo, core fisici da /proc/cpuinfo, memoria da /proc/meminfo, semafori rilasciati correttamente e messaggio di dipendenza più chiaro.
+Versione di manutenzione. Il file franchetti_log.txt e il file sony_diagnosi.txt ora vengono scritti nella cartella dati dell'app (su Windows %APPDATA%\FranchettiRawConverterPro) invece che sul Desktop: il percorso è valido su qualsiasi sistema e il file è sempre reperibile. Nel log c'è una nuova riga di avvio con versione di Python, PID, PPID, metodo dei processi e argomenti, utile quando un avvio non va a buon fine. La build sperimentale per Linux ora usa --onedir e, quando il programma è impacchettato, esegue il batch con thread invece di processi separati: si evita il ciclo di copie dell'applicazione che su alcune distribuzioni esauriva RAM e swap. Su Windows pipeline, parametri e resa delle immagini non cambiano.
 ```
 
 ---
@@ -146,15 +146,15 @@ conversione RAW
 | Sito web | https://franchettibiagio.github.io/raw-converter-pro/ |
 | Informativa sulla privacy | https://github.com/FranchettiBiagio/raw-converter-pro/blob/main/PRIVACY.md |
 | Supporto | https://github.com/FranchettiBiagio/raw-converter-pro/issues |
-| Note sulla versione | https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1 |
+| Note sulla versione | https://github.com/FranchettiBiagio/raw-converter-pro/releases |
 | Lingua del listing | Italiano (principale); inglese facoltativo |
-| Tipo di pacchetto | EXE/MSI — installer Inno Setup v2.58.1 |
+| Tipo di pacchetto | EXE/MSI — installer Inno Setup v2.58.2 |
 
 ---
 
 ## Materiale grafico pronto
 
-La cartella `store_assets/` (e l'archivio `store_assets_v2.58.1.zip`) contiene:
+La cartella `store_assets/` contiene:
 
 - 9 screenshot reali 1920×1080 in ordine di caricamento (`store_assets/screenshots/`);
 - immagine hero 2340×1200 (`store_assets/hero/`);
@@ -172,13 +172,14 @@ Istruzioni campo per campo e ordine degli screenshot:
 - [ ] Caratteristiche principali: massimo 20 voci
 - [ ] Parole chiave: massimo 7, ognuna entro 30 caratteri
 - [ ] URL privacy e supporto raggiungibili
-- [ ] Screenshot aggiornati alla 2.58.1 (minimo 4, 16:9)
+- [ ] Screenshot verificati: le catture della 2.58.1 restano valide
+      (l'interfaccia non cambia); minimo 4, 16:9
 - [ ] Immagine hero 2340×1200 aggiornata, se richiesta
 - [ ] Installer EXE/MSI già caricato nella sottomissione esistente
 - [ ] **Firma Authenticode non necessaria** per questo prodotto: l'installer
       v1.0.0 distribuito dallo Store è `NotSigned`. Vedi
       `store_assets/PUBLISH_EXE_FREE.md`
-- [ ] **Package URL** versionato aggiornato all'installer v2.58.1
+- [ ] **Package URL** versionato aggiornato all'installer v2.58.2
 - [ ] **Installer parameters** `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
 - [ ] Codice di ritorno successo `0`, annullamento `2`
 - [ ] Nessuna modifica al pacchetto: solo testo della scheda

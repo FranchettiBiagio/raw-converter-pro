@@ -1,6 +1,6 @@
 # Scheda Negozio uptodown.dev / FileCR / Itch.io / SourceForge
 
-**Franchetti Raw Converter Pro v2.58.1**  
+**Franchetti Raw Converter Pro v2.58.2**  
 *Convertitore RAW professionale Enterprise per Windows — Pipeline Y/Cb/Cr, Tethering multi-marca, Cloud Dispatch*
 
 ---
@@ -17,7 +17,15 @@ Suite RAW Enterprise (25+ formati): pipeline Y/Cb/Cr, profili prestazioni adatti
 
 ### 🎯 **Per fotografi professionisti e studi che vogliono controllo totale e automazione**
 
-Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~92 MB), open source (MIT), zero telemetria.
+Franchetti Raw Converter Pro v2.58.2 è una **suite Enterprise completa** che trasforma file RAW in JPEG ottimizzati attraverso una **pipeline matematica in spazio Y/Cb/Cr**, con automazione **tethering multi-marca** e **distribuzione cloud multi-canale** integrata. Tutto in un singolo eseguibile portable (~92 MB), open source (MIT), zero telemetria.
+
+### 🆕 **Novità v2.58.2**
+
+Versione di manutenzione, pensata soprattutto per la build Linux sperimentale:
+
+- **Log in una cartella valida su ogni sistema**: `franchetti_log.txt` e `sony_diagnosi.txt` non vengono più scritti in `Desktop` (che su Linux si chiama `Scrivania` o non esiste), ma nella cartella dati dell'app: `%APPDATA%\FranchettiRawConverterPro` su Windows, `~/.local/share/FranchettiRawConverterPro` su Linux.
+- **Riga di avvio nel log** con versione di Python, PID, PPID, metodo dei processi e argomenti: serve a riconoscere subito un avvio anomalo.
+- **Build Linux sperimentale**: `python build_exe.py` usa `--onedir` (niente estrazione in `/tmp` a ogni avvio) e, quando il programma è impacchettato, il batch usa thread invece di processi separati. Su Windows la pipeline e la resa delle immagini non cambiano.
 
 ---
 
@@ -38,7 +46,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🧠 **Nuova Pipeline Y/Cb/Cr (v2.58.1)**
+### 🧠 **Pipeline Y/Cb/Cr**
 
 | Fase | Descrizione | Parametro |
 |------|-------------|-----------|
@@ -56,7 +64,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🧠 **Smart Batch — Analisi e Correzioni per File (v2.58.1)**
+### 🧠 **Smart Batch — Analisi e Correzioni per File**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -72,7 +80,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🎨 **Preset portabili, LUT e XMP (v2.58.1)**
+### 🎨 **Preset portabili, LUT e XMP**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -85,7 +93,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### 📡 **Tethering automatico multi-marca — Hot-Folder (v2.58.1)**
+### 📡 **Tethering automatico multi-marca — Hot-Folder**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -100,7 +108,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### ⚡ **Prestazioni Adattive (v2.58.1)**
+### ⚡ **Prestazioni Adattive**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -113,7 +121,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### 🖼️ **Galleria Cliente con Selezione (v2.58.1)**
+### 🖼️ **Galleria Cliente con Selezione**
 
 | Funzione | Dettaglio |
 |----------|-----------|
@@ -125,7 +133,7 @@ Franchetti Raw Converter Pro v2.58.1 è una **suite Enterprise completa** che tr
 
 ---
 
-### © **Copyright nei Metadati EXIF/IPTC (v2.58.1)**
+### © **Copyright nei Metadati EXIF/IPTC**
 
 - **EXIF**: `Artist`, `Copyright`, `ImageDescription`
 - **IPTC**: `By-line`, `Copyright Notice`, `Caption-Abstract`, `Object Name`
@@ -192,7 +200,7 @@ non attivi vengono saltati senza errori. L'invio automatico delle anteprime FTP
 
 ### 🔒 **Privacy & Sicurezza (by design)**
 
-| Cosa | Franchetti Raw Converter Pro v2.58.1 |
+| Cosa | Franchetti Raw Converter Pro v2.58.2 |
 |------|--------------------------------------|
 | **Rete** | Solo se attivi Cloud Dispatch o Wi-Fi FTP (opzionali) |
 | **Telemetria** | ❌ Nessuna |
@@ -202,7 +210,7 @@ non attivi vengono saltati senza errori. L'invio automatico delle anteprime FTP
 | **Dati personali** | ❌ Mai raccolti |
 | **File originali** | ✅ Solo lettura, mai modificati |
 
-### Requisiti di Sistema v2.58.1
+### Requisiti di Sistema v2.58.2
 
 | Componente | Minimo | Consigliato |
 |------------|--------|-------------|
@@ -232,7 +240,7 @@ non attivi vengono saltati senza errori. L'invio automatico delle anteprime FTP
 - [Specifiche Tecniche](TECHNICAL_SPECS.md) — Architettura, benchmark, formati
 - [Guida Installazione](INSTALLATION_GUIDE.md) — Deployment enterprise (GPO, Intune)
 - [FAQ](FAQ.md) — Risposte alle domande frequenti
-- [Changelog](CHANGELOG.md) — Storico versioni (v2.58.1)
+- [Changelog](CHANGELOG.md) — Storico versioni (v2.58.2)
 - [Privacy Policy](PRIVACY.md) — Zero data collection
 - [Security Policy](SECURITY.md) — Responsible disclosure
 
@@ -270,7 +278,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 - **Sito web / GitHub Pages**: https://franchettibiagio.github.io/raw-converter-pro/
 - **GitHub Repository**: https://github.com/FranchettiBiagio/raw-converter-pro
-- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1
+- **Release / Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases
 - **Direct Download**: https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe
 - **FileCR**: https://filecr.com/windows/franchetti-raw-converter-pro/
 - **Itch.io**: https://franchetti.itch.io/franchetti-raw-converter-pro
@@ -297,7 +305,7 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 
 ## 📋 **Checklist Pubblicazione (tutti gli store)**
 
-- [x] Titolo ottimizzato SEO (v2.58.1 + keywords)
+- [x] Titolo ottimizzato SEO (v2.58.2 + keywords)
 - [x] Descrizione breve < 300 caratteri
 - [x] Descrizione completa Markdown con feature highlights
 - [x] Tag/keywords pertinenti (25+ termini)
@@ -311,8 +319,8 @@ Attribuzione apprezzata: *"Franchetti Raw Converter Pro by Franchetti"*
 - [x] SHA-256 verificato e documentato
 - [x] Nessun falso positivo antivirus (VirusTotal 0/70+)
 - [x] UPX compression attiva (~92 MB)
-- [x] Version metadata embedded (v2.58.1.0)
+- [x] Version metadata embedded (v2.58.2.0)
 
 ---
 
-*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — 12 Novembre 2026 (v2.58.1)*
+*Scheda pronta per copia-incolla su uptodown.dev, FileCR, Itch.io, SourceForge — 18 Novembre 2026 (v2.58.2)*

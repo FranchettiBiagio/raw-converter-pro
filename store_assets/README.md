@@ -1,4 +1,4 @@
-# Asset Microsoft Store — Franchetti Raw Converter Pro v2.58.1
+# Asset Microsoft Store — Franchetti Raw Converter Pro v2.58.2
 
 Questa cartella contiene **tutto il materiale grafico** pronto per la scheda
 Microsoft Store esistente (`XP9CJZTBCW6VS7`), insieme al testo già pronto in
@@ -6,7 +6,8 @@ Microsoft Store esistente (`XP9CJZTBCW6VS7`), insieme al testo già pronto in
 
 Tutti gli screenshot sono **catture reali** dell'app 2.58.1 in esecuzione su
 Windows 11, riprese con `PrintWindow` (nessun overlay di sistema, nessun
-mockup, nessuna immagine generata con AI). Le foto visibili nell'anteprima
+mockup, nessuna immagine generata con AI). L'interfaccia non cambia nella
+2.58.2, quindi le catture restano valide. Le foto visibili nell'anteprima
 sono immagini libere di Unsplash usate come soggetti di prova.
 
 ---
@@ -84,7 +85,7 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
      `STORE_LISTING_MICROSOFT.md` → *Descrizione breve*.
    - **Descrizione completa**: incolla il blocco *Descrizione completa*.
      Incolla come testo semplice: il Partner Center non interpreta Markdown.
-   - **Novità della versione**: incolla il blocco *Novità della versione 2.58.1*.
+   - **Novità della versione**: incolla il blocco *Novità della versione 2.58.2*.
    - **Caratteristiche principali**: incolla le 20 righe, una per voce.
    - **Parole chiave**: incolla le 7 righe, una per voce.
    - **Categoria**: `Foto e video` (o `Fotografia`, se disponibile).
@@ -102,14 +103,16 @@ pacchetto**. Si aggiornano solo testo e immagini della sottomissione esistente.
    carica `hero/hero_2340x1200.png`.
 7. **Logo / App icon** (se richiesto): carica `logos/logo_300x300.png`.
 8. **Note sulla versione**: incolla l'URL
-   `https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1`
+   `https://github.com/FranchettiBiagio/raw-converter-pro/releases`
    oppure il testo breve delle note.
 9. **Pacchetto**: percorso scelto → **EXE/MSI, senza firma** (come la
    versione v1.0.0 già pubblicata e distribuita dallo Store).
    - **Package URL**:
-     `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+     `https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.2.exe`
      (dominio proprio, HTTP 200 diretto: gli asset GitHub reindirizzano e la
-     validazione di Partner Center può fallire)
+     validazione di Partner Center può fallire). Carica prima il nuovo installer
+     nella cartella `downloads`: finché il file non c'è, l'URL risponde 404 e la
+     certificazione viene rifiutata.
    - **Installer parameters**:
      `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`
    - **App type**: EXE; **Architecture**: x64.

@@ -1,141 +1,123 @@
-# Release Notes v2.58.1
+# Release Notes v2.58.2
 
-**Franchetti Raw Converter Pro** - Release v2.58.1  
-**Data**: 12 Novembre 2026  
-**Build**: 2.58.1.0
-
----
-
-## Preset nativi, LUT e sviluppo più veloce
-
-La 2.58.1 aggiunge un sistema di preset portabile, l'import XMP in beta, le
-LUT 3D `.cube` e un profilo **Veloce** sensibilmente più rapido. Windows resta
-il target principale: la pipeline predefinita non cambia.
+**Franchetti Raw Converter Pro** - Release v2.58.2
+**Data**: 18 Novembre 2026
+**Build**: 2.58.2.0
 
 ---
 
-## Preset `.frcpreset`: solo dati, mai codice
+## Manutenzione: log reperibili e build Linux che non si moltiplica
 
-Un preset è un file JSON leggibile con:
-
-- nome, autore, descrizione, tag e versione minima dell'app;
-- una sezione `look` con tono, colore, curva, denoise, nitidezza, grana,
-  vignettatura e split toning;
-- una sezione `output` facoltativa con formato, lato lungo, qualità ed EXIF.
-
-Non può contenere percorsi, cartelle, credenziali cloud, FTP o copyright.
-Applicarlo non cambia mai il flusso di lavoro e non tocca gli originali.
-
-I sei preset storici sono migrati nel nuovo formato:
-
-| Preset | Output | Uso |
-|---|---|---|
-| Web / Social | JPEG 2048 px, q90 | web e social |
-| Stampa Fine Art | TIFF pieno, q100 | stampa |
-| Archivio JPEG | JPEG pieno, q95, EXIF | archivio |
-| Ritratto | JPEG 3000 px, q92 | persone |
-| Paesaggio | JPEG 3000 px, q92 | natura |
-| Bianco e Nero | JPEG 3000 px, q92 | monocromo |
-
-In **AVANZATE** puoi salvare il look corrente, importare, esportare, eliminare
-e applicare un preset con anteprima. I preset personali stanno nella cartella
-dati dell'utente, non accanto all'EXE.
+La 2.58.2 non cambia la resa delle immagini. Chiude due problemi concreti:
+il file di log finiva in una cartella che su Linux spesso non esiste, e la
+build Linux impacchettata poteva riaprire copie di sé stessa fino a esaurire
+RAM e swap. Su Windows la pipeline, i parametri e gli output restano quelli
+della 2.58.1.
 
 ---
 
-## Pacchetti scaricabili con checksum
+## Il log ora è in una cartella valida su ogni sistema
 
-Un pacchetto è uno ZIP (o una cartella) con `manifest.json` e i file
-`.frcpreset`. Ogni voce ha un checksum **SHA-256**: se non corrisponde, il file
-viene rifiutato. L'importazione è sempre manuale, nessun download automatico.
+Prima `franchetti_log.txt` veniva scritto in `~/Desktop`. Su Linux quella
+cartella si chiama `Scrivania`, in tedesco `Schreibtisch`, e con un desktop
+diverso non esiste affatto: il file semplicemente non compariva.
 
-Il pack ufficiale di esempio è in
-[`presets_pack/`](presets_pack/README.md): Cinema caldo, Paesaggio freddo,
-Ritratto soft.
+Ora il log va nella cartella dati dell'app, creata se manca:
 
----
+| Sistema | Percorso |
+|---|---|
+| Windows | `%APPDATA%\FranchettiRawConverterPro\franchetti_log.txt` |
+| Linux | `~/.local/share/FranchettiRawConverterPro/franchetti_log.txt` |
+| macOS | `~/Library/Application Support/FranchettiRawConverterPro/franchetti_log.txt` |
 
-## Import XMP (beta)
+Lo stesso vale per `sony_diagnosi.txt`, che prima finiva sul Desktop.
 
-I preset Lightroom `.xmp` vengono letti e mappati in modo parziale:
-
-- esposizione, luci, ombre, bianchi, neri, contrasto;
-- vivacità, saturazione, chiarezza, dehaze;
-- riduzione rumore, nitidezza, vignettatura, grana;
-- saturazione selettiva rosso/verde/blu e split toning.
-
-Restano fuori profili camera, curve puntuali, texture e film simulation. L'app
-lo dice chiaramente prima di applicare il preset. Non è una conversione 1:1 e
-non promette una resa identica a Lightroom.
+Su Windows il file non è più sul Desktop: se lo cercavi lì, ora è in
+`%APPDATA%\FranchettiRawConverterPro`.
 
 ---
 
-## LUT 3D `.cube`
+## Riga di avvio nel log
 
-Le LUT creative si applicano con interpolazione trilineare e intensità
-regolabile. Il calcolo avviene a blocchi, così una foto da 24-60 MP non alloca
-centinaia di MB. Se il file non è leggibile, l'immagine resta invariata e il
-log lo segnala.
+Ogni sessione inizia con una riga di contesto:
 
-La LUT non entra nei preset: un preset resta un file di dati, non un
-riferimento a un percorso del computer.
+```text
+Avvio: Python 3.12.8, win32, PID 1234, PPID 987, impacchettato=True,
+metodo processi=spawn, argomenti=[]
+```
 
----
-
-## Profilo Veloce: -39% sul test
-
-Il collo di bottiglia era il denoise non-locale. Nel profilo **Veloce** ora
-lavora a metà risoluzione e la stima del rumore usa un ritaglio centrale di
-1024 px. Misura su RAW sintetico da 24 MP portato a 3000 px:
-
-| Scenario | Prima | Dopo |
-|---|---|---|
-| Pipeline completa, Bilanciato | 8,8 s | 8,8 s |
-| Pipeline completa, Veloce | 9,1 s | 5,4 s |
-
-Nel test, l'output di **Bilanciato** resta identico pixel per pixel: la stima
-campionata e il denoise a metà risoluzione sono attivi solo in **Veloce**.
-Gli altri profili mantengono la resa precedente.
-
-Le micro-ottimizzazioni (luminanza riusata tra le fasi, stima del rumore
-condivisa) non cambiano i valori elaborati.
+Con versione di Python, PID, processo padre, metodo di avvio dei processi e
+argomenti si riconosce subito un avvio anomalo o una copia indesiderata.
 
 ---
 
-## Linux: correzioni sperimentali
+## Linux: perché l'applicazione si moltiplicava
 
-- filtro file **`.RAF` maiuscolo** nel dialogo di apertura;
-- core fisici letti da `/proc/cpuinfo` (prima una VM da 2 vCPU restava a un
-  solo processo);
-- memoria disponibile da `/proc/meminfo`;
-- chiusura del pool con `wait=True` per non lasciare semafori;
-- `gc.collect()` + `malloc_trim(0)` per restituire memoria al sistema;
-- messaggio di dipendenza mancante più chiaro;
-- build Linux/macOS documentata come **sperimentale**.
+Da **Python 3.14** il metodo predefinito per creare processi su Linux è
+`forkserver` (prima era `fork`). `spawn` e `forkserver` non funzionano con un
+eseguibile PyInstaller `--onefile`: ogni worker riapre il programma intero, che
+si ri-estrae in `/tmp/_MEI…` e apre altri worker. Il risultato era un ciclo di
+copie: `/tmp` piena, `libpython` non più trovato, `resource_tracker` che
+rilancia, e alla fine il processo terminato dal sistema (`Ucciso`).
 
-Su Windows il comportamento resta quello della 2.58.0.
+Cosa cambia nella 2.58.2:
+
+- quando il programma è **impacchettato su Linux o macOS**, il batch usa i
+  **thread** invece dei processi separati: il ciclo non può più partire;
+- la build Linux passa a **`--onedir`**: i file restano accanto all'eseguibile
+  e non vengono estratti in `/tmp` a ogni avvio;
+- `build_exe.py` avvisa se la Python usata è **3.14 o superiore** e consiglia
+  3.11 o 3.12;
+- l'override manuale resta disponibile: `FRC_THREADS=1` forza i thread,
+  `FRC_ONEFILE=1` riporta la build a `--onefile`.
+
+La build Linux/macOS resta **sperimentale**: non è stata provata su tutte le
+distribuzioni. L'avvio dalla sorgente (`python3 main.py`) non è interessato dal
+problema.
+
+---
+
+## Diagnosi guidata su Linux
+
+Nuovo script `tools/diagnosi_linux.sh`: avvia l'applicazione, campiona ogni tre
+secondi memoria libera, numero di copie del processo e processi più pesanti,
+poi chiude tutto e scrive un report in `~/diagnosi-frc.txt`.
+
+```bash
+bash tools/diagnosi_linux.sh
+```
+
+Serve a distinguere due casi che dal solo log si confondono: un ciclo di copie
+dell'applicazione, oppure una crescita di memoria dentro un singolo processo.
+
+---
+
+## Cosa non cambia su Windows
+
+- Pipeline Y/Cb/Cr, profili di prestazione, preset, LUT, XMP, Smart Batch,
+  tethering, Cloud Dispatch e galleria cliente restano identici alla 2.58.1.
+- Nessuna nuova dipendenza Python.
+- Gli originali restano in sola lettura e non vengono mai modificati.
+- I preset e le configurazioni salvate restano validi.
 
 ---
 
 ## Compatibilità
 
 - **Windows 10/11 x64**, portable o installer.
-- Gli originali non vengono mai modificati.
+- **Linux/macOS**: build sperimentale, richiede `python3-tk`.
 - EXIF preservato nei formati supportati.
 - Configurazioni e flussi di lavoro precedenti restano validi.
-- Nessuna nuova dipendenza Python: LUT, XMP e preset usano la libreria standard.
-- La build Linux/macOS è sperimentale e richiede `python3-tk`.
 
 ---
 
-## Download v2.58.1
+## Download v2.58.2
 
 - **Portable**: `FranchettiRawConverterPro.exe`
-- **Installer**: `Franchetti_Raw_Converter_Setup_v2.58.1.exe`
+- **Installer**: `Franchetti_Raw_Converter_Setup_v2.58.2.exe`
 - **Pack preset**: `presets_pack.zip`
 
-Gli hash SHA-256 aggiornati sono riportati in `SHA256SUMS.txt` e nella pagina
-della release GitHub.
+Gli hash SHA-256 sono pubblicati nella pagina della release.
 
 ---
 
@@ -144,5 +126,5 @@ della release GitHub.
 Le note complete delle versioni precedenti sono in
 [`CHANGELOG.md`](CHANGELOG.md).
 
-Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il
-problema.
+Per assistenza, allega il file `franchetti_log.txt` e descrivi il passaggio che
+ha causato il problema.
