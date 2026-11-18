@@ -364,7 +364,9 @@ YourBrand © 2024
 
 Il tab **Log** mostra ogni operazione con orario (`[HH:MM:SS]`) ed è accompagnato da due pulsanti:
 **Svuota log** e **Salva log su file**. Lo stesso contenuto viene scritto nel file
-`franchetti_log.txt` sul Desktop per diagnosi successive.
+`franchetti_log.txt` nella cartella dati del programma
+(`%APPDATA%\FranchettiRawConverterPro` su Windows,
+`~/.local/share/FranchettiRawConverterPro` su Linux).
 
 ---
 

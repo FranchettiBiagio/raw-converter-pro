@@ -27,7 +27,7 @@ TEMPLATE = os.path.join(ROOT, "msix", "AppxManifest.xml.template")
 ICON = os.path.join(ROOT, "icon_512.png")
 DEFAULT_EXE = os.path.join(ROOT, "dist", "FranchettiRawConverterPro.exe")
 DEFAULT_LAYOUT = os.path.join(ROOT, "build", "msix", "layout")
-DEFAULT_OUT = os.path.join(ROOT, "Output", "FranchettiRawConverterPro_2.58.1.0_x64.msix")
+DEFAULT_OUT = os.path.join(ROOT, "Output", "FranchettiRawConverterPro_2.58.2.0_x64.msix")
 
 APP_FILE = "FranchettiRawConverterPro.exe"
 
@@ -106,7 +106,7 @@ def main():
     parser.add_argument("--out", default=DEFAULT_OUT)
     parser.add_argument("--publisher", default="CN=FranchettiAcademy")
     parser.add_argument("--identity", default="FranchettiAcademy.FranchettiRawConverterPro")
-    parser.add_argument("--version", default="2.58.1.0")
+    parser.add_argument("--version", default="2.58.2.0")
     parser.add_argument("--display-name", default="Franchetti Raw Converter Pro")
     parser.add_argument("--publisher-display", default="Franchetti Academy")
     parser.add_argument("--description", default="Da RAW a JPEG con preset, batch e tethering.")

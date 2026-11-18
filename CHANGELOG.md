@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.58.2] - 2026-11-18
+
+### Fixed
+- **Linux: avvio e batch con l'eseguibile PyInstaller.** Da Python 3.14 il
+  metodo predefinito per i processi su Linux è `forkserver`: con un bundle
+  `--onefile` ogni worker riapriva il programma intero, si ri-estraeva in
+  `/tmp` e ne apriva altri, fino a esaurire RAM e swap (`Ucciso`). Ora, quando
+  il programma è impacchettato su Linux/macOS, il batch usa i thread; si può
+  forzare con `FRC_THREADS=1`.
+- **Log in una cartella valida su ogni sistema.** `franchetti_log.txt` (e
+  `sony_diagnosi.txt`) non vengono più scritti in `Desktop`, che su Linux si
+  chiama `Scrivania` o non esiste: ora vanno nella cartella dati dell'app
+  (`%APPDATA%` su Windows, `~/.local/share` su Linux).
+- **Riga di avvio nel log** con versione di Python, PID, PPID, metodo dei
+  processi e argomenti: serve a riconoscere subito eventuali copie del
+  programma.
+
+### Added
+- `tools/diagnosi_linux.sh`: campiona memoria, numero di copie del processo e
+  processi più pesanti durante l'avvio, e scrive un report da allegare alle
+  segnalazioni.
+
+### Changed
+- Su Linux la build usa `--onedir` (i file restano accanto all'eseguibile):
+  niente più estrazione in `/tmp` a ogni avvio. Con `FRC_ONEFILE=1` si può
+  tornare a `--onefile`. La build avvisa se la Python è 3.14 o superiore.
+
+---
+
 ## [2.58.1] - 2026-11-12
 
 ### Added

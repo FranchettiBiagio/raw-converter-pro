@@ -1,6 +1,6 @@
-# Franchetti Raw Converter Pro v2.58.1
+# Franchetti Raw Converter Pro v2.58.2
 
-[![Version](https://img.shields.io/badge/version-2.58.1-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
+[![Version](https://img.shields.io/badge/version-2.58.2-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
@@ -12,6 +12,16 @@
 > **Guida illustrata 2.58.0:** [HTML](docs/guida_illustrata/guida.html) - ogni schermata reale spiegata campo per campo, con procedure numerate. Versione stampabile: [PDF A4](docs/guida_illustrata/Guida_Illustrata_2.58.0.pdf).
 
 > **Enterprise RAW Suite** — Pipeline Y/Cb/Cr e denoise ISO, Tethering automatico multi-marca, Cloud Dispatch multi-canale, Watermark professionale, EXIF preservation. Portable, Open Source (MIT), Zero telemetria.
+
+---
+
+## 🚀 Novità v2.58.2 — Linux: l'app non si moltiplica più
+
+- **Batch con thread su Linux impacchettato**: da Python 3.14 il metodo predefinito per creare processi è `forkserver`; con un bundle PyInstaller ogni worker riapriva il programma intero e lo estraeva in `/tmp`, fino a esaurire RAM e swap. In quel caso il batch ora usa i thread (forzabile anche a mano con `FRC_THREADS=1`).
+- **Log ritrovabile**: `franchetti_log.txt` e `sony_diagnosi.txt` non vengono più scritti in `Desktop`, che su Linux si chiama `Scrivania` o non esiste: ora stanno nella cartella dati dell'app (`%APPDATA%` su Windows, `~/.local/share` su Linux).
+- **Build Linux `--onedir`**: niente estrazione in `/tmp` a ogni avvio; `python build_exe.py` avvisa se la Python è 3.14 o superiore.
+- **Riga di avvio nel log** con versione di Python, PID e argomenti: se il programma viene riaperto da un processo figlio si vede subito.
+- **Nuovo `tools/diagnosi_linux.sh`**: campiona memoria e processi durante l'avvio e scrive un report da allegare alle segnalazioni.
 
 ---
 
@@ -263,12 +273,12 @@ Telegram e Dropbox vengono eseguiti al completamento di ogni elaborazione; i can
 
 ## 🚀 Quick Start
 
-### Download v2.58.1
+### Download v2.58.2
 | Metodo | Link |
 |--------|------|
-| **GitHub Releases** | [Download v2.58.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1) |
+| **GitHub Releases** | [Download v2.58.2](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.2) |
 | **Portable (consigliato)** | [FranchettiRawConverterPro.exe](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/FranchettiRawConverterPro.exe) |
-| **Installer Windows** | [Setup v2.58.1](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.58.1.exe) |
+| **Installer Windows** | [Setup v2.58.2](https://github.com/FranchettiBiagio/raw-converter-pro/releases/latest/download/Franchetti_Raw_Converter_Setup_v2.58.2.exe) |
 | **FileCR** | [FileCR Page](https://filecr.com/windows/franchetti-raw-converter-pro/) |
 | **Itch.io** | [Itch.io Page](https://franchetti.itch.io/franchetti-raw-converter-pro) |
 | **SourceForge** | [SourceForge Project](https://sourceforge.net/projects/franchetti-raw-converter-pro/) |
@@ -421,9 +431,9 @@ python build_exe.py
 ### Pacchetto MSIX per il Microsoft Store
 ```cmd
 python tools\build_msix.py
-:: Output: Output\FranchettiRawConverterPro_2.58.1.0_x64.msix
+:: Output: Output\FranchettiRawConverterPro_2.58.2.0_x64.msix
 
-.\tools\sign_msix_dev.ps1 -Package "Output\FranchettiRawConverterPro_2.58.1.0_x64.msix" -Install
+.\tools\sign_msix_dev.ps1 -Package "Output\FranchettiRawConverterPro_2.58.2.0_x64.msix" -Install
 ```
 Richiede *Windows SDK Build Tools* (`makeappx.exe`, `signtool.exe`). Guida
 completa, identità Partner Center e test: `store_assets\MSIX_MIGRATION.md`.
@@ -509,10 +519,10 @@ in the Software without restriction...
 
 **Made with ❤️ per fotografi professionisti da Franchetti**
 
-**v2.58.1 - 12 Novembre 2026**
+**v2.58.2 - 18 Novembre 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-FranchettiBiagio%2Fraw--converter--pro-181717?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro)
-[![Download](https://img.shields.io/badge/Download-v2.58.1-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.1)
+[![Download](https://img.shields.io/badge/Download-v2.58.2-0066cc?logo=github)](https://github.com/FranchettiBiagio/raw-converter-pro/releases/tag/v2.58.2)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>

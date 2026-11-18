@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-          FRANCHETTI RAW CONVERTER PRO v2.58.1 - MONOLITHIC CORE
+          FRANCHETTI RAW CONVERTER PRO v2.58.2 - MONOLITHIC CORE
 ================================================================================
 Licenza: MIT
 Descrizione: Suite Enterprise Open-Source per lo sviluppo RAW lineare a livello
@@ -90,7 +90,7 @@ except Exception:  # pragma: no cover
     DummyAuthorizer = FTPHandler = FTPServer = None
 
 
-APP_VERSION = "2.58.1"
+APP_VERSION = "2.58.2"
 APP_TITLE = f"Franchetti Raw Converter Pro v{APP_VERSION} - Enterprise Suite"
 
 
@@ -126,14 +126,32 @@ if SCALA_DPI > 1.01:
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
+def _cartella_dati_utente():
+    """Cartella dati dell'app, secondo le convenzioni del sistema."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+    elif sys.platform == "darwin":
+        base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or os.path.join(
+            os.path.expanduser("~"), ".local", "share"
+        )
+    return os.path.join(base, "FranchettiRawConverterPro")
+
+
 # Log su file: serve per diagnosticare i problemi segnalati dagli utenti.
+# Non va mai scritto in "Desktop": su Linux la cartella si chiama "Scrivania",
+# in tedesco "Schreibtisch", e con un desktop diverso non esiste affatto.
 try:
-    _file_log = os.path.join(os.path.expanduser("~"), "Desktop", "franchetti_log.txt")
+    _cartella_log = _cartella_dati_utente()
+    os.makedirs(_cartella_log, exist_ok=True)
+    _file_log = os.path.join(_cartella_log, "franchetti_log.txt")
     _handler_file = logging.FileHandler(_file_log, encoding="utf-8")
     _handler_file.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logging.getLogger().addHandler(_handler_file)
 except Exception:
-    pass
+    _file_log = ""
 
 RAW_ESTENSIONI = (
     ".arw", ".cr2", ".cr3", ".nef", ".nrw", ".raf", ".dng", ".orf", ".rw2",
@@ -796,15 +814,7 @@ PRESET_BUILTIN = {
 
 def cartella_dati_utente():
     """Cartella dati dell'app, coerente con le convenzioni del sistema."""
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or os.path.expanduser("~")
-    elif sys.platform == "darwin":
-        base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
-    else:
-        base = os.environ.get("XDG_DATA_HOME") or os.path.join(
-            os.path.expanduser("~"), ".local", "share"
-        )
-    return os.path.join(base, "FranchettiRawConverterPro")
+    return _cartella_dati_utente()
 
 
 def cartella_preset():
@@ -1813,6 +1823,24 @@ def _pulisci_temporanei(compiti):
                     time.sleep(0.2)
 
 
+def usa_processi_per_batch():
+    """Dice se il batch puo' aprire processi separati.
+
+    Su Linux con eseguibile PyInstaller non e' affidabile: da Python 3.14 il
+    metodo predefinito per creare processi e' "forkserver" (prima era "fork"),
+    e "spawn"/"forkserver" non funzionano con i programmi impacchettati: ogni
+    worker riapre il programma intero, che si ri-estrae in /tmp e apre altri
+    worker, fino a esaurire RAM e swap. In quel caso si usano i thread.
+    """
+    if os.environ.get("FRC_THREADS", "").strip().lower() in ("1", "true", "si", "sì"):
+        return False
+    if getattr(sys, "frozen", False) and (
+        sys.platform.startswith("linux") or sys.platform == "darwin"
+    ):
+        return False
+    return True
+
+
 def esegui_batch(
     files, params, destinazione, log=None, progresso=None, cancel_event=None,
     analisi=None,
@@ -1939,7 +1967,8 @@ def esegui_batch(
         profilo = str(params.get("profilo_prestazioni", "Bilanciato"))
         if processi > 1:
             nota(
-                f"Elaborazione parallela: {processi} processi "
+                f"Elaborazione parallela: {processi} "
+                f"{'processi' if usa_processi_per_batch() else 'thread'} "
                 f"(profilo {profilo}, {nuclei_fisici()} core fisici / "
                 f"{nuclei_logici()} logici)."
             )
@@ -1971,7 +2000,15 @@ def esegui_batch(
         else:
             vecchi_thread = _limita_thread_per_processi()
             try:
-                esecutore = ProcessPoolExecutor(max_workers=processi)
+                if usa_processi_per_batch():
+                    esecutore = ProcessPoolExecutor(max_workers=processi)
+                else:
+                    esecutore = ThreadPoolExecutor(max_workers=processi)
+                    nota(
+                        "Il batch usa i thread invece di processi separati: "
+                        "su Linux l'eseguibile impacchettato non e' affidabile "
+                        "con il multiprocessing."
+                    )
             except Exception:
                 _ripristina_thread(vecchi_thread)
                 raise
@@ -8453,7 +8490,7 @@ class FranchettiApp(ctk.CTk):
                     "Nessuna risposta dalla fotocamera. Apri 'Smart Remote Control' "
                     "sulla A7S e attendi che il Wi-Fi sia attivo."
                 )
-            percorso = os.path.join(os.path.expanduser("~"), "Desktop", "sony_diagnosi.txt")
+            percorso = os.path.join(cartella_dati_utente(), "sony_diagnosi.txt")
             try:
                 with open(percorso, "w", encoding="utf-8") as file_diag:
                     file_diag.write("\n".join(righe))
@@ -8517,8 +8554,29 @@ class FranchettiApp(ctk.CTk):
 # 6. ENTRY POINT
 # ================================================================================
 if __name__ == "__main__":
-    # Necessario su Windows per l'elaborazione multi-processo (PyInstaller).
+    # Da chiamare per primo: gestisce l'avvio dei processi figli quando il
+    # programma e' impacchettato con PyInstaller (Windows e Linux).
     multiprocessing.freeze_support()
+
+    try:
+        _metodo_processi = multiprocessing.get_start_method()
+    except Exception:
+        _metodo_processi = "sconosciuto"
+    # Riga di contesto: se un figlio riapre il programma, nel log si vedono
+    # PID e argomenti e si capisce subito da dove arriva.
+    logging.info(
+        "Avvio: Python %s, %s, PID %s, PPID %s, impacchettato=%s, "
+        "metodo processi=%s, argomenti=%s",
+        sys.version.split()[0],
+        sys.platform,
+        os.getpid(),
+        getattr(os, "getppid", lambda: -1)(),
+        bool(getattr(sys, "frozen", False)),
+        _metodo_processi,
+        sys.argv[1:],
+    )
+    if _file_log:
+        logging.info("Log di questa sessione: %s", _file_log)
 
     # Modalita' di test da riga di comando:
     #   FranchettiRawConverterPro.exe --converti-test <sorgente> <uscita>

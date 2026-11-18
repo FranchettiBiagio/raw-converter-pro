@@ -19,15 +19,20 @@ MAIN_SCRIPT = PROJECT_DIR / "main.py"
 DIST_DIR = PROJECT_DIR / "dist"
 BUILD_DIR = PROJECT_DIR / "build"
 IS_WINDOWS = os.name == "nt"
+IS_LINUX = sys.platform.startswith("linux")
 OUTPUT_NAME = "FranchettiRawConverterPro"
 OUTPUT_EXE = OUTPUT_NAME + (".exe" if IS_WINDOWS else "")
+# Su Linux il bundle --onefile si ri-estrae in /tmp a ogni processo figlio:
+# con il multiprocessing diventa un ciclo di copie fino a esaurire la RAM.
+# --onedir tiene i file accanto all'eseguibile e il problema non si presenta.
+USARE_ONEDIR = IS_LINUX and os.environ.get("FRC_ONEFILE", "") != "1"
 ICON_FILE = PROJECT_DIR / "icon.ico"
 VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
 # Metadati versione (single source of truth)
-VERSION = "2.58.1"
-VERSION_TUPLE = (2, 58, 1, 0)
+VERSION = "2.58.2"
+VERSION_TUPLE = (2, 58, 2, 0)
 
 
 def run_cmd(cmd, cwd=None):
@@ -96,12 +101,21 @@ def main():
     if not IS_WINDOWS:
         print("Build sperimentale: opzioni icona, version-info e manifest saltate.")
         print("Il binario usera' il tema/icona di sistema e non avra' metadati EXE.")
+        if USARE_ONEDIR:
+            print("Build --onedir: i file restano accanto all'eseguibile (consigliato su Linux).")
+        if sys.version_info >= (3, 14):
+            print(
+                "\nATTENZIONE: Python %s su Linux usa 'forkserver' per il multiprocessing.\n"
+                "Con un programma impacchettato e' la combinazione che manda in crash\n"
+                "l'applicazione a catena. Per la build consigliata usa Python 3.11 o 3.12\n"
+                "(per esempio: conda create -n frc python=3.12)." % sys.version.split()[0]
+            )
 
     cmd = [
         sys.executable,
         "-m",
         "PyInstaller",
-        "--onefile",
+        *(["--onedir"] if USARE_ONEDIR else ["--onefile"]),
         *(["--windowed"] if IS_WINDOWS else []),
         f"--name={OUTPUT_NAME}",
         f"--distpath={DIST_DIR}",
@@ -172,7 +186,7 @@ def main():
     print(f"\nEsecuzione PyInstaller...")
     run_cmd(" ".join(cmd))
 
-    exe_path = DIST_DIR / OUTPUT_EXE
+    exe_path = (DIST_DIR / OUTPUT_NAME / OUTPUT_EXE) if USARE_ONEDIR else (DIST_DIR / OUTPUT_EXE)
     if exe_path.exists():
         size_mb = exe_path.stat().st_size / (1024 * 1024)
         print(f"\n[OK] BUILD COMPLETATO!")
@@ -183,9 +197,14 @@ def main():
             print(f"\nPer testare: {exe_path}")
         else:
             print(f"\nPer testare: chmod +x '{exe_path}' && '{exe_path}'")
+            if USARE_ONEDIR:
+                print(
+                    "La cartella dist/" + OUTPUT_NAME + "/ va tenuta insieme: "
+                    "l'eseguibile da solo non parte."
+                )
             print(
-                "Nota: build sperimentale su Linux/macOS. Se il bundle --onefile "
-                "ha problemi, avvia dalla sorgente con: python3 main.py"
+                "Nota: build sperimentale su Linux/macOS. Se il binario ha problemi, "
+                "avvia dalla sorgente con: python3 main.py"
             )
     else:
         print(f"\n[ERRORE] Eseguibile non trovato in {exe_path}")

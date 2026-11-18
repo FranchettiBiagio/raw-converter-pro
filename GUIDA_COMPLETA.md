@@ -1,6 +1,6 @@
 # Guida completa a Franchetti Raw Converter Pro
 
-**Versione 2.58.1 - Windows 10/11 - Italiano**
+**Versione 2.58.2 - Windows 10/11 - Italiano**
 
 Questa guida spiega, in modo semplice, **tutte le funzioni** del programma e indica le impostazioni consigliate per ottenere foto pulite, naturali e nitide. Non serve essere esperti: basta seguire i passaggi.
 
@@ -910,6 +910,6 @@ Qualità 95–100 e subsampling 4:4:4 producono file grandi. Per il web usa qual
 
 ---
 
-**Franchetti Raw Converter Pro v2.58.1** - Guida completa.  
+**Franchetti Raw Converter Pro v2.58.2** - Guida completa.  
 **2 Novembre 2026**
 Per assistenza, salva il **Log** e descrivi il passaggio che ha causato il problema.
