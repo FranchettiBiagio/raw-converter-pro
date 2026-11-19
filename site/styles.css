@@ -1528,6 +1528,89 @@ button:focus-visible {
   border-radius: 6px;
 }
 
+/* ---------- Linux e macOS (sperimentale) ---------------------------------- */
+
+.linux {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 44px;
+  align-items: start;
+}
+
+.linux__title {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 12px;
+}
+
+.linux__code {
+  margin: 0 0 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.45);
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.linux__hint {
+  color: var(--muted-2);
+  font-size: 14px;
+  max-width: 52ch;
+  margin-bottom: 26px;
+}
+
+.linux__hint code,
+.linux__note code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--text);
+}
+
+.linux__notes { display: grid; gap: 14px; }
+
+.linux__note {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 18px 20px;
+}
+
+.linux__note h3 {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 8px;
+}
+
+.linux__note ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+.linux__note li { margin-bottom: 6px; }
+.linux__note p { color: var(--muted); font-size: 14.5px; }
+
+.linux__more { font-size: 14.5px; }
+
+.linux__more a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .linux { grid-template-columns: 1fr; gap: 30px; }
+}
+
 /* ---------- Stampa -------------------------------------------------------- */
 
 @media print {

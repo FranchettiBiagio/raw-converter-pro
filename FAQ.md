@@ -13,7 +13,11 @@
 **R:** No. È **portatile** — singolo `.exe` (~92 MB). Doppio clic e funziona. Nessun installer, nessun registro, nessuna cartella AppData.
 
 ### D: Funziona su Mac / Linux?
-**R:** Solo Windows 10/11 x64 attualmente. Il codice sorgente è multipiattaforma; contributi per build native benvenuti.
+**R:** Su Windows c'è il pacchetto pronto. Su Linux e macOS lo stesso programma
+si avvia dal sorgente, in versione **sperimentale**: servono Python 3.11/3.12 e
+Tk, poi `pip install -r requirements.txt` e `python3 main.py`. Istruzioni:
+[LINUX_MACOS.md](LINUX_MACOS.md). Non ci sono pacchetti `.deb`, `.AppImage` o
+`.dmg`, e macOS non è ancora stato provato su una macchina reale.
 
 ### D: Perché ~92 MB per un "semplice convertitore"?
 **R:** Include **runtime Python 3.12 completo** + **LibRaw** (decodifica RAW C++) + **scikit-image** (Y/Cb/Cr e guided filter) + **Pillow** (imaging) + **NumPy** + **customtkinter** + **watchdog** + **piexif** + **requests** + **pyftpdlib** (server FTP) + **OpenCV headless** (resize Lanczos e overlay delle anteprime). Zero dipendenze esterne = funziona ovunque.

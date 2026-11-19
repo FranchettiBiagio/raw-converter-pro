@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tools/diagnosi_linux.sh`: campiona memoria, numero di copie del processo e
   processi più pesanti durante l'avvio, e scrive un report da allegare alle
   segnalazioni.
+- `LINUX_MACOS.md`: guida per avviare dalla sorgente su Linux e macOS, con Tk
+  per distribuzione, primo avvio su macOS, percorso del log, limiti dichiarati
+  e cosa allegare a una segnalazione.
 
 ### Changed
 - Su Linux la build usa `--onedir` (i file restano accanto all'eseguibile):

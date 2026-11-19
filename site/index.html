@@ -794,6 +794,59 @@
       </div>
     </div>
   </section>
+  <!-- ===================== LINUX E MACOS ===================== -->
+  <section class="section section--soft" id="linux">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Linux e macOS · sperimentale</span>
+        <h2>Fuori da Windows si parte dal sorgente.</h2>
+        <p>Lo stesso programma, con le stesse funzioni. Servono Python e Tk: qui ci sono i comandi, i limiti dichiarati e dove trovare il log.</p>
+      </div>
+
+      <div class="linux">
+        <div data-reveal>
+          <h3 class="linux__title">Linux: sei righe</h3>
+          <pre class="linux__code"><code>git clone https://github.com/FranchettiBiagio/raw-converter-pro.git
+cd raw-converter-pro
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 main.py</code></pre>
+          <p class="linux__hint">Se manca Tk: <code>sudo apt install python3-tk</code> su Debian, Ubuntu e Mint; su Fedora è <code>python3-tkinter</code>, su Arch <code>tk</code>.</p>
+
+          <h3 class="linux__title">macOS: gli stessi comandi</h3>
+          <p class="linux__hint">Serve una Python con Tk: quella di python.org lo include; con Homebrew aggiungi <code>brew install python-tk@3.12</code>. Avviando dalla sorgente non c'è nessun avviso di sicurezza.</p>
+        </div>
+
+        <div class="linux__notes" data-reveal>
+          <div class="linux__note">
+            <h3>Cosa serve</h3>
+            <ul>
+              <li>Python <b>3.11 o 3.12</b> (con 3.14 il batch può comportarsi male)</li>
+              <li>Tk installato</li>
+              <li>Circa 1 GB liberi</li>
+            </ul>
+          </div>
+          <div class="linux__note">
+            <h3>Cosa non aspettarsi</h3>
+            <ul>
+              <li>Nessun pacchetto <code>.deb</code>, <code>.AppImage</code> o <code>.dmg</code></li>
+              <li>macOS non è mai stato provato su una macchina reale</li>
+              <li>Nessuna firma Apple: l'eseguibile compilato va aperto con «Apri comunque»</li>
+            </ul>
+          </div>
+          <div class="linux__note">
+            <h3>Log</h3>
+            <p>Non sul Desktop: in <code>~/.local/share/FranchettiRawConverterPro/</code> su Linux, <code>~/Library/Application Support/FranchettiRawConverterPro/</code> su macOS.</p>
+          </div>
+          <p class="linux__more">
+            <a href="https://github.com/FranchettiBiagio/raw-converter-pro/blob/main/LINUX_MACOS.md">Istruzioni complete su GitHub</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="footer">

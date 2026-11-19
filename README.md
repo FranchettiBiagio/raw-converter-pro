@@ -402,6 +402,7 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 | [Guida Illustrata 2.58.0](docs/guida_illustrata/guida.html) | **Ogni schermata reale, campo per campo, con 18 figure e procedure numerate** |
 | [Guida Illustrata in PDF](docs/guida_illustrata/Guida_Illustrata_2.58.0.pdf) | Versione A4 pronta da stampare e condividere |
 | [Manuale Utente](USER_MANUAL.md) | Guida completa con screenshot |
+| [Linux e macOS](LINUX_MACOS.md) | Avvio da sorgente, Tk, build e limiti dichiarati (sperimentale) |
 | [Specifiche Tecniche](TECHNICAL_SPECS.md) | Architettura, algoritmi, formati |
 | [Guida Installazione](INSTALLATION_GUIDE.md) | Deployment enterprise (GPO, Intune) |
 | [FAQ](FAQ.md) | Domande frequenti & troubleshooting |
@@ -440,13 +441,26 @@ Richiede *Windows SDK Build Tools* (`makeappx.exe`, `signtool.exe`). Guida
 completa, identità Partner Center e test: `store_assets\MSIX_MIGRATION.md`.
 
 ### Linux / macOS (sperimentale)
+
+Stesso programma, sorgente: **non c'è un pacchetto da scaricare**, servono Python e Tk.
+
 ```bash
-sudo apt install python3-tk        # solo Linux Mint, se manca Tk
-python3 -m pip install -r requirements.txt
-python3 main.py                    # esecuzione da sorgente (consigliata)
-python3 build_exe.py               # output senza estensione in dist/
+git clone https://github.com/FranchettiBiagio/raw-converter-pro.git
+cd raw-converter-pro
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python3 main.py                    # avvio consigliato
+python3 build_exe.py               # cartella dist/FranchettiRawConverterPro/
 ```
-La build Linux/macOS è sperimentale: `build_exe.py` salta icona, version-info e manifest, che sono opzioni Windows. Se il bundle `--onefile` dà problemi, usa `python3 main.py`.
+
+Istruzioni complete (Tk per ogni distribuzione, primo avvio su macOS, log,
+limiti): **[LINUX_MACOS.md](LINUX_MACOS.md)**.
+
+In sintesi: Python **3.11/3.12** consigliate, `python3-tk` installato, log in
+`~/.local/share/FranchettiRawConverterPro/` (Linux) o
+`~/Library/Application Support/FranchettiRawConverterPro/` (macOS). La build
+Linux usa `--onedir` e il batch con thread: è la combinazione provata. Su
+macOS non è mai stata fatta una prova reale.
 
 ### Sviluppo
 ```cmd
