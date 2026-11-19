@@ -3315,6 +3315,58 @@ class ImageEngine:
 # ================================================================================
 # 2b. ANTEPRIMA PRIMA / DOPO
 # ================================================================================
+def _decodifica_raw_anteprima(percorso, use_camera_wb=True):
+    """Decodifica ridotta di un RAW, con ripieghi per i sensori ostici.
+
+    Non tutti i RAW accettano la lettura a metà risoluzione: con alcuni
+    sensori (Fujifilm X-Trans, file compressi o RGB) LibRaw la rifiuta e
+    l'anteprima resterebbe vuota. Si prova quindi la decodifica piena e, in
+    ultima istanza, la miniatura JPEG incorporata nel file: la stessa scala
+    di ripieghi usata dall'analisi dei file.
+    """
+    try:
+        with rawpy.imread(percorso) as raw:
+            rgb = raw.postprocess(
+                half_size=True,
+                use_camera_wb=bool(use_camera_wb),
+                no_auto_bright=False,
+                output_color=rawpy.ColorSpace.sRGB,
+                output_bps=8,
+            )
+        return Image.fromarray(rgb, "RGB")
+    except Exception as errore:
+        logging.warning(
+            "Anteprima: mezza risoluzione non disponibile per %s (%s); "
+            "provo la decodifica piena.",
+            os.path.basename(percorso),
+            errore,
+        )
+
+    try:
+        with rawpy.imread(percorso) as raw:
+            rgb = raw.postprocess(
+                use_camera_wb=bool(use_camera_wb),
+                no_auto_bright=False,
+                output_color=rawpy.ColorSpace.sRGB,
+                output_bps=8,
+            )
+        return Image.fromarray(rgb, "RGB")
+    except Exception as errore:
+        logging.warning(
+            "Anteprima: decodifica piena non riuscita per %s (%s); "
+            "uso la miniatura incorporata.",
+            os.path.basename(percorso),
+            errore,
+        )
+
+    with rawpy.imread(percorso) as raw:
+        miniatura = raw.extract_thumb()
+    if miniatura.format == rawpy.ThumbFormat.JPEG:
+        with Image.open(io.BytesIO(miniatura.data)) as im:
+            return ImageOps.exif_transpose(im).convert("RGB")
+    return Image.fromarray(miniatura.data, "RGB")
+
+
 def carica_anteprima(percorso, lato=900, use_camera_wb=True):
     """Decodifica una versione ridotta del file per l'anteprima interattiva.
 
@@ -3324,15 +3376,7 @@ def carica_anteprima(percorso, lato=900, use_camera_wb=True):
     """
     estensione = os.path.splitext(percorso)[1].lower()
     if estensione in RAW_ESTENSIONI:
-        with rawpy.imread(percorso) as raw:
-            rgb = raw.postprocess(
-                half_size=True,
-                use_camera_wb=bool(use_camera_wb),
-                no_auto_bright=False,
-                output_color=rawpy.ColorSpace.sRGB,
-                output_bps=8,
-            )
-        immagine = Image.fromarray(rgb, "RGB")
+        immagine = _decodifica_raw_anteprima(percorso, use_camera_wb)
     else:
         with Image.open(percorso) as im:
             immagine = ImageOps.exif_transpose(im).convert("RGB")
@@ -4546,6 +4590,7 @@ class FranchettiApp(ctk.CTk):
         self._anteprima_after_id = None
         self._anteprima_in_corso = False
         self._anteprima_richiesta = False
+        self._anteprima_errore_visto = ""
         self._anteprima_lato = 900
         self._dim_anteprima = (180, 112)
         self._dim_av_anteprima = (300, 170)
@@ -5490,6 +5535,7 @@ class FranchettiApp(ctk.CTk):
         self._anteprima_file = percorso
         self._anteprima_prima = None
         self._anteprima_dopo = None
+        self._anteprima_errore_visto = ""
         self._anteprima_generazione += 1
         if not percorso:
             self._mostra_segnaposto_anteprima(
@@ -5551,7 +5597,13 @@ class FranchettiApp(ctk.CTk):
             dopo = sviluppa_anteprima(base, parametri)
             self._coda.put(("anteprima_done", generazione, percorso, base, dopo))
         except Exception as errore:
-            logging.debug("Anteprima non disponibile per %s: %s", percorso, errore)
+            logging.warning(
+                "Anteprima non disponibile per %s: %s: %s",
+                os.path.basename(percorso) if percorso else "-",
+                type(errore).__name__,
+                errore,
+                exc_info=True,
+            )
             self._coda.put(
                 (
                     "anteprima_error",
@@ -5576,6 +5628,11 @@ class FranchettiApp(ctk.CTk):
         self._anteprima_in_corso = False
         if percorso == self._anteprima_file:
             self._imposta_info_anteprima(f"Anteprima non disponibile: {errore}")
+            # Una riga sola per file: gli slider riprovano e altrimenti il
+            # log si riempirebbe dello stesso messaggio.
+            if errore != self._anteprima_errore_visto:
+                self._anteprima_errore_visto = errore
+                self.scrivi_log(f"Anteprima non disponibile: {errore}")
         if self._anteprima_richiesta:
             self._anteprima_richiesta = False
             self._programma_anteprima(immediato=True)
@@ -5616,7 +5673,17 @@ class FranchettiApp(ctk.CTk):
             except Exception:
                 pass
             etichetta.configure(image=ctk_immagine, text="")
-        except Exception:
+        except Exception as errore:
+            # Se il calcolo riesce ma il disegno no, prima il fallimento era
+            # invisibile: l'utente vedeva solo il segnaposto. Ora resta scritto.
+            if not getattr(self, "_errore_visualizzazione_anteprima", False):
+                self._errore_visualizzazione_anteprima = True
+                logging.warning(
+                    "Anteprima calcolata ma non visualizzata: %s: %s",
+                    type(errore).__name__,
+                    errore,
+                    exc_info=True,
+                )
             try:
                 etichetta.configure(image="", text=segnaposto)
             except Exception:

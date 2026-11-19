@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.58.2] - 2026-11-18
 
 ### Fixed
+- **Anteprima PRIMA/DOPO più robusta.** Se un RAW non accetta la lettura a
+  metà risoluzione (sensori X-Trans, file compressi), l'anteprima restava
+  vuota: ora si prova la decodifica piena e, in ultima istanza, la miniatura
+  incorporata nel file. Gli errori di anteprima non sono più silenziosi:
+  finiscono nel log e con una riga nel tab Log.
 - **Linux: avvio e batch con l'eseguibile PyInstaller.** Da Python 3.14 il
   metodo predefinito per i processi su Linux è `forkserver`: con un bundle
   `--onefile` ogni worker riapriva il programma intero, si ri-estraeva in

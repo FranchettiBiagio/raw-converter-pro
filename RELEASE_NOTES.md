@@ -77,6 +77,21 @@ problema.
 
 ---
 
+## Anteprima PRIMA/DOPO più robusta
+
+Con alcuni RAW la decodifica a metà risoluzione può essere rifiutata da LibRaw
+e, in quel caso, l'anteprima restava vuota pur con l'elaborazione funzionante.
+Ora la decodifica ha tre livelli: mezza risoluzione, decodifica piena,
+miniatura incorporata nel file. È la stessa scala di ripieghi che l'analisi dei
+file usava già.
+
+Gli errori di anteprima non sono più silenziosi: vengono scritti nel log con il
+dettaglio dell'eccezione e con una riga nel tab **Log**, così una segnalazione
+arriva già con la causa. Se l'anteprima resta vuota per un motivo diverso, il
+log ora lo dice invece di lasciarlo indovinare.
+
+---
+
 ## Diagnosi guidata su Linux
 
 Nuovo script `tools/diagnosi_linux.sh`: avvia l'applicazione, campiona ogni tre

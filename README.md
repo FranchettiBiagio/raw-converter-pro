@@ -20,6 +20,7 @@
 - **Batch con thread su Linux impacchettato**: da Python 3.14 il metodo predefinito per creare processi è `forkserver`; con un bundle PyInstaller ogni worker riapriva il programma intero e lo estraeva in `/tmp`, fino a esaurire RAM e swap. In quel caso il batch ora usa i thread (forzabile anche a mano con `FRC_THREADS=1`).
 - **Log ritrovabile**: `franchetti_log.txt` e `sony_diagnosi.txt` non vengono più scritti in `Desktop`, che su Linux si chiama `Scrivania` o non esiste: ora stanno nella cartella dati dell'app (`%APPDATA%` su Windows, `~/.local/share` su Linux).
 - **Build Linux `--onedir`**: niente estrazione in `/tmp` a ogni avvio; `python build_exe.py` avvisa se la Python è 3.14 o superiore.
+- **Anteprima PRIMA/DOPO più robusta**: se un RAW non accetta la lettura a metà risoluzione si prova la decodifica piena e poi la miniatura incorporata; se l'anteprima non riesce, il motivo finisce nel log.
 - **Riga di avvio nel log** con versione di Python, PID e argomenti: se il programma viene riaperto da un processo figlio si vede subito.
 - **Nuovo `tools/diagnosi_linux.sh`**: campiona memoria e processi durante l'avvio e scrive un report da allegare alle segnalazioni.
 
