@@ -1,8 +1,9 @@
 # Linux e macOS (sperimentale)
 
 Franchetti Raw Converter Pro è lo stesso programma su Windows, Linux e macOS.
-Su Windows esiste un pacchetto pronto; su Linux e macOS **non c'è un file da
-scaricare e avviare**: si parte dal codice sorgente e servono cinque minuti.
+Su Windows esiste un pacchetto pronto; su Linux e macOS si parte dal codice
+sorgente. Sul sito c'è un archivio per Linux e uno per macOS con avvio
+automatico: il programma è lo stesso, cambia il modo di avviarlo.
 
 > **Stato reale:** la versione Linux è stata provata su Linux Mint 22.3 in
 > macchina virtuale (2 vCPU, 8 GB di RAM). macOS non è mai stato provato.
@@ -50,6 +51,10 @@ Per uscire dall'ambiente: `deactivate`.
 ---
 
 ## macOS: avvio in cinque comandi
+
+Sul sito è disponibile anche un pacchetto con `Avvia Franchetti Raw
+Converter.command`: doppio clic, prepara l'ambiente al primo avvio e apre il
+programma. Se preferisci i comandi a mano, valgono quelli qui sotto.
 
 Serve una Python con Tk. Va bene quella di [python.org](https://www.python.org/downloads/)
 (include Tk); con Homebrew aggiungi il pacchetto Tk della stessa versione:

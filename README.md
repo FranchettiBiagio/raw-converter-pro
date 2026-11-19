@@ -442,7 +442,9 @@ completa, identità Partner Center e test: `store_assets\MSIX_MIGRATION.md`.
 
 ### Linux / macOS (sperimentale)
 
-Stesso programma, sorgente: **non c'è un pacchetto da scaricare**, servono Python e Tk.
+Stesso programma, sorgente: servono Python e Tk. Sul sito ci sono due archivi
+leggeri: [sorgente per Linux](https://franchettibiagio.github.io/franchetti-raw-converter-site/downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip)
+e [pacchetto macOS con avvio automatico](https://franchettibiagio.github.io/franchetti-raw-converter-site/downloads/Franchetti_Raw_Converter_macOS_2.58.2.zip).
 
 ```bash
 git clone https://github.com/FranchettiBiagio/raw-converter-pro.git
