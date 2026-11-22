@@ -488,9 +488,9 @@ Contributi benvenuti! Leggi [CONTRIBUTING.md](CONTRIBUTING.md) per linee guida.
 
 ## Code signing policy / Firma del codice
 
-**Firma gratuita fornita da [SignPath.io](https://signpath.io), certificato di
-[SignPath Foundation](https://signpath.org).**
+**Firma gratuita fornita da SignPath.io, certificato di SignPath Foundation.**
 *Free code signing provided by SignPath.io, certificate by SignPath Foundation.*
+([SignPath.io](https://signpath.io) · [SignPath Foundation](https://signpath.org))
 
 Le build Windows ufficiali (eseguibile e installer) sono firmate con il
 certificato di **SignPath Foundation**, il programma di firma gratuito per i

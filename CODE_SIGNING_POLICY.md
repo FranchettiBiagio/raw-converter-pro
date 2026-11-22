@@ -4,9 +4,10 @@
 
 Ultimo aggiornamento: 22 novembre 2026
 
-> **Firma gratuita fornita da [SignPath.io](https://signpath.io), certificato di [SignPath Foundation](https://signpath.org).**
+> **Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
 >
-> *Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).*
+> Firma gratuita fornita da SignPath.io, certificato di SignPath Foundation.
+> Progetti: [signpath.io](https://signpath.io) · [signpath.org](https://signpath.org).
 
 ---
 

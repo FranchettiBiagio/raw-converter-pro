@@ -226,9 +226,8 @@ jobs:
             ${{ env.SETUP_EXE }}
             SHA256SUMS.txt
           body: |
-            Firma gratuita fornita da [SignPath.io](https://signpath.io), certificato di
-            [SignPath Foundation](https://signpath.org). *Free code signing provided by
-            SignPath.io, certificate by SignPath Foundation.*
+            Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+            Firma gratuita fornita da SignPath.io, certificato di SignPath Foundation.
 
             Code signing policy / Politica di firma:
             [CODE_SIGNING_POLICY.md](https://github.com/FranchettiBiagio/raw-converter-pro/blob/main/CODE_SIGNING_POLICY.md)
