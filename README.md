@@ -518,6 +518,8 @@ serve a confermare che il binario è quello uscito dalla build.
 ## 📄 Licenza
 
 Distribuito sotto licenza **MIT**. Vedi [LICENSE](LICENSE) per testo completo.
+Le licenze dei componenti inclusi (rawpy, LibRaw, Pillow, NumPy, Python) sono
+in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ```
 Copyright (c) 2024-2026 Franchetti

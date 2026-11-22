@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 Franchetti
+Copyright (c) 2024-2026 Biagio Franchetti
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,45 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-## Third-Party Licenses
-
-This software bundles the following open-source components:
-
-### rawpy (BSD 3-Clause)
-Copyright (c) 2015-2024, rawpy contributors
-All rights reserved.
-
-### LibRaw (LGPL 2.1 / CDDL 1.0)
-Copyright (c) 2008-2024, LibRaw LLC
-Licensed under LGPL 2.1 or CDDL 1.0 at user's choice.
-
-### Pillow (HPND / PIL License)
-Copyright (c) 1997-2024, Pillow contributors
-Licensed under the PIL Software License (HPND-compatible).
-
-### NumPy (BSD 3-Clause)
-Copyright (c) 2005-2024, NumPy Developers
-All rights reserved.
-
-### Python (PSF License)
-Copyright (c) 2001-2024, Python Software Foundation
-Licensed under the Python Software Foundation License Version 2.
-
-### Tkinter (Python StdLib)
-Part of Python standard library, PSF License.
-
----
-
-## Attribution Requirements
-
-If you distribute this software (modified or unmodified), you must:
-
-1. **Include this LICENSE file** in all distributions
-2. **Retain copyright notices** in source code
-3. **Provide attribution** in About dialog / documentation:
-   > "Franchetti Raw Converter Pro includes software developed by the rawpy, LibRaw, Pillow, and NumPy projects."
-
-Commercial distribution is permitted under MIT terms.
