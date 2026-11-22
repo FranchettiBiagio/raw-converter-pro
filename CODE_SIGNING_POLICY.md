@@ -4,6 +4,10 @@
 
 Ultimo aggiornamento: 22 novembre 2026
 
+> **Firma gratuita fornita da [SignPath.io](https://signpath.io), certificato di [SignPath Foundation](https://signpath.org).**
+>
+> *Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).*
+
 ---
 
 ## 1. Progetto
@@ -81,6 +85,29 @@ arriveranno altri manutentori, l'approvazione di una richiesta di firma
 richiederà una persona diversa da chi ha scritto il codice, e questa politica
 sarà aggiornata prima del cambio.
 
+### Gruppi e permessi
+
+| Ruolo | Gruppo / account |
+| --- | --- |
+| Committer e reviewer | [@FranchettiBiagio](https://github.com/FranchettiBiagio) — proprietario del repository, unico account con permesso di scrittura |
+| Approver | [@FranchettiBiagio](https://github.com/FranchettiBiagio) — approva le richieste di firma in SignPath |
+| Collaboratori esterni | nessuno: le proposte arrivano come pull request pubbliche e vengono rilette prima del merge |
+
+### Metadati degli artefatti
+
+SignPath richiede che ogni binario firmato abbia nome e versione del prodotto
+coerenti e verificabili. Nel progetto sono fissati in un solo punto e usati
+dalla build:
+
+| Metadato | Dove | Valore |
+| --- | --- | --- |
+| ProductName | `version_info.txt` (risorsa di versione dell'exe) | `Franchetti Raw Converter Pro` |
+| FileVersion / ProductVersion | `version_info.txt`, `build_exe.py` (`VERSION_TUPLE`) | `2.58.2.0` |
+| AppName / AppVersion | `setup.iss` | `Franchetti Raw Converter Pro` / `2.58.2` |
+
+Una build con versione diversa va allineata in tutti e tre i file: il workflow
+non firma nulla se l'exe manca o se il nome del file non è quello atteso.
+
 ## 5. Autenticazione
 
 - Tutti gli account usati per il progetto (GitHub, SignPath, posta) hanno
@@ -89,7 +116,18 @@ sarà aggiornata prima del cambio.
   GitHub e non è mai scritto nei file, nei log o nella documentazione.
 - I workflow usano il `GITHUB_TOKEN` con permessi minimi (`contents: read`).
 
-## 6. Come verificare una firma
+## 6. Privacy
+
+Il programma non raccoglie dati e non li trasmette ad altri sistemi se non su
+richiesta esplicita dell'utente (invio FTP/Telegram/Dropbox attivato a mano).
+Nessuna telemetria, nessun identificativo, nessun crash report automatico.
+Dettagli: [PRIVACY.md](PRIVACY.md).
+
+*This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or operating
+it.*
+
+## 7. Come verificare una firma
 
 Windows (PowerShell):
 
@@ -113,7 +151,7 @@ lo stesso uscito dalla build:
 certutil -hashfile FranchettiRawConverterPro.exe SHA256
 ```
 
-## 7. Stato attuale
+## 8. Stato attuale
 
 Il certificato di SignPath Foundation viene concesso su domanda e dopo
 approvazione manuale. La domanda è stata preparata insieme a questa politica.
@@ -121,7 +159,7 @@ approvazione manuale. La domanda è stata preparata insieme a questa politica.
 scritto anche nelle note di rilascio: nessuna pagina dichiara una firma che
 non esiste.
 
-## 8. Segnalazioni
+## 9. Segnalazioni
 
 - Vulnerabilità o sospetto di manomissione: `security@franchetti.dev`
   (vedi [SECURITY.md](SECURITY.md)).
@@ -197,6 +235,25 @@ While the project has a single maintainer these roles coincide. If further
 maintainers join, approving a signing request will require someone other than
 the author of the code, and this policy will be updated before that change.
 
+### Groups and permissions
+
+| Role | Group / account |
+| --- | --- |
+| Committer and reviewer | [@FranchettiBiagio](https://github.com/FranchettiBiagio) — repository owner, only account with write access |
+| Approver | [@FranchettiBiagio](https://github.com/FranchettiBiagio) — approves signing requests in SignPath |
+| External contributors | none with write access: changes arrive as public pull requests and are reviewed before merge |
+
+### Artifact metadata
+
+SignPath requires every signed binary to carry consistent, verifiable product
+name and version. In this project they are defined once and used by the build:
+
+| Metadata | Where | Value |
+| --- | --- | --- |
+| ProductName | `version_info.txt` (exe version resource) | `Franchetti Raw Converter Pro` |
+| FileVersion / ProductVersion | `version_info.txt`, `build_exe.py` (`VERSION_TUPLE`) | `2.58.2.0` |
+| AppName / AppVersion | `setup.iss` | `Franchetti Raw Converter Pro` / `2.58.2` |
+
 ## 5. Authentication
 
 - Multi-factor authentication is enabled on every account used for the project
@@ -205,7 +262,18 @@ the author of the code, and this policy will be updated before that change.
   never written to files, logs or documentation.
 - Workflows use `GITHUB_TOKEN` with minimal permissions (`contents: read`).
 
-## 6. Verifying a signature
+## 6. Privacy
+
+The program collects no data and transfers none to other systems unless the
+user explicitly asks for it (FTP/Telegram/Dropbox upload, enabled by hand). No
+telemetry, no identifiers, no automatic crash reports. Details:
+[PRIVACY.md](PRIVACY.md).
+
+*This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or operating
+it.*
+
+## 7. Verifying a signature
 
 ```powershell
 Get-AuthenticodeSignature .\FranchettiRawConverterPro.exe | Format-List Status, SignerCertificate
@@ -221,14 +289,14 @@ Expected: `Status: Valid`, signer **SignPath Foundation**, chain to a CA in the
 Microsoft Trusted Root Program. The published SHA-256 lets you confirm the
 binary matches the build output.
 
-## 7. Current status
+## 8. Current status
 
 The SignPath Foundation certificate is granted on application, after manual
 review. The application has been prepared together with this policy.
 **Until it is approved, Windows releases remain unsigned**, and release notes
 say so: no page claims a signature that does not exist yet.
 
-## 8. Reporting
+## 9. Reporting
 
 - Vulnerabilities or suspected tampering: `security@franchetti.dev`
   (see [SECURITY.md](SECURITY.md)).
