@@ -45,3 +45,6 @@ tools/sdkbuildtools/
 *.msixupload
 *.cer
 *.pfx
+
+# Staging temporaneo degli archivi del sito (rigenerabile dagli script)
+site/downloads/_macos/

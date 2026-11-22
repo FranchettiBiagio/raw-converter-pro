@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://franchettibiagio.github.io/franchetti-raw-converter-site/sitemap.xml

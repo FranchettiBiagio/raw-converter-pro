@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Franchetti Raw Converter Pro — sviluppo RAW e JPEG per Windows</title>
 <meta name="description" content="Convertitore RAW desktop per Windows 10/11: 27 formati, batch ricorsivo, protezione luci, denoise guidato, preset portabili, LUT 3D e tethering. Elaborazione locale su CPU, originali intatti.">
+<link rel="canonical" href="https://franchettibiagio.github.io/franchetti-raw-converter-site/" />
 <meta name="theme-color" content="#08090b">
 <meta property="og:site_name" content="Franchetti Raw Converter Pro">
 <meta property="og:locale" content="it_IT">
@@ -24,6 +25,34 @@
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/logo.png">
 <link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Franchetti Raw Converter Pro",
+  "applicationCategory": "MultimediaApplication",
+  "applicationSubCategory": "Sviluppo RAW",
+  "operatingSystem": "Windows 10, Windows 11, Linux, macOS",
+  "softwareVersion": "2.58.1",
+  "inLanguage": "it",
+  "description": "Sviluppo RAW e JPEG in locale: tono che protegge le luci, denoise guidato, LUT 3D, preset portabili e batch. Gratuito, senza account.",
+  "url": "https://franchettibiagio.github.io/franchetti-raw-converter-site/",
+  "downloadUrl": "https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_Setup_v2.58.1.exe",
+  "image": "https://franchettibiagio.github.io/franchetti-raw-converter-site/assets/og-image.jpg",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/InStock"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Franchetti",
+    "url": "https://franchettibiagio.github.io/franchetti-raw-converter-site/",
+    "email": "reportage@libero.it"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -39,6 +68,7 @@
       <a href="#funzioni">Funzioni</a>
       <a href="#tethering">Tethering</a>
       <a href="#lut">LUT</a>
+      <a href="#linux">Linux e macOS</a>
       <a href="#faq">Domande</a>
     </nav>
     <a class="nav__cta" href="#scarica">Scarica</a>
@@ -795,55 +825,254 @@
     </div>
   </section>
   <!-- ===================== LINUX E MACOS ===================== -->
-  <section class="section section--soft" id="linux">
+  <section class="section lx" id="linux">
     <div class="wrap">
-      <div class="section-head" data-reveal>
-        <span class="eyebrow">Linux e macOS · sperimentale</span>
-        <h2>Fuori da Windows si parte dal sorgente.</h2>
-        <p>Lo stesso programma, con le stesse funzioni. Servono Python e Tk: qui ci sono i comandi, i limiti dichiarati e dove trovare il log.</p>
+
+      <div class="lx-head">
+        <div data-reveal>
+          <span class="eyebrow">Linux e macOS · build sperimentale</span>
+          <h2>Il RAW non conosce<br>un solo <em>sistema</em>.</h2>
+          <p>Lo stesso motore di sviluppo, lo stesso batch, gli stessi preset. Fuori da Windows si scarica un pacchetto leggero e lo si avvia con Python: su macOS con un doppio clic, su Linux con cinque comandi. Una volta sola.</p>
+          <div class="lx-chips">
+            <span class="lx-chip">Stesso motore di Windows</span>
+            <span class="lx-chip">macOS · 117 KB</span>
+            <span class="lx-chip">Linux · 152 KB</span>
+            <span class="lx-chip">Nessuna registrazione</span>
+            <span class="lx-chip lx-chip--warn">Sperimentale</span>
+          </div>
+        </div>
+
+        <div class="lx-visual" data-reveal>
+          <div class="lx-float lx-float--mac">
+            <span class="lx-float__tile">
+              <svg viewBox="0 0 24 24" fill="#12161c" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.26 3.06-.9.94-2.02 1.48-3.05 1.39-.12-1.09.44-2.25 1.26-3.03.9-.86 2.16-1.44 3.05-1.42zM20.94 17.1c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.77-4.05-3.33-2.78-4.37-3.07-9.5-1.36-12.23 1.21-1.95 3.13-3.09 4.93-3.09 1.83 0 2.98 1.01 4.5 1.01 1.47 0 2.37-1.01 4.5-1.01 1.6 0 3.29.87 4.5 2.37-3.95 2.16-3.31 7.79.73 9.81z"/></svg>
+            </span>
+            macOS
+          </div>
+
+          <div class="lx-frame">
+            <div class="lx-frame__bar"><i></i><i></i><i></i><span>Franchetti Raw Converter Pro — batch</span></div>
+            <img src="assets/ui-batch.jpg" alt="L'interfaccia del programma: batch RAW con anteprima prima e dopo" loading="lazy" width="1600" height="900">
+          </div>
+
+          <div class="lx-float lx-float--linux">
+            <span class="lx-float__tile">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M15 33c-4 6-5 15-1 21 3-4 4-12 4-19z" fill="#12161c"/>
+                <path d="M49 33c4 6 5 15 1 21-3-4-4-12-4-19z" fill="#12161c"/>
+                <ellipse cx="32" cy="39" rx="18" ry="21" fill="#12161c"/>
+                <circle cx="32" cy="19" r="13" fill="#12161c"/>
+                <ellipse cx="32" cy="45" rx="12.5" ry="13.5" fill="#ffffff"/>
+                <ellipse cx="26.5" cy="18" rx="5.4" ry="6.4" fill="#ffffff"/>
+                <ellipse cx="37.5" cy="18" rx="5.4" ry="6.4" fill="#ffffff"/>
+                <circle cx="27.4" cy="18.6" r="1.9" fill="#12161c"/>
+                <circle cx="36.6" cy="18.6" r="1.9" fill="#12161c"/>
+                <path d="M32 21.5 28.2 26.5q3.8 2.9 7.6 0z" fill="#f0a35e"/>
+                <ellipse cx="24" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+                <ellipse cx="40" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+              </svg>
+            </span>
+            Linux
+          </div>
+
+          <p class="lx-visual__caption">L'interfaccia è la stessa: cambia solo il sistema che la ospita.</p>
+        </div>
       </div>
 
-      <div class="linux">
-        <div data-reveal>
-          <h3 class="linux__title">Linux: sei righe</h3>
-          <pre class="linux__code"><code>git clone https://github.com/FranchettiBiagio/raw-converter-pro.git
-cd raw-converter-pro
+      <!-- Schede piattaforma -->
+      <div class="lx-platforms">
+        <article class="lx-card lx-card--linux" data-reveal>
+          <div class="lx-card__top">
+            <span class="lx-logo">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M15 33c-4 6-5 15-1 21 3-4 4-12 4-19z" fill="#12161c"/>
+                <path d="M49 33c4 6 5 15 1 21-3-4-4-12-4-19z" fill="#12161c"/>
+                <ellipse cx="32" cy="39" rx="18" ry="21" fill="#12161c"/>
+                <circle cx="32" cy="19" r="13" fill="#12161c"/>
+                <ellipse cx="32" cy="45" rx="12.5" ry="13.5" fill="#ffffff"/>
+                <ellipse cx="26.5" cy="18" rx="5.4" ry="6.4" fill="#ffffff"/>
+                <ellipse cx="37.5" cy="18" rx="5.4" ry="6.4" fill="#ffffff"/>
+                <circle cx="27.4" cy="18.6" r="1.9" fill="#12161c"/>
+                <circle cx="36.6" cy="18.6" r="1.9" fill="#12161c"/>
+                <path d="M32 21.5 28.2 26.5q3.8 2.9 7.6 0z" fill="#f0a35e"/>
+                <ellipse cx="24" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+                <ellipse cx="40" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+              </svg>
+            </span>
+            <span class="lx-badge">Testata su Mint 22.3</span>
+          </div>
+          <h3>Linux</h3>
+          <p class="lx-card__sub">Debian · Ubuntu · Mint · Fedora · Arch</p>
+          <p>Si avvia dalla sorgente con Python. La build produce una cartella <code>dist/</code> da tenere intera: niente estrazione in <code>/tmp</code> a ogni avvio.</p>
+          <ul class="lx-list">
+            <li>Python 3.11 o 3.12 con <code>python3-tk</code></li>
+            <li>Batch con thread: memoria stabile</li>
+            <li>Log in <code>~/.local/share/</code></li>
+          </ul>
+          <div class="lx-card__actions">
+            <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
+              Scarica il sorgente
+            </a>
+            <a class="btn btn--ghost" href="linux.html#linux">Guida Linux</a>
+          </div>
+          <span class="lx-card__meta">ZIP · 156.402 byte · versione 2.58.2</span>
+        </article>
+
+        <article class="lx-card lx-card--mac" data-reveal>
+          <div class="lx-card__top">
+            <span class="lx-logo">
+              <svg viewBox="0 0 24 24" fill="#12161c" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.26 3.06-.9.94-2.02 1.48-3.05 1.39-.12-1.09.44-2.25 1.26-3.03.9-.86 2.16-1.44 3.05-1.42zM20.94 17.1c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.77-4.05-3.33-2.78-4.37-3.07-9.5-1.36-12.23 1.21-1.95 3.13-3.09 4.93-3.09 1.83 0 2.98 1.01 4.5 1.01 1.47 0 2.37-1.01 4.5-1.01 1.6 0 3.29.87 4.5 2.37-3.95 2.16-3.31 7.79.73 9.81z"/></svg>
+            </span>
+            <span class="lx-badge">Mai provata su Mac</span>
+          </div>
+          <h3>macOS</h3>
+          <p class="lx-card__sub">Apple Silicon · Intel</p>
+          <p>Un pacchetto con avvio automatico: doppio clic e parte, senza digitare comandi. Se preferisci, gli stessi comandi restano nella guida.</p>
+          <ul class="lx-list">
+            <li>Python 3.11 o 3.12 con Tk</li>
+            <li>Avvio con doppio clic, ambiente incluso</li>
+            <li>Log in <code>~/Library/Application Support/</code></li>
+            <li>Nessun bundle <code>.app</code> firmato</li>
+          </ul>
+          <div class="lx-card__actions">
+            <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_macOS_2.58.2.zip" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
+              Scarica per macOS
+            </a>
+            <a class="btn btn--ghost" href="linux.html#macos">Guida macOS</a>
+          </div>
+          <span class="lx-card__meta">ZIP · 119.995 byte · avvio assistito · 2.58.2</span>
+        </article>
+      </div>
+
+      <!-- Tre passaggi -->
+      <div class="lx-steps">
+        <div class="lx-step" data-reveal>
+          <span class="lx-step__n">01</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
+          <h3>Scarica lo ZIP</h3>
+          <p>Due pacchetti leggeri: macOS con avvio automatico, Linux con il sorgente. Documentazione e diagnosi incluse.</p>
+        </div>
+        <div class="lx-step" data-reveal>
+          <span class="lx-step__n">02</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 4 5-4 5"/><path d="M12 17h7"/></svg>
+          <h3>Prepara Python</h3>
+          <p>Python 3.11 o 3.12, Tk dal gestore pacchetti, ambiente virtuale e dipendenze. Una volta sola.</p>
+        </div>
+        <div class="lx-step" data-reveal>
+          <span class="lx-step__n">03</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <h3>Avvia</h3>
+          <p><code>python3 main.py</code> per usarlo subito. Oppure <code>python3 build_exe.py</code> per l'eseguibile.</p>
+        </div>
+      </div>
+
+      <!-- Terminale -->
+      <div class="lx-term" data-reveal>
+        <div class="lx-term__bar">
+          <span class="lx-dots"><i></i><i></i><i></i></span>
+          <span class="lx-tabs" role="tablist" aria-label="Comandi per sistema">
+            <button class="lx-tab is-active" role="tab" aria-selected="true" aria-controls="lx-panel-linux" data-lx-tab="linux">Linux</button>
+            <button class="lx-tab" role="tab" aria-selected="false" aria-controls="lx-panel-macos" data-lx-tab="macos">macOS</button>
+          </span>
+          <button class="lx-copy" type="button" data-lx-copy="active">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+            Copia
+          </button>
+        </div>
+        <div class="lx-term__body">
+          <pre id="lx-panel-linux" role="tabpanel" data-lx-panel="linux"><span class="c"># nella cartella dove hai scaricato lo ZIP</span>
+unzip Franchetti_Raw_Converter_Sorgente_2.58.2.zip
+cd FranchettiRawConverterPro-2.58.2
+
+<span class="c"># Debian, Ubuntu, Mint: Tk e ambiente</span>
+sudo apt install python3-tk
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python3 main.py</code></pre>
-          <p class="linux__hint">Se manca Tk: <code>sudo apt install python3-tk</code> su Debian, Ubuntu e Mint; su Fedora è <code>python3-tkinter</code>, su Arch <code>tk</code>.</p>
+python3 main.py</pre>
+          <pre id="lx-panel-macos" role="tabpanel" data-lx-panel="macos" hidden><span class="c"># nella cartella dove hai scaricato lo ZIP</span>
+unzip Franchetti_Raw_Converter_Sorgente_2.58.2.zip
+cd FranchettiRawConverterPro-2.58.2
 
-          <h3 class="linux__title">macOS: gli stessi comandi</h3>
-          <p class="linux__hint">Serve una Python con Tk: quella di python.org lo include; con Homebrew aggiungi <code>brew install python-tk@3.12</code>. Avviando dalla sorgente non c'è nessun avviso di sicurezza.</p>
+<span class="c"># solo con Python installato da Homebrew</span>
+brew install python-tk@3.12
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 main.py</pre>
         </div>
-
-        <div class="linux__notes" data-reveal>
-          <div class="linux__note">
-            <h3>Cosa serve</h3>
-            <ul>
-              <li>Python <b>3.11 o 3.12</b> (con 3.14 il batch può comportarsi male)</li>
-              <li>Tk installato</li>
-              <li>Circa 1 GB liberi</li>
-            </ul>
-          </div>
-          <div class="linux__note">
-            <h3>Cosa non aspettarsi</h3>
-            <ul>
-              <li>Nessun pacchetto <code>.deb</code>, <code>.AppImage</code> o <code>.dmg</code></li>
-              <li>macOS non è mai stato provato su una macchina reale</li>
-              <li>Nessuna firma Apple: l'eseguibile compilato va aperto con «Apri comunque»</li>
-            </ul>
-          </div>
-          <div class="linux__note">
-            <h3>Log</h3>
-            <p>Non sul Desktop: in <code>~/.local/share/FranchettiRawConverterPro/</code> su Linux, <code>~/Library/Application Support/FranchettiRawConverterPro/</code> su macOS.</p>
-          </div>
-          <p class="linux__more">
-            <a href="https://github.com/FranchettiBiagio/raw-converter-pro/blob/main/LINUX_MACOS.md">Istruzioni complete su GitHub</a>
-          </p>
+        <div class="lx-term__foot">
+          <span>Tk su Fedora: <code>python3-tkinter</code> · su Arch: <code>tk</code></span>
+          <span>Il primo <code>pip install</code> scarica circa 250 MB.</span>
         </div>
       </div>
+
+      <!-- Note -->
+      <div class="lx-notes">
+        <div class="lx-note" data-reveal>
+          <h3>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Cosa serve
+          </h3>
+          <ul>
+            <li>Python <b>3.11 o 3.12</b> (con 3.14 il batch può comportarsi male)</li>
+            <li>Tk installato dal gestore pacchetti</li>
+            <li>Circa 1 GB liberi per dipendenze e build</li>
+            <li>8 GB di RAM consigliati per i RAW grandi</li>
+          </ul>
+        </div>
+        <div class="lx-note" data-reveal>
+          <h3>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/><path d="m3 8 9-5 9 5"/><path d="M10 12h4"/></svg>
+            Cosa non trovi
+          </h3>
+          <ul>
+            <li>Nessun pacchetto <code>.deb</code>, <code>.rpm</code>, <code>.AppImage</code> o <code>.dmg</code></li>
+            <li>Nessuna firma o notarizzazione Apple</li>
+            <li>Nessun aggiornamento automatico</li>
+            <li>macOS non è mai stato provato su una macchina reale</li>
+          </ul>
+        </div>
+        <div class="lx-note" data-reveal>
+          <h3>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+            Log e diagnosi
+          </h3>
+          <p>Non sul Desktop. Su Linux: <code>~/.local/share/FranchettiRawConverterPro/</code>. Su macOS: <code>~/Library/Application Support/FranchettiRawConverterPro/</code>.</p>
+          <p>Su Linux lo script <code>tools/diagnosi_linux.sh</code> misura memoria e processi durante l'avvio.</p>
+        </div>
+      </div>
+
+      <!-- Foto -->
+      <div class="lx-photo" data-reveal>
+        <div class="lx-photo__inner">
+          <span class="eyebrow">Un solo motore</span>
+          <h3>Lo stesso RAW, sviluppato dallo stesso codice.</h3>
+          <p>Windows, Linux e macOS condividono la pipeline: bilanciamento del bianco, demosaic, protezione luci, denoise, nitidezza. Cambia solo il modo in cui l'applicazione viene avviata.</p>
+          <div class="lx-chips">
+            <span class="lx-chip">27 formati RAW</span>
+            <span class="lx-chip">Batch ricorsivo</span>
+            <span class="lx-chip">Preset portabili</span>
+            <span class="lx-chip">LUT 3D</span>
+            <span class="lx-chip">EXIF conservati</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invito -->
+      <div class="lx-cta" data-reveal>
+        <div>
+          <h3>La guida completa, passo per passo.</h3>
+          <p>Tk per ogni distribuzione, primo avvio su macOS, compilazione dell'eseguibile, log e problemi comuni. Con i comandi pronti da copiare.</p>
+        </div>
+        <div class="lx-cta__actions">
+          <a class="btn btn--primary" href="linux.html">Apri la guida</a>
+          <a class="btn btn--ghost" href="mailto:reportage@libero.it?subject=Franchetti%20Raw%20Converter%20Pro%20-%20Linux%20o%20macOS">Scrivi all'autore</a>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -873,5 +1102,6 @@ python3 main.py</code></pre>
 </footer>
 
 <script src="app.js"></script>
+<script src="os.js"></script>
 </body>
 </html>

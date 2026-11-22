@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: #08090b;
+    color: #edf1f5;
+    position: relative;
+  }
+  .glow-a, .glow-b {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+  }
+  .glow-a {
+    width: 560px; height: 520px; left: -200px; top: -180px;
+    background: rgba(121, 180, 174, 0.20);
+  }
+  .glow-b {
+    width: 720px; height: 600px; right: -220px; bottom: -260px;
+    background: rgba(228, 164, 98, 0.19);
+  }
+  .frame {
+    position: relative;
+    width: 100%; height: 100%;
+    padding: 44px 56px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- testata --- */
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .brand img { width: 42px; height: 42px; border-radius: 11px; }
+  .brand b { display: block; font-size: 18px; letter-spacing: 0.01em; }
+  .brand span {
+    display: block; font-size: 10.5px; letter-spacing: 0.24em;
+    color: #93a0ad; text-transform: uppercase; margin-top: 2px;
+  }
+  .badge {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #e9bd8b; border: 1px solid rgba(228, 164, 98, 0.4);
+    background: rgba(228, 164, 98, 0.1); padding: 8px 15px; border-radius: 999px;
+  }
+  .badge i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #e4a462; display: block;
+  }
+
+  /* --- corpo --- */
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 396px minmax(0, 1fr);
+    gap: 42px;
+    align-items: center;
+    padding: 8px 0 4px;
+  }
+
+  h1 {
+    font-size: 53px; line-height: 1.04; letter-spacing: -0.035em;
+    font-weight: 800;
+  }
+  h1 em { font-style: normal; color: #e4a462; }
+
+  .lead {
+    margin-top: 16px;
+    font-size: 18.5px; line-height: 1.48; color: #b9c4cf;
+    max-width: 36ch;
+  }
+  .lead b { color: #edf1f5; font-weight: 600; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 13px; border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    background: rgba(255, 255, 255, 0.045);
+    font-size: 13px; color: #dbe3ea;
+  }
+  .chip svg { width: 15px; height: 15px; flex: 0 0 15px; }
+  .chip--warn {
+    color: #e9bd8b;
+    border-color: rgba(228, 164, 98, 0.38);
+    background: rgba(228, 164, 98, 0.1);
+  }
+
+  .note {
+    margin-top: 20px;
+    font-size: 11.5px; line-height: 1.5; color: #7b8794;
+    letter-spacing: 0.03em;
+  }
+
+  /* --- finestra del browser --- */
+  .shotwrap { position: relative; }
+
+  .shot {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0b0e13;
+    box-shadow: 0 34px 70px rgba(0, 0, 0, 0.62), 0 0 0 6px rgba(255, 255, 255, 0.02);
+    transform: rotate(-1.1deg);
+  }
+  .shot__bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: #14181f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+  .dots i:nth-child(1) { background: #c9745f; }
+  .dots i:nth-child(2) { background: #c9a35f; }
+  .dots i:nth-child(3) { background: #79b4ae; }
+  .addr {
+    flex: 1;
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 11px; border-radius: 7px;
+    background: #0c1016; border: 1px solid rgba(255, 255, 255, 0.07);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 11.5px; color: #9dabb8;
+    white-space: nowrap; overflow: hidden;
+  }
+  .addr b { color: #c9d4de; font-weight: 500; }
+  .addr span { color: #e4a462; }
+  .addr svg { width: 11px; height: 11px; flex: 0 0 11px; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot__fade {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 78px;
+    background: linear-gradient(180deg, rgba(11, 14, 19, 0), rgba(11, 14, 19, 0.92));
+  }
+</style>
+</head>
+<body>
+  <div class="glow-a"></div>
+  <div class="glow-b"></div>
+
+  <div class="frame">
+    <div class="top">
+      <div class="brand">
+        <img src="logo.png" alt="">
+        <div>
+          <b>Franchetti Raw Converter Pro</b>
+          <span>Sviluppo RAW e JPEG · in locale</span>
+        </div>
+      </div>
+      <div class="badge"><i></i>Versione 2.58.2 · gratuito</div>
+    </div>
+
+    <div class="main">
+      <div>
+        <h1>Ora anche su<br><em>Linux e macOS</em>.</h1>
+        <p class="lead">Stesso motore RAW di Windows, stessi preset, stesso batch. Sul sito il pacchetto <b>macOS</b> si scarica e parte con un doppio clic.</p>
+
+        <div class="chips">
+          <span class="chip">
+            <svg viewBox="0 0 24 24" fill="#edf1f5"><path d="M16.365 1.43c0 1.14-.42 2.2-1.26 3.06-.9.94-2.02 1.48-3.05 1.39-.12-1.09.44-2.25 1.26-3.03.9-.86 2.16-1.44 3.05-1.42zM20.94 17.1c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.77-4.05-3.33-2.78-4.37-3.07-9.5-1.36-12.23 1.21-1.95 3.13-3.09 4.93-3.09 1.83 0 2.98 1.01 4.5 1.01 1.47 0 2.37-1.01 4.5-1.01 1.6 0 3.29.87 4.5 2.37-3.95 2.16-3.31 7.79.73 9.81z"/></svg>
+            macOS · doppio clic
+          </span>
+          <span class="chip">
+            <svg viewBox="0 0 64 64">
+              <path d="M15 33c-4 6-5 15-1 21 3-4 4-12 4-19z" fill="#edf1f5"/>
+              <path d="M49 33c4 6 5 15 1 21-3-4-4-12-4-19z" fill="#edf1f5"/>
+              <ellipse cx="32" cy="39" rx="18" ry="21" fill="#edf1f5"/>
+              <circle cx="32" cy="19" r="13" fill="#edf1f5"/>
+              <ellipse cx="32" cy="45" rx="12.5" ry="13.5" fill="#12161c"/>
+              <ellipse cx="26.5" cy="18" rx="5.4" ry="6.4" fill="#12161c"/>
+              <ellipse cx="37.5" cy="18" rx="5.4" ry="6.4" fill="#12161c"/>
+              <circle cx="27.4" cy="18.6" r="1.9" fill="#edf1f5"/>
+              <circle cx="36.6" cy="18.6" r="1.9" fill="#edf1f5"/>
+              <path d="M32 21.5 28.2 26.5q3.8 2.9 7.6 0z" fill="#f0a35e"/>
+              <ellipse cx="24" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+              <ellipse cx="40" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+            </svg>
+            Linux · cinque comandi
+          </span>
+        </div>
+
+        <p class="note">Build sperimentali · Linux provata su Mint 22.3 in macchina virtuale · macOS non ancora provata su un Mac</p>
+      </div>
+
+      <div class="shotwrap">
+        <div class="shot">
+          <div class="shot__bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="addr">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6f7b88" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <b>franchettibiagio.github.io/franchetti-raw-converter-site/</b><span>#linux</span>
+            </div>
+          </div>
+          <img src="banner-screen.jpg" alt="La sezione Linux e macOS del sito">
+          <div class="shot__fade"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

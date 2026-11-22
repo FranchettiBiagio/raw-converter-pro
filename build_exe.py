@@ -4,7 +4,9 @@
 Script di build per Franchetti Raw Converter Pro.
 
 Windows: crea dist\\FranchettiRawConverterPro.exe (build ufficiale).
-Linux/macOS: crea un eseguibile senza estensione (build sperimentale).
+Linux: crea la cartella dist/FranchettiRawConverterPro/ con l'eseguibile accanto
+       alle librerie (build sperimentale).
+macOS: crea l'app dist/FranchettiRawConverterPro.app (build sperimentale).
 Uso: python build_exe.py
 """
 
@@ -20,13 +22,19 @@ DIST_DIR = PROJECT_DIR / "dist"
 BUILD_DIR = PROJECT_DIR / "build"
 IS_WINDOWS = os.name == "nt"
 IS_LINUX = sys.platform.startswith("linux")
+IS_MAC = sys.platform == "darwin"
 OUTPUT_NAME = "FranchettiRawConverterPro"
 OUTPUT_EXE = OUTPUT_NAME + (".exe" if IS_WINDOWS else "")
+BUNDLE_NAME = OUTPUT_NAME + ".app"
+BUNDLE_ID = "it.franchetti.rawconverterpro"
 # Su Linux il bundle --onefile si ri-estrae in /tmp a ogni processo figlio:
 # con il multiprocessing diventa un ciclo di copie fino a esaurire la RAM.
 # --onedir tiene i file accanto all'eseguibile e il problema non si presenta.
-USARE_ONEDIR = IS_LINUX and os.environ.get("FRC_ONEFILE", "") != "1"
+# Su macOS vale lo stesso ragionamento: anche lì --onefile si scompatta in una
+# cartella temporanea a ogni avvio, e il bundle .app funziona meglio con --onedir.
+USARE_ONEDIR = (IS_LINUX or IS_MAC) and os.environ.get("FRC_ONEFILE", "") != "1"
 ICON_FILE = PROJECT_DIR / "icon.ico"
+ICNS_FILE = PROJECT_DIR / "icon.icns"
 VERSION_FILE = PROJECT_DIR / "version_info.txt"
 MANIFEST_FILE = PROJECT_DIR / "app.manifest"
 
@@ -86,6 +94,14 @@ def main():
     elif IS_WINDOWS:
         print("Icona NON trovata (opzionale)")
 
+    if IS_MAC:
+        if ICNS_FILE.exists():
+            extra_args.append(f"--icon={ICNS_FILE}")
+            print(f"Icona trovata: {ICNS_FILE}")
+        else:
+            print("Icona .icns NON trovata: l'app usera' l'icona generica (opzionale).")
+            print("Per crearla: vedi 'Icona macOS' in LINUX_MACOS.md")
+
     if IS_WINDOWS and VERSION_FILE.exists():
         extra_args.append(f"--version-file={VERSION_FILE}")
         print(f"Version info trovata: {VERSION_FILE}")
@@ -101,7 +117,9 @@ def main():
     if not IS_WINDOWS:
         print("Build sperimentale: opzioni icona, version-info e manifest saltate.")
         print("Il binario usera' il tema/icona di sistema e non avra' metadati EXE.")
-        if USARE_ONEDIR:
+        if IS_MAC:
+            print("Build macOS: creo dist/FranchettiRawConverterPro.app (doppio clic).")
+        elif USARE_ONEDIR:
             print("Build --onedir: i file restano accanto all'eseguibile (consigliato su Linux).")
         if sys.version_info >= (3, 14):
             print(
@@ -116,7 +134,8 @@ def main():
         "-m",
         "PyInstaller",
         *(["--onedir"] if USARE_ONEDIR else ["--onefile"]),
-        *(["--windowed"] if IS_WINDOWS else []),
+        *(["--windowed"] if (IS_WINDOWS or IS_MAC) else []),
+        *([f"--osx-bundle-identifier={BUNDLE_ID}"] if IS_MAC else []),
         f"--name={OUTPUT_NAME}",
         f"--distpath={DIST_DIR}",
         f"--workpath={BUILD_DIR}",
@@ -163,6 +182,10 @@ def main():
         "--hidden-import=PIL.ImageOps",
         "--hidden-import=PIL.ImageCms",
         "--hidden-import=PIL.ImageFilter",
+        # ImageTk carica _tkinter_finder a runtime: senza questo, su Linux le
+        # anteprime non vengono disegnate (ModuleNotFoundError su PIL._tkinter_finder).
+        "--hidden-import=PIL.ImageTk",
+        "--hidden-import=PIL._tkinter_finder",
         "--hidden-import=multiprocessing",
         "--hidden-import=multiprocessing.spawn",
         *(["--hidden-import=multiprocessing.popen_spawn_win32"] if IS_WINDOWS else []),
@@ -186,15 +209,40 @@ def main():
     print(f"\nEsecuzione PyInstaller...")
     run_cmd(" ".join(cmd))
 
-    exe_path = (DIST_DIR / OUTPUT_NAME / OUTPUT_EXE) if USARE_ONEDIR else (DIST_DIR / OUTPUT_EXE)
+    if IS_MAC:
+        exe_path = DIST_DIR / BUNDLE_NAME
+    elif USARE_ONEDIR:
+        exe_path = DIST_DIR / OUTPUT_NAME / OUTPUT_EXE
+    else:
+        exe_path = DIST_DIR / OUTPUT_EXE
+
     if exe_path.exists():
-        size_mb = exe_path.stat().st_size / (1024 * 1024)
+        if exe_path.is_dir():
+            byte_totali = sum(p.stat().st_size for p in exe_path.rglob("*") if p.is_file())
+        else:
+            byte_totali = exe_path.stat().st_size
+        size_mb = byte_totali / (1024 * 1024)
         print(f"\n[OK] BUILD COMPLETATO!")
         print(f"Eseguibile: {exe_path}")
         print(f"Dimensione: {size_mb:.1f} MB")
         print(f"Versione: {VERSION}")
         if IS_WINDOWS:
             print(f"\nPer testare: {exe_path}")
+        elif IS_MAC:
+            print(f"\nPer testare: open '{exe_path}'")
+            print(
+                "Primo avvio senza firma Apple: clic destro sull'app, poi Apri (oppure\n"
+                "Impostazioni di Sistema > Privacy e Sicurezza > Apri comunque)."
+            )
+            print(
+                "\nPer distribuirla, comprimi il bundle preservando permessi e link:\n"
+                f"  ditto -c -k --sequesterRsrc --keepParent '{exe_path}' "
+                f"{OUTPUT_NAME}-macOS.zip"
+            )
+            print(
+                "Non usare il compressore del Finder ne' 'zip -r': rompono i link\n"
+                "interni della .app e l'app non parte piu'."
+            )
         else:
             print(f"\nPer testare: chmod +x '{exe_path}' && '{exe_path}'")
             if USARE_ONEDIR:
@@ -202,13 +250,19 @@ def main():
                     "La cartella dist/" + OUTPUT_NAME + "/ va tenuta insieme: "
                     "l'eseguibile da solo non parte."
                 )
+        if not IS_WINDOWS:
             print(
                 "Nota: build sperimentale su Linux/macOS. Se il binario ha problemi, "
                 "avvia dalla sorgente con: python3 main.py"
             )
     else:
         print(f"\n[ERRORE] Eseguibile non trovato in {exe_path}")
-        if not IS_WINDOWS:
+        if IS_MAC:
+            print(
+                "Controlla l'output di PyInstaller: su macOS deve comparire "
+                f"dist/{BUNDLE_NAME}."
+            )
+        elif not IS_WINDOWS:
             print(
                 "Controlla l'output di PyInstaller: su Linux il nome non ha "
                 "estensione e deve comparire in dist/."

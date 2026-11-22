@@ -1373,15 +1373,20 @@ def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
     """Elenca i file convertibili. Evita duplicati e la cartella di output."""
     sorgente = str(sorgente or "").strip()
     escluso = None
+    in_place = False
     if escludi and os.path.isdir(sorgente):
         try:
             sorgente_norm = os.path.normcase(os.path.abspath(sorgente))
             escluso_norm = os.path.normcase(os.path.abspath(escludi))
             # Esclude l'output solo se e' dentro la sorgente. Se la destinazione
             # e' una cartella superiore, i file della sorgente devono restare.
-            if escluso_norm == sorgente_norm or escluso_norm.startswith(
-                sorgente_norm + os.sep
-            ):
+            if escluso_norm == sorgente_norm:
+                # Sorgente e destinazione coincidono: escludere la cartella
+                # vorrebbe dire escludere tutto, quindi non si esclude nulla.
+                # Al posto suo si saltano le immagini gia' prodotte accanto al
+                # RAW che le ha generate (stesso nome, estensione da immagine).
+                in_place = True
+            elif escluso_norm.startswith(sorgente_norm + os.sep):
                 escluso = escluso_norm
         except Exception:
             escluso = None
@@ -1391,7 +1396,13 @@ def raccogli_file_sorgente(sorgente, ricorsivo=True, escludi=None):
             percorso_norm = os.path.normcase(os.path.abspath(percorso))
             if percorso_norm == escluso or percorso_norm.startswith(escluso + os.sep):
                 return False
-        return percorso.lower().endswith(ESTENSIONI_ACCETTATE)
+        if not percorso.lower().endswith(ESTENSIONI_ACCETTATE):
+            return False
+        if in_place and percorso.lower().endswith(IMMAGINI_ESTENSIONI):
+            base, _ = os.path.splitext(percorso)
+            if any(os.path.isfile(base + estensione) for estensione in RAW_ESTENSIONI):
+                return False
+        return True
 
     if ";" in sorgente:
         elenco = []

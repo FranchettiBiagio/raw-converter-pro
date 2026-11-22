@@ -97,9 +97,9 @@ python3 build_exe.py
 - Su Linux il risultato è la cartella **`dist/FranchettiRawConverterPro/`**:
   va tenuta tutta, l'eseguibile da solo non parte. Non viene più estratto in
   `/tmp` a ogni avvio.
-- Su macOS il risultato è **`dist/FranchettiRawConverterPro`**, un singolo
-  eseguibile: non viene creato un bundle `.app` con icona. Per distribuirlo
-  servirebbe firma e notarizzazione Apple (vedi sotto).
+- Su macOS il risultato è l'app **`dist/FranchettiRawConverterPro.app`**: si
+  apre con doppio clic. Anche lì la build è `--onedir`, dentro il bundle, così
+  non viene scompattata in una cartella temporanea a ogni avvio.
 
 Variabili utili:
 
@@ -108,8 +108,55 @@ Variabili utili:
 | `FRC_ONEFILE=1` | torna al pacchetto singolo (sconsigliato: si ri-estrae in `/tmp`) |
 | `FRC_THREADS=1` | forza il batch con i thread invece dei processi |
 
-Icona, versione del file e manifest sono opzioni Windows: su Linux e macOS la
-build le salta e lo scrive.
+Versione del file e manifest restano opzioni Windows: su Linux e macOS la build
+le salta e lo scrive.
+
+### Distribuire la .app
+
+```bash
+ditto -c -k --sequesterRsrc --keepParent \
+  "dist/FranchettiRawConverterPro.app" FranchettiRawConverterPro-macOS.zip
+```
+
+Non usare il compressore del Finder né `zip -r`: rompono i link interni del
+bundle e l'app non parte più. Lo ZIP va caricato così com'è, senza rinominare
+niente dentro.
+
+### Icona macOS
+
+PyInstaller su macOS vuole un file `.icns`. Partendo da un PNG quadrato da
+512 o 1024 px (`icona.png` va bene):
+
+```bash
+mkdir -p icon.iconset
+for s in 16 32 128 256 512; do
+  sips -z $s $s icona.png --out icon.iconset/icon_${s}x${s}.png
+  sips -z $((s*2)) $((s*2)) icona.png --out icon.iconset/icon_${s}x${s}@2x.png
+done
+iconutil -c icns icon.iconset -o icon.icns
+rm -rf icon.iconset
+```
+
+Metti `icon.icns` nella cartella del progetto e rilancia la build: lo script lo
+usa da solo.
+
+### Firma e notarizzazione (facoltativa)
+
+Senza firma Apple l'app funziona, ma al primo avvio va aperta con **clic destro →
+Apri**. Per togliere l'avviso servono un account Apple Developer (99 $ l'anno) e
+qualche comando in più:
+
+```bash
+codesign --deep --force --options runtime \
+  --sign "Developer ID Application: Nome Cognome (TEAMID)" \
+  "dist/FranchettiRawConverterPro.app"
+xcrun notarytool submit FranchettiRawConverterPro-macOS.zip --wait \
+  --apple-id ... --team-id ... --password ...
+xcrun stapler staple "dist/FranchettiRawConverterPro.app"
+```
+
+Senza questi passaggi l'app resta perfettamente usabile: cambia solo il primo
+avvio.
 
 ---
 
@@ -136,12 +183,12 @@ Scrive un report in `~/diagnosi-frc.txt`.
 
 - nessun pacchetto `.deb`, `.rpm`, `.AppImage` o `.dmg`;
 - nessuna firma o notarizzazione Apple: l'app compilata va aperta come sopra;
-- icona e proprietà del file non impostate;
+- icone del bundle solo se crei `icon.icns` prima della build;
 - Sony Wi-Fi, server FTP e tethering non sono stati provati su Linux o macOS;
 - nessun aggiornamento automatico.
 
-Sul sito la pagina di download resta quella Windows: è l'unica versione che si
-scarica e si avvia subito.
+Sul sito ci sono due archivi: quello per macOS con avvio assistito e quello per
+Linux con il sorgente. Nessuno dei due è un binario compilato.
 
 ---
 
