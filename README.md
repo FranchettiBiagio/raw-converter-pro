@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/version-2.58.2-blue.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Code signing](https://img.shields.io/badge/code%20signing-SignPath%20Foundation-2f6f4e.svg)](CODE_SIGNING_POLICY.md)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/actions)
 [![Size](https://img.shields.io/badge/size-92%20MB-orange.svg)](https://github.com/FranchettiBiagio/raw-converter-pro/releases)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
@@ -409,6 +410,7 @@ Vedi [PRIVACY.md](PRIVACY.md) e [SECURITY.md](SECURITY.md) per dettagli.
 | [Changelog](CHANGELOG.md) | Storico versioni (v2.58.0) |
 | [Privacy Policy](PRIVACY.md) | Zero data collection |
 | [Security Policy](SECURITY.md) | Responsible disclosure |
+| [Code signing policy](CODE_SIGNING_POLICY.md) | Chi firma le release, come e come verificare la firma (IT/EN) |
 | [Release Notes](RELEASE_NOTES.md) | Note complete v2.58.0 |
 
 ---
@@ -481,6 +483,31 @@ Contributi benvenuti! Leggi [CONTRIBUTING.md](CONTRIBUTING.md) per linee guida.
 2. Commit: `git commit -m 'Add amazing feature'`
 3. Push: `git push origin feature/amazing-feature`
 4. Apri Pull Request
+
+---
+
+## Firma del codice
+
+Le build Windows ufficiali (eseguibile e installer) sono firmate con il
+certificato di **SignPath Foundation**, il programma di firma gratuito per i
+progetti open source. La firma avviene solo in CI, con il workflow
+[`.github/workflows/windows-release.yml`](.github/workflows/windows-release.yml):
+il binario viene compilato dal sorgente pubblico, inviato a SignPath, firmato e
+poi impacchettato nell'installer.
+
+- **Politica completa:** [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md) (italiano e inglese)
+- **Stato:** domanda a SignPath Foundation in corso. Fino all'approvazione le
+  release restano **non firmate** e nessuna pagina dichiara il contrario.
+- **Verifica di un binario firmato:**
+
+```powershell
+Get-AuthenticodeSignature .\FranchettiRawConverterPro.exe | Format-List Status, SignerCertificate
+signtool verify /pa /v FranchettiRawConverterPro.exe
+```
+
+Atteso: `Status: Valid`, firmatario `SignPath Foundation`, catena a una CA nel
+Microsoft Trusted Root Program. L'hash SHA-256 pubblicato accanto a ogni file
+serve a confermare che il binario è quello uscito dalla build.
 
 ---
 
