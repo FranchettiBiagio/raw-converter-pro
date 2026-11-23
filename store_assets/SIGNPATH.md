@@ -42,8 +42,28 @@ Obiettivi misurabili, da raggiungere prima di un nuovo invio:
 | Contributori con commit | 1 | 3 (Sergio Pedone è il primo candidato) |
 | Fork | 0 | 5 |
 | Articoli o video indipendenti | 0 | 1-2 |
-| Installazioni Store + download sito | non misurate | 1.000+ |
+| Installazioni Store | 19 in 23 giorni (24/10-15/11/2026) | 1.000+ |
+| Valutazioni Store | 4, media 5 (13-18/10/2026) | 25+ |
 | README in inglese | no | sì (oggi è solo in italiano) |
+
+### Base di partenza misurata (Partner Center, 24/10-15/11/2026)
+
+| Dato | Valore |
+| --- | --- |
+| Visualizzazioni pagina scheda | 34 (12 giorni con attività) |
+| Tentativi di installazione | 21 |
+| Installazioni riuscite | 19 (18 Italia, 1 Cina) |
+| Primi avvii | 15 |
+| Conversione visita → installazione | 55,9% |
+| Scarichi GitHub (release, totale) | 205 |
+| Stelle / fork | 0 / 0 |
+| SourceForge | 0 download/settimana (non citare) |
+
+Le 4 valutazioni risultano in Partner Center come `revised rating`, con
+`original rating` a 0: è la spiegazione più probabile del perché la pagina
+pubblica mostra `ratingCount: 0`. Segnalazione a Microsoft: TrackingID
+`2610170050000596` («Store Reviews Not Displaying Despite Being Visible in
+Partner Center»).
 
 Azioni che portano lì, in ordine di efficacia:
 
