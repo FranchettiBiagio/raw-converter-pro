@@ -154,11 +154,16 @@ certutil -hashfile FranchettiRawConverterPro.exe SHA256
 
 ## 8. Stato attuale
 
-Il certificato di SignPath Foundation viene concesso su domanda e dopo
-approvazione manuale. La domanda è stata preparata insieme a questa politica.
-**Fino all'approvazione le release Windows restano non firmate** e questo è
-scritto anche nelle note di rilascio: nessuna pagina dichiara una firma che
-non esiste.
+La candidatura al programma SignPath Foundation è stata presentata il
+22 novembre 2026 e **non è stata accolta**: il programma richiede segnali di
+adozione esterna (stelle, fork, contributori, articoli e discussioni
+indipendenti) che il progetto non ha ancora.
+
+**Le release Windows restano non firmate** e nessuna pagina dichiara il
+contrario: ogni file è pubblicato con il proprio hash SHA-256, che ne verifica
+l'integrità. La candidatura sarà ripresentata quando il progetto avrà
+visibilità misurabile. Questa politica e il workflow di firma restano pronti:
+il giorno dell'approvazione non servirà modificare nulla.
 
 ## 9. Segnalazioni
 
@@ -292,10 +297,16 @@ binary matches the build output.
 
 ## 8. Current status
 
-The SignPath Foundation certificate is granted on application, after manual
-review. The application has been prepared together with this policy.
-**Until it is approved, Windows releases remain unsigned**, and release notes
-say so: no page claims a signature that does not exist yet.
+The application to the SignPath Foundation programme was submitted on
+22 November 2026 and **was not accepted**: the programme requires evidence of
+external adoption (stars, forks, contributors, independent articles and
+discussions) that the project does not have yet.
+
+**Windows releases remain unsigned** and no page claims otherwise: every file
+is published with its own SHA-256 hash, which verifies its integrity. The
+application will be resubmitted once the project has measurable visibility.
+This policy and the signing workflow stay ready: nothing will need to change
+on the day of approval.
 
 ## 9. Reporting
 

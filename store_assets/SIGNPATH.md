@@ -18,6 +18,50 @@
 
 Copia dei valori inviati: `C:\Users\Administrator\Downloads\signpath_modulo.md`.
 
+## Esito
+
+**Non accolta**, 23 novembre 2026. Motivo dichiarato: il programma è pensato
+per progetti che hanno già un livello di fiducia e visibilità pubblica
+(stelle, fork, contributori, articoli esterni, discussioni indipendenti,
+supporto istituzionale, attività costante). Nessun giudizio sulla qualità.
+
+Invito esplicito a ripresentare la candidatura quando il progetto avrà più
+riconoscimento. Alternativa proposta: abbonamento SignPath a pagamento.
+
+Conseguenza immediata: la menzione «certificato di SignPath Foundation» è
+stata **rimossa dal sito**, perché non più vera. Il workflow, la politica e
+tutto il resto restano: pronti per il giorno in cui la firma sarà possibile.
+
+## Per ripresentare la candidatura
+
+Obiettivi misurabili, da raggiungere prima di un nuovo invio:
+
+| Indicatore | Adesso | Obiettivo minimo |
+| --- | --- | --- |
+| Stelle GitHub | 0 | 25-50 |
+| Contributori con commit | 1 | 3 (Sergio Pedone è il primo candidato) |
+| Fork | 0 | 5 |
+| Articoli o video indipendenti | 0 | 1-2 |
+| Installazioni Store + download sito | non misurate | 1.000+ |
+| README in inglese | no | sì (oggi è solo in italiano) |
+
+Azioni che portano lì, in ordine di efficacia:
+
+1. **README in inglese** e pagina di presentazione in inglese: senza questo la
+   community internazionale non può nemmeno valutare il progetto.
+2. **Sergio Pedone come collaboratore**: ha già costruito e testato la versione
+   Linux. Un suo pull request reale (guida di build, script di diagnosi, report
+   dei test) crea contributore, fork e revisione: esattamente i segnali che
+   SignPath chiede.
+3. **Una recensione indipendente**: un video YouTube o un articolo di un blog
+   di fotografia valgono più di cento stelle comprate.
+4. **Pubblicazione sulle community giuste**: forum Juza, r/postprocessing,
+   r/opensource, Hacker News «Show HN», Product Hunt, alternativeto.net.
+5. **Recensioni sullo Store**: invitare gli utenti soddisfatti, senza incentivi
+   (vietati dalla policy Microsoft).
+
+Riapplicare non prima di 3-6 mesi, e solo con i numeri sopra raggiunti.
+
 ## Cosa non toccare in attesa
 
 SignPath verifica l'origine delle build guardando il repository **nel momento
