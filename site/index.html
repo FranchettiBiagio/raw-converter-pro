@@ -832,11 +832,11 @@
         <div data-reveal>
           <span class="eyebrow">Linux e macOS · build sperimentale</span>
           <h2>Il RAW non conosce<br>un solo <em>sistema</em>.</h2>
-          <p>Lo stesso motore di sviluppo, lo stesso batch, gli stessi preset. Fuori da Windows si scarica un pacchetto leggero e lo si avvia con Python: su macOS con un doppio clic, su Linux con cinque comandi. Una volta sola.</p>
+          <p>Lo stesso motore di sviluppo, lo stesso batch, gli stessi preset. Su Linux c'è un pacchetto già compilato: tre comandi e parte, senza Python. Su macOS un doppio clic. Il sorgente resta per chi vuole compilare o modificare il programma.</p>
           <div class="lx-chips">
             <span class="lx-chip">Stesso motore di Windows</span>
             <span class="lx-chip">macOS · 117 KB</span>
-            <span class="lx-chip">Linux · 152 KB</span>
+            <span class="lx-chip">Linux · 149,6 MB</span>
             <span class="lx-chip">Nessuna registrazione</span>
             <span class="lx-chip lx-chip--warn">Sperimentale</span>
           </div>
@@ -899,24 +899,26 @@
                 <ellipse cx="40" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
               </svg>
             </span>
-            <span class="lx-badge">Testata su Mint 22.3</span>
+            <span class="lx-badge">Provata su 3 distribuzioni</span>
           </div>
           <h3>Linux</h3>
-          <p class="lx-card__sub">Debian · Ubuntu · Mint · Fedora · Arch</p>
-          <p>Si avvia dalla sorgente con Python. La build produce una cartella <code>dist/</code> da tenere intera: niente estrazione in <code>/tmp</code> a ogni avvio.</p>
+          <p class="lx-card__sub">Ubuntu · Debian · Mint · glibc 2.35+</p>
+          <p>Pacchetto già compilato: si scompatta e si avvia, senza installare Python. La cartella <code>_internal/</code> va tenuta accanto all'eseguibile.</p>
           <ul class="lx-list">
-            <li>Python 3.11 o 3.12 con <code>python3-tk</code></li>
+            <li>Nessun Python richiesto: Tk è incluso</li>
+            <li>glibc 2.35 o superiore (Ubuntu 22.04+)</li>
             <li>Batch con thread: memoria stabile</li>
             <li>Log in <code>~/.local/share/</code></li>
           </ul>
           <div class="lx-card__actions">
-            <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>
+            <a class="btn btn--primary" href="https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
-              Scarica il sorgente
+              Scarica per Linux
             </a>
             <a class="btn btn--ghost" href="linux.html#linux">Guida Linux</a>
           </div>
-          <span class="lx-card__meta">ZIP · 156.402 byte · versione 2.58.2</span>
+          <span class="lx-card__meta">tar.gz · 149.647.813 byte · versione 2.58.2</span>
+          <span class="lx-card__meta">Build e prove a cura di Sergio Pedone — Ubuntu 22.04 LTS, Debian 12, Linux Mint 22.3</span>
         </article>
 
         <article class="lx-card lx-card--mac" data-reveal>
@@ -951,20 +953,20 @@
         <div class="lx-step" data-reveal>
           <span class="lx-step__n">01</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
-          <h3>Scarica lo ZIP</h3>
-          <p>Due pacchetti leggeri: macOS con avvio automatico, Linux con il sorgente. Documentazione e diagnosi incluse.</p>
+          <h3>Scarica il pacchetto</h3>
+          <p>Su Linux un archivio già compilato, su macOS uno ZIP con avvio assistito. Il sorgente è a parte, per chi vuole compilare.</p>
         </div>
         <div class="lx-step" data-reveal>
           <span class="lx-step__n">02</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 4 5-4 5"/><path d="M12 17h7"/></svg>
-          <h3>Prepara Python</h3>
-          <p>Python 3.11 o 3.12, Tk dal gestore pacchetti, ambiente virtuale e dipendenze. Una volta sola.</p>
+          <h3>Scompatta</h3>
+          <p>Su Linux: <code>tar -xzf</code>, poi <code>cd FranchettiRawConverterPro</code>. Su macOS: doppio clic sul file di avvio. Python non serve.</p>
         </div>
         <div class="lx-step" data-reveal>
           <span class="lx-step__n">03</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-          <h3>Avvia</h3>
-          <p><code>python3 main.py</code> per usarlo subito. Oppure <code>python3 build_exe.py</code> per l'eseguibile.</p>
+          <h3>Avvia e converti</h3>
+          <p>Si apre la finestra normale: selezioni i RAW e la destinazione, poi «Avvia conversione batch».</p>
         </div>
       </div>
 

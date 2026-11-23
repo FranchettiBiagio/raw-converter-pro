@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Linux e macOS — Franchetti Raw Converter Pro</title>
-<meta name="description" content="Guida completa per avviare Franchetti Raw Converter Pro su Linux e macOS dal sorgente: Python, Tk, build, log, Gatekeeper e problemi comuni. Build sperimentale.">
+<meta name="description" content="Scarica Franchetti Raw Converter Pro per Linux — pacchetto pronto, glibc 2.35+, nessun Python da installare — e per macOS con avvio assistito: comandi, requisiti, build dal sorgente, log e problemi comuni. Build sperimentale.">
 <link rel="canonical" href="https://franchettibiagio.github.io/franchetti-raw-converter-site/linux.html" />
 <meta name="theme-color" content="#08090b">
 <meta property="og:site_name" content="Franchetti Raw Converter Pro">
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="Linux e macOS — Franchetti Raw Converter Pro">
-<meta property="og:description" content="Dal sorgente all'immagine: comandi, requisiti, build e limiti dichiarati per usare il programma su Linux e macOS.">
+<meta property="og:description" content="Pacchetto pronto per Linux e avvio assistito per macOS: comandi, requisiti, build dal sorgente e limiti dichiarati.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://franchettibiagio.github.io/franchetti-raw-converter-site/linux.html">
 <meta property="og:image" content="https://franchettibiagio.github.io/franchetti-raw-converter-site/assets/banner-linux-mac.png">
@@ -39,7 +39,7 @@
       <a href="#log">Log</a>
       <a href="#problemi">Problemi</a>
     </nav>
-    <a class="nav__cta" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>Scarica</a>
+    <a class="nav__cta" href="https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz">Scarica</a>
   </div>
 </header>
 
@@ -78,12 +78,15 @@
         </div>
 
         <div class="hero__actions">
-          <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_macOS_2.58.2.zip" download>
+          <a class="btn btn--primary" href="https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
-            Scarica per macOS <small>117 KB</small>
+            Scarica per Linux <small>149,6 MB</small>
           </a>
-          <a class="btn btn--ghost" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>Sorgente per Linux</a>
+          <a class="btn btn--ghost" href="downloads/Franchetti_Raw_Converter_macOS_2.58.2.zip" download>Scarica per macOS <small>117 KB</small></a>
+          <a class="btn btn--ghost" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>Compila dal sorgente</a>
         </div>
+
+        <p class="lx-credit"><b>Build e prove Linux a cura di Sergio Pedone</b> — Ubuntu 22.04 LTS, Debian 12, Linux Mint 22.3.</p>
       </div>
     </div>
   </section>
@@ -95,9 +98,36 @@
       <!-- ===================== COSA SCARICHI ===================== -->
       <section id="contenuto">
         <h2><span class="num">01</span>Cosa scaricare</h2>
-        <p class="lead">Due archivi leggeri, senza installer e senza binari compilati: contengono lo stesso programma, la documentazione e lo script di diagnosi. Si scompattano in una cartella qualsiasi.</p>
+        <p class="lead">Tre file, tre modi di partire. Su Linux c'è un pacchetto già compilato: si scompatta e si avvia, senza installare Python. Su macOS uno ZIP con l'avvio assistito. Il sorgente resta per chi vuole compilare o modificare il programma.</p>
 
         <div class="lx-downloads">
+          <div class="lx-download">
+            <h3>
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M15 33c-4 6-5 15-1 21 3-4 4-12 4-19z" fill="#eef2f6"/>
+                <path d="M49 33c4 6 5 15 1 21-3-4-4-12-4-19z" fill="#eef2f6"/>
+                <ellipse cx="32" cy="39" rx="18" ry="21" fill="#eef2f6"/>
+                <circle cx="32" cy="19" r="13" fill="#eef2f6"/>
+                <ellipse cx="32" cy="45" rx="12.5" ry="13.5" fill="#12161c"/>
+                <ellipse cx="26.5" cy="18" rx="5.4" ry="6.4" fill="#12161c"/>
+                <ellipse cx="37.5" cy="18" rx="5.4" ry="6.4" fill="#12161c"/>
+                <circle cx="27.4" cy="18.6" r="1.9" fill="#eef2f6"/>
+                <circle cx="36.6" cy="18.6" r="1.9" fill="#eef2f6"/>
+                <path d="M32 21.5 28.2 26.5q3.8 2.9 7.6 0z" fill="#f0a35e"/>
+                <ellipse cx="24" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+                <ellipse cx="40" cy="60" rx="7" ry="3.2" fill="#f0a35e"/>
+              </svg>
+              Linux · pacchetto pronto
+            </h3>
+            <p>Contiene Python e Tk: non serve installare niente. Si scompatta in una cartella qualsiasi e si avvia con tre comandi.</p>
+            <a class="btn btn--primary" href="https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
+              Scarica per Linux
+            </a>
+            <span class="lx-download__meta">149.647.813 byte · SHA-256 eff9af465847ce42eed892e16405b0e27712cc7bd98d8cff4e913ccfa312ae9e</span>
+            <span class="lx-download__meta">glibc 2.35 o superiore · Ubuntu 22.04+, Debian 12+, Linux Mint 21+</span>
+          </div>
+
           <div class="lx-download">
             <h3>
               <svg viewBox="0 0 24 24" fill="#eef2f6" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.26 3.06-.9.94-2.02 1.48-3.05 1.39-.12-1.09.44-2.25 1.26-3.03.9-.86 2.16-1.44 3.05-1.42zM20.94 17.1c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.01-3.06-1.77-4.05-3.33-2.78-4.37-3.07-9.5-1.36-12.23 1.21-1.95 3.13-3.09 4.93-3.09 1.83 0 2.98 1.01 4.5 1.01 1.47 0 2.37-1.01 4.5-1.01 1.6 0 3.29.87 4.5 2.37-3.95 2.16-3.31 7.79.73 9.81z"/></svg>
@@ -129,7 +159,7 @@
               </svg>
               Linux · sorgente
             </h3>
-            <p>Il sorgente completo con la guida: cinque comandi nel terminale, oppure la compilazione dell'eseguibile con <code>build_exe.py</code>.</p>
+            <p>Il sorgente completo con la guida: sei passaggi nel terminale, oppure la compilazione dell'eseguibile con <code>build_exe.py</code>, per Linux e macOS.</p>
             <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
               Scarica il sorgente
@@ -138,7 +168,9 @@
           </div>
         </div>
 
-        <p>Il pacchetto macOS contiene in più <code>Avvia Franchetti Raw Converter.command</code> e <code>LEGGIMI.txt</code>. Il pacchetto Linux e quello macOS contengono lo stesso programma: cambia solo il modo di avviarlo.</p>
+        <p>Il pacchetto Linux è già compilato: contiene l'eseguibile e la cartella <code>_internal/</code>, che vanno tenute insieme. Il pacchetto macOS aggiunge <code>Avvia Franchetti Raw Converter.command</code> e <code>LEGGIMI.txt</code> al sorgente. Sono lo stesso programma: cambia solo il modo di avviarlo.</p>
+
+        <p>Questa è la struttura del <b>pacchetto sorgente</b>:</p>
 
         <table class="lx-table">
           <thead>
@@ -166,18 +198,18 @@
       <!-- ===================== PRIMA DI INIZIARE ===================== -->
       <section id="requisiti">
         <h2><span class="num">02</span>Prima di iniziare</h2>
-        <p class="lead">Non serve essere programmatori. Su Linux sono cinque comandi da incollare nel terminale; su macOS c'è un file di avvio automatico. In entrambi i casi serve Python con la sua libreria grafica, Tk.</p>
+        <p class="lead">Non serve essere programmatori. Su Linux sono tre comandi con il pacchetto pronto, sei se parti dal sorgente; su macOS c'è un file di avvio automatico.</p>
 
         <table class="lx-table">
           <thead>
             <tr><th>Voce</th><th>Richiesta</th></tr>
           </thead>
           <tbody>
-            <tr><td>Python</td><td><b>3.11 o 3.12</b>. Con 3.14 o superiore il batch può comportarsi male: la build avvisa.</td></tr>
-            <tr><td>Tk</td><td>La libreria grafica di Python. Su molte distribuzioni non è installata di serie.</td></tr>
-            <tr><td>Spazio su disco</td><td>Circa 1 GB tra dipendenze e build.</td></tr>
+            <tr><td>Python</td><td><b>Non serve</b> col pacchetto Linux: è incluso. Dal sorgente servono <b>3.11 o 3.12</b>; con 3.14 o superiore il batch può comportarsi male e la build avvisa.</td></tr>
+            <tr><td>Tk</td><td>Incluso nel pacchetto Linux. Dal sorgente è la libreria grafica di Python, e su molte distribuzioni non è installata di serie.</td></tr>
+            <tr><td>Spazio su disco</td><td>407 MB per il pacchetto Linux scompattato; circa 1 GB dal sorgente, tra dipendenze e build.</td></tr>
             <tr><td>RAM</td><td>2 GB minimo, 8 GB consigliati con RAW da 40-60 MP.</td></tr>
-            <tr><td>Sistema</td><td>Linux x86_64; macOS Intel o Apple Silicon.</td></tr>
+            <tr><td>Sistema</td><td>Linux x86_64 con <b>glibc 2.35 o superiore</b> (Ubuntu 22.04+, Debian 12+, Mint 21+); macOS Intel o Apple Silicon.</td></tr>
           </tbody>
         </table>
 
@@ -201,7 +233,19 @@
       <!-- ===================== LINUX ===================== -->
       <section id="linux">
         <h2><span class="num">03</span>Linux, passo per passo</h2>
-        <p class="lead">Questa è la procedura provata su Linux Mint 22.3 in macchina virtuale, con Python 3.12.0 e PyInstaller 6.22.3. Vale allo stesso modo su Ubuntu e Debian.</p>
+        <p class="lead">Due strade: il pacchetto pronto, che si avvia con tre comandi, e la compilazione dal sorgente. Il pacchetto è stato compilato su Ubuntu 22.04.5 con Python 3.10.12 e provato, in macchina virtuale, su Debian 12 e Linux Mint 22.3.</p>
+
+        <h3>Strada rapida: il pacchetto pronto</h3>
+        <p>Nella cartella dove hai salvato il <code>.tar.gz</code>, tre comandi. Python non serve: è dentro l'archivio, insieme a Tk.</p>
+        <div class="lx-code">
+          <div class="lx-code__bar"><span>Terminale</span><button class="lx-copy" type="button" data-lx-copy="#cmd-0">Copia</button></div>
+          <pre id="cmd-0">tar -xzf Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz
+cd FranchettiRawConverterPro
+./FranchettiRawConverterPro</pre>
+        </div>
+        <p>Si apre la finestra normale. Il log si crea in <code>~/.local/share/FranchettiRawConverterPro/franchetti_log.txt</code>. Se compare <code>Permission denied</code>, l'archivio è stato scompattato senza i permessi di esecuzione: <code>chmod +x FranchettiRawConverterPro/FranchettiRawConverterPro</code>.</p>
+
+        <h3>Dal sorgente: sei passaggi</h3>
 
         <div class="lx-stepblock">
           <span class="lx-stepblock__n">1</span>
@@ -441,7 +485,7 @@ python3 build_exe.py</pre>
 
         <div class="lx-callout lx-callout--warn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-          <span><strong>Linux</strong> è stata provata su una sola distribuzione, in macchina virtuale: Linux Mint 22.3, 2 vCPU, 8 GB. <strong>macOS</strong> non è mai stata provata su una macchina reale.</span>
+          <span><strong>Linux</strong> è stata provata su tre distribuzioni, in macchina virtuale: Ubuntu 22.04.5, Debian 12 e Linux Mint 22.3, con 2 vCPU. <strong>macOS</strong> non è mai stata provata su una macchina reale.</span>
         </div>
 
         <table class="lx-table">
@@ -449,12 +493,13 @@ python3 build_exe.py</pre>
             <tr><th>Voce</th><th>Stato</th></tr>
           </thead>
           <tbody>
-            <tr><td>Pacchetti pronti</td><td>Nessun <code>.deb</code>, <code>.rpm</code>, <code>.AppImage</code>, <code>.dmg</code> o <code>.app</code></td></tr>
+            <tr><td>Pacchetti pronti</td><td>Un archivio <code>.tar.gz</code> da scompattare. Nessun <code>.deb</code>, <code>.rpm</code> o <code>.AppImage</code>; per macOS nessun <code>.dmg</code> o <code>.app</code></td></tr>
+            <tr><td>glibc</td><td>2.35 o superiore (Ubuntu 22.04+, Debian 12+, Mint 21+). Su sistemi più vecchi il programma non parte</td></tr>
             <tr><td>Firma Apple</td><td>Assente: il file scaricato va aperto con «Apri comunque»</td></tr>
             <tr><td>Icona e proprietà</td><td>Non impostate su Linux e macOS</td></tr>
-            <tr><td>Tethering e FTP</td><td>Sony Wi-Fi, server FTP e hot-folder non sono stati provati su Linux o macOS</td></tr>
-            <tr><td>Aggiornamenti</td><td>Nessun aggiornamento automatico: si riscarica lo ZIP</td></tr>
-            <tr><td>Distribuzioni</td><td>Provata una sola: altre possono richiedere pacchetti aggiuntivi</td></tr>
+            <tr><td>Tethering, FTP, LUT</td><td>Sony Wi-Fi, server FTP, hot-folder, watermark, preset e LUT non sono stati provati su Linux o macOS. Le prove hanno coperto selezione dei RAW, anteprime e batch</td></tr>
+            <tr><td>Aggiornamenti</td><td>Nessun aggiornamento automatico: si riscarica l'archivio</td></tr>
+            <tr><td>Distribuzioni</td><td>Provate tre, in macchina virtuale: Ubuntu 22.04.5, Debian 12, Linux Mint 22.3</td></tr>
           </tbody>
         </table>
       </section>
@@ -518,14 +563,14 @@ python3 build_exe.py</pre>
       <div class="lx-cta" data-reveal>
         <div>
           <h3>Pronto a provarlo?</h3>
-          <p>Scarica il sorgente, segui i cinque comandi della guida e apri il primo RAW. Se qualcosa non torna, il log dice dove guardare.</p>
+          <p>Scarica il pacchetto Linux, estrai l'archivio e apri il primo RAW. Se qualcosa non torna, il log dice dove guardare.</p>
         </div>
         <div class="lx-cta__actions">
-          <a class="btn btn--primary" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>
+          <a class="btn btn--primary" href="https://www.franchettitv.it/downloads/Franchetti_Raw_Converter_2.58.2_Linux_x86_64.tar.gz">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>
-            Scarica il sorgente
+            Scarica per Linux
           </a>
-          <a class="btn btn--ghost" href="index.html#linux">Torna alla pagina principale</a>
+          <a class="btn btn--ghost" href="downloads/Franchetti_Raw_Converter_Sorgente_2.58.2.zip" download>Compila dal sorgente</a>
         </div>
       </div>
     </div>

@@ -2398,6 +2398,18 @@ button:focus-visible {
   word-break: break-all;
 }
 
+.lx-credit {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted-2);
+  max-width: 62ch;
+}
+
+.lx-credit b { color: var(--muted); font-weight: 600; }
+
 @media (max-width: 760px) {
   .lx-downloads { grid-template-columns: 1fr; }
 }
